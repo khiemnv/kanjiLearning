@@ -257,5 +257,10 @@ namespace test_universalApp
             updateTerm();
             updateNum();
         }
+
+        private void back_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

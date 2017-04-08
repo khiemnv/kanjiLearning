@@ -29,6 +29,7 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button x:Name="StudyBtn" Content="Study" HorizontalAlignment="Left" Margin="0" Click="StudyBtn_Click" Grid.Row="2" VerticalAlignment="Bottom"/>
+        <Button x:Name="StudyBtn" Content="Study" HorizontalAlignment="Right" Margin="0" Click="StudyBtn_Click" Grid.Row="2" VerticalAlignment="Bottom"/>
+        <Button x:Name="Back" Content="Back" HorizontalAlignment="Left" Margin="0" Grid.Row="2" VerticalAlignment="Bottom"/>
     </Grid>
 </Page>

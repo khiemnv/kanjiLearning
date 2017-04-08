@@ -40,6 +40,12 @@ namespace test_universalApp
             ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
             s_content.LoadChapterCompleted += C_LoadCompleted;
+            s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
+        }
+
+        private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
+        {
+            browserPath.Text = e.path;
         }
 
         private async void testWriteData()

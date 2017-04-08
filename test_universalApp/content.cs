@@ -38,16 +38,23 @@ namespace test_universalApp
 
             StorageFolder folder = await picker.PickSingleFolderAsync();
             if (folder != null) { 
-            //var fileTypeFilter = new string[] { ".txt", ".dat" };
-            //QueryOptions queryOptions = new QueryOptions(CommonFileQuery.OrderBySearchRank, fileTypeFilter);
-            //queryOptions.UserSearchFilter = "chapter";
-            //StorageFileQueryResult queryResult = folder.CreateFileQueryWithOptions(queryOptions);
-            //IReadOnlyList<StorageFile> files = queryResult.GetFilesAsync().GetResults();
-            IReadOnlyList<StorageFile> fileList = await folder.GetFilesAsync();
-            foreach(var file in fileList)
-            {
+                //var fileTypeFilter = new string[] { ".txt", ".dat" };
+                //QueryOptions queryOptions = new QueryOptions(CommonFileQuery.OrderBySearchRank, fileTypeFilter);
+                //queryOptions.UserSearchFilter = "chapter";
+                //StorageFileQueryResult queryResult = folder.CreateFileQueryWithOptions(queryOptions);
+                //IReadOnlyList<StorageFile> files = queryResult.GetFilesAsync().GetResults();
+                IReadOnlyList<StorageFile> fileList = await folder.GetFilesAsync();
+                foreach(var file in fileList)
+                {
                     Debug.WriteLine(file.Name);
-            }
+                    string txt = await FileIO.ReadTextAsync(file);
+                    var words = parse(txt);
+                    if (words.Count > 0)
+                    {
+                        updateDict(file.Name, words);
+                    }
+                }
+                OnLoadMultiChaperCompleted(new LoadChapterCompletedEventArgs() { path = folder.Path});
             }
             return -1;
         }
@@ -100,13 +107,9 @@ namespace test_universalApp
         {
             updateDict();
         }
-
-        private void updateDict()
+        private void updateDict(string key, List<word> words)
         {
-            //update chapters dict
-            var key = m_content.m_fileName;
-            var words = m_content.m_words;
-            if (m_chapters.ContainsKey(m_content.m_fileName))
+            if (m_chapters.ContainsKey(key))
             {
                 var oldWords = m_chapters[key];
                 m_chapters[key] = words;
@@ -117,6 +120,13 @@ namespace test_universalApp
                 m_chapters.Add(key, words);
             }
         }
+        private void updateDict()
+        {
+            //update chapters dict
+            var key = m_content.m_fileName;
+            var words = m_content.m_words;
+            updateDict(key, words);
+        }
 
         public async Task<int> loadChapter()
         {
@@ -125,10 +135,19 @@ namespace test_universalApp
             return ret;
         }
 
+        public class LoadChapterCompletedEventArgs:EventArgs
+        {
+            public string path;
+        }
         public event EventHandler LoadChapterCompleted;
         protected virtual void OnLoadChaperCompleted(EventArgs e)
         {
             LoadChapterCompleted?.Invoke(this, e);
+        }
+        public event EventHandler<LoadChapterCompletedEventArgs> LoadMultiChapterCompleted;
+        protected virtual void OnLoadMultiChaperCompleted(LoadChapterCompletedEventArgs e)
+        {
+            LoadMultiChapterCompleted?.Invoke(this, e);
         }
     }
 

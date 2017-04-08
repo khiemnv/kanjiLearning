@@ -8,21 +8,17 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom">
-            <Button Name="optionBtn">...</Button>
-            <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
-            <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
-            <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
-            <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
-            <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
-        </StackPanel>
+        
+        <Button Name="back" Content="Back" VerticalAlignment="Bottom" Click="back_Click"></Button>
         <SplitView Name="split"
                    HorizontalAlignment="Left"
-                   Height="298"
+                   VerticalAlignment="Center"
+                   Height="300"
                    Margin="10,10,0,0"
                    Width="340"
                    IsPaneOpen="False"
-                   DisplayMode="Overlay">
+                   DisplayMode="Overlay"
+                   OpenPaneLength="200">
             <SplitView.Pane>
                 <StackPanel Name="optionsStack" Background="DarkGray">
                     <StackPanel Margin="48, 0, 0, 0">
@@ -43,13 +39,19 @@
                 </StackPanel>
             </SplitView.Pane>
             <SplitView.Content>
-                <Grid Name="contentGrid">
-                    <Grid Tapped="term_Tapped" Background="Silver">
-                        <StackPanel  VerticalAlignment="Center">
-                            <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" />
-                            <TextBlock Name="detail" Text="detail" FontSize="12" Foreground="Black"/>
-                        </StackPanel>
-                    </Grid>
+                <Grid Tapped="term_Tapped" Background="Silver">
+                    <StackPanel  VerticalAlignment="Top" Margin="0,0,0,10">
+                        <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" />
+                        <TextBlock Name="detail" Text="detail" FontSize="12" Foreground="Black"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom">
+                        <Button Name="optionBtn">...</Button>
+                        <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
+                        <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
+                        <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
+                        <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
+                        <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
+                    </StackPanel>
                 </Grid>
             </SplitView.Content>
         </SplitView>

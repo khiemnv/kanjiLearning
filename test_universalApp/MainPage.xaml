@@ -8,19 +8,21 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,0,10,10">
-        <RelativePanel>
+        <StackPanel Padding="0, 0, 0, 0" Margin="0,25,0,35">
             <StackPanel Name="browserStack" Orientation="Horizontal" VerticalAlignment="Top" Width="350">
-                <TextBox x:Name="browserPath" Height="10" TextWrapping="Wrap" Text="data file path" VerticalAlignment="Top" Margin="0"/>
-                <Button x:Name="browserBtn" Content=". . ." HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Click="browserBtn_Click"/>
+                <TextBlock x:Name="browserPath" TextWrapping="Wrap" Text="data file path" VerticalAlignment="Top" Margin="0" Width="303" Height="32"/>
+                <Button x:Name="browserBtn" Content=". . ." HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Click="browserBtn_Click" RenderTransformOrigin="0.5,0.5" Width="50">
+                    <Button.RenderTransform>
+                        <CompositeTransform ScaleX="-1"/>
+                    </Button.RenderTransform>
+                </Button>
             </StackPanel>
             <StackPanel Name="buttonStack"  Orientation="Horizontal" RelativePanel.Below="browserStack">
                 <Button x:Name="reloadBtn" Content="Reload" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" RenderTransformOrigin="0.162,0.473" Click="reloadBtn_Click"/>
                 <Button x:Name="addBtn" Content="Save" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Height="32" Click="addBtn_Click"/>
             </StackPanel>
-            <GridView RelativePanel.Below="buttonStack" RelativePanel.Above="nextBtn" x:Name="wordGV" Margin="0,5,-350,0">
-                <TextBox x:Name="TextBox" Height="261" TextWrapping="Wrap" Text="TextBlock" Width="340"/>
-            </GridView>
-            <Button RelativePanel.AlignBottomWithPanel="True" x:Name="nextBtn" Content="Next" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Bottom" Click="nextBtn_Click"/>
-        </RelativePanel>
+            <TextBox x:Name="TextBox" Height="500" TextWrapping="NoWrap" Text="kotoba" Width="350"/>
+        </StackPanel>
+        <Button RelativePanel.AlignBottomWithPanel="True" x:Name="nextBtn" Content="Next" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Bottom" Click="nextBtn_Click"/>
     </Grid>
 </Page>
