@@ -8,21 +8,51 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,0,10,10">
-        <StackPanel Padding="0, 0, 0, 0" Margin="0,25,0,35">
-            <StackPanel Name="browserStack" Orientation="Horizontal" VerticalAlignment="Top" Width="350">
-                <TextBlock x:Name="browserPath" TextWrapping="Wrap" Text="data file path" VerticalAlignment="Top" Margin="0" Width="303" Height="32"/>
-                <Button x:Name="browserBtn" Content=". . ." HorizontalAlignment="Right" Margin="0" VerticalAlignment="Top" Click="browserBtn_Click" RenderTransformOrigin="0.5,0.5" Width="50">
-                    <Button.RenderTransform>
-                        <CompositeTransform ScaleX="-1"/>
-                    </Button.RenderTransform>
-                </Button>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="30" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="50"/>
+        </Grid.ColumnDefinitions>
+            <TextBlock x:Name="browserPath"
+                       Grid.Row="0" Grid.Column="0"
+                       TextWrapping="Wrap"
+                       Text="data file path"
+                       Width="auto" Height="auto"/>
+        <Button x:Name="browserBtn"
+                Content=". . ."
+                Grid.Row="0"
+                Grid.Column="1"
+                HorizontalAlignment="Right"
+                Click="browserBtn_Click">
+        </Button>
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+            <StackPanel Name="buttonStack"
+                        Orientation="Horizontal"
+                        RelativePanel.Below="browserStack">
+                <Button x:Name="reloadBtn"
+                        Content="Reload"
+                        Click="reloadBtn_Click"/>
+                <Button x:Name="addBtn"
+                        Content="Save"
+                        Click="addBtn_Click"/>
             </StackPanel>
-            <StackPanel Name="buttonStack"  Orientation="Horizontal" RelativePanel.Below="browserStack">
-                <Button x:Name="reloadBtn" Content="Reload" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" RenderTransformOrigin="0.162,0.473" Click="reloadBtn_Click"/>
-                <Button x:Name="addBtn" Content="Save" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top" Height="32" Click="addBtn_Click"/>
-            </StackPanel>
-            <TextBox x:Name="TextBox" Height="500" TextWrapping="NoWrap" Text="kotoba" Width="350"/>
         </StackPanel>
-        <Button RelativePanel.AlignBottomWithPanel="True" x:Name="nextBtn" Content="Next" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Bottom" Click="nextBtn_Click"/>
+        <TextBox Grid.Row="2"
+                 Grid.ColumnSpan="2"
+                 x:Name="TextBox"
+                 TextWrapping="NoWrap"
+                 Text="kotoba"
+                 Width="auto"
+                 Height="auto"/>
+        <Button Grid.Row="3"
+                Grid.Column="1"
+                x:Name="nextBtn" Content="Next"
+                HorizontalAlignment="Right"
+                Click="nextBtn_Click"/>
     </Grid>
 </Page>

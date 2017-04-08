@@ -50,13 +50,21 @@ namespace test_universalApp
 
         private void StudyBtn_Click(object sender, RoutedEventArgs e)
         {
-            s_cp.m_selectedChapters.Clear();
-            foreach (chapterItem i in chapterList.SelectedItems)
+            if (chapterList.SelectedItems.Count > 0)
             {
-                Debug.WriteLine("{0} {1}", i.name, i.count);
-                s_cp.m_selectedChapters.Add(i.name);
+                s_cp.m_selectedChapters.Clear();
+                foreach (chapterItem i in chapterList.SelectedItems)
+                {
+                    Debug.WriteLine("{0} {1}", i.name, i.count);
+                    s_cp.m_selectedChapters.Add(i.name);
+                }
+                this.Frame.Navigate(typeof(study));
             }
-            this.Frame.Navigate(typeof(study));
+        }
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(MainPage));
         }
     }
 }

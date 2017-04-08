@@ -8,14 +8,22 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        
-        <Button Name="back" Content="Back" VerticalAlignment="Bottom" Click="back_Click"></Button>
-        <SplitView Name="split"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Center"
-                   Height="300"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="100"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+       <SplitView Name="split"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="3"
+                   Height="auto"
+                  Width="auto"
                    Margin="10,10,0,0"
-                   Width="340"
                    IsPaneOpen="False"
                    DisplayMode="Overlay"
                    OpenPaneLength="200">
@@ -39,21 +47,23 @@
                 </StackPanel>
             </SplitView.Pane>
             <SplitView.Content>
-                <Grid Tapped="term_Tapped" Background="Silver">
-                    <StackPanel  VerticalAlignment="Top" Margin="0,0,0,10">
-                        <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" />
-                        <TextBlock Name="detail" Text="detail" FontSize="12" Foreground="Black"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom">
-                        <Button Name="optionBtn">...</Button>
-                        <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
-                        <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
-                        <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
-                        <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
-                        <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
+                <Grid Background="Silver" Tapped="term_Tapped" >
+                    <StackPanel Margin="0,0,0, 50" >
+                        <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" VerticalAlignment="Top"/>
+                        <TextBlock Name="detail" Text="detail" TextWrapping="Wrap" FontSize="12" Foreground="Black" VerticalAlignment="Bottom"/>
                     </StackPanel>
                 </Grid>
             </SplitView.Content>
         </SplitView>
+        <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom"
+                    Margin="0,0,0,35">
+            <Button Name="optionBtn">...</Button>
+            <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
+            <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
+            <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
+            <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
+            <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
+        </StackPanel>
+        <Button Name="back" Content="Back" VerticalAlignment="Bottom" Click="back_Click"></Button>
     </Grid>
 </Page>

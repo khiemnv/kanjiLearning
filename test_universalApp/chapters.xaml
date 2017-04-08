@@ -8,8 +8,25 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <TextBox x:Name="textBox" HorizontalAlignment="Left" Margin="0" TextWrapping="Wrap" Text="Chapter list" VerticalAlignment="Top"/>
-        <ListView x:Name="chapterList" Margin="0,37,10,32" Grid.Row="1"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="100"/>
+        </Grid.ColumnDefinitions>
+        
+        <TextBlock x:Name="textBox"
+                 Grid.Row="0"
+                 Text="Chapter list"
+                 HorizontalAlignment="Left"/>
+        <ListView x:Name="chapterList"
+                  Width="auto"
+                  Height="auto"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="2"
                   SelectionMode="Multiple">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -29,7 +46,15 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <Button x:Name="StudyBtn" Content="Study" HorizontalAlignment="Right" Margin="0" Click="StudyBtn_Click" Grid.Row="2" VerticalAlignment="Bottom"/>
-        <Button x:Name="Back" Content="Back" HorizontalAlignment="Left" Margin="0" Grid.Row="2" VerticalAlignment="Bottom"/>
+        <Button x:Name="StudyBtn" Content="Study"
+                Grid.Row="2"
+                Grid.Column="1"
+                Click="StudyBtn_Click"
+                HorizontalAlignment="Right"
+                />
+        <Button x:Name="Back" Content="Back"
+                HorizontalAlignment="Left"
+                Grid.Row="2"
+                Click="Back_Click"/>
     </Grid>
 </Page>
