@@ -1,4 +1,4 @@
-﻿//#define test_study_page
+﻿#define test_study_page
 
 using System;
 using System.Collections.Generic;
@@ -50,8 +50,18 @@ namespace test_universalApp
             termCmb.SelectionChanged += TermCmb_SelectionChanged;
 
             detailChk.Tapped += DetailChk_Tapped;
+            optStarChk.Click += OptStarChk_Click;
+            starChk.Click += starChk_Checked;
 
             split.PaneClosed += Split_PaneClosed;
+        }
+
+        private void OptStarChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.showMarked = (bool)optStarChk.IsChecked;
+            m_iCursor = 0;
+            updateTerm();
+            updateNum();
         }
 
         private void Split_PaneClosed(SplitView sender, object args)
@@ -93,6 +103,7 @@ namespace test_universalApp
             public mode termMode;
             public mode defineMode;
             public bool showDetail;
+            public bool showMarked;
         }
 
         static option m_option = new option() {
@@ -104,6 +115,7 @@ namespace test_universalApp
         {
             public word word;
             public itemStatus status;
+            public bool marked;
             private string getDefine(mode m)
             {
                 switch (m)
@@ -140,6 +152,7 @@ namespace test_universalApp
             }
         }
         List<wordItem> m_items = new List<wordItem>();
+        List<wordItem> m_markedItems = new List<wordItem>();
 
         private void OptionBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -181,8 +194,9 @@ namespace test_universalApp
 
         private void updateTerm()
         {
-            Debug.Assert(m_iCursor >= 0 && m_iCursor < m_items.Count);
-            wordItem curItem = m_items[m_iCursor];
+            var items = getCurItems();
+            Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
+            wordItem curItem = items[m_iCursor];
             switch (curItem.status)
             {
                 case itemStatus.term:
@@ -200,6 +214,12 @@ namespace test_universalApp
                     }
                     break;
             }
+            starChk.IsChecked = curItem.marked;
+        }
+
+        private List<wordItem> getCurItems()
+        {
+            return m_option.showMarked ? m_markedItems : m_items;
         }
 
         int m_iCursor;
@@ -210,16 +230,18 @@ namespace test_universalApp
         }
         private void term_Tapped(object sender, TappedRoutedEventArgs e)
         {
+            var items = getCurItems();
             //rotate
-            Debug.Assert(m_iCursor >= 0 && m_iCursor < m_items.Count);
-            wordItem curItem = m_items[m_iCursor];
+            Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
+            wordItem curItem = items[m_iCursor];
             curItem.rotate();
             updateTerm();
         }
 
         private void nextBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (m_iCursor < (m_items.Count - 1))
+            var items = getCurItems();
+            if (m_iCursor < (items.Count - 1))
             {
                 m_iCursor++;
                 updateTerm();
@@ -239,19 +261,23 @@ namespace test_universalApp
 
         private void updateNum()
         {
-            numberTxt.Text = string.Format("{0}/{1}", m_iCursor + 1, m_items.Count);
+            var items = getCurItems();
+            int count = items.Count;
+            numberTxt.Text = string.Format("{0}/{1}", m_iCursor + 1, count);
         }
 
         private void sulfBnt_Click(object sender, RoutedEventArgs e)
         {
+            var items = getCurItems();
+
             Random rng = new Random();
-            int count = m_items.Count;
+            int count = items.Count;
             for (int i = 0; i<count;i++)
             {
                 int irand = rng.Next(count - 1);
-                var temp = m_items[i];
-                m_items[i] = m_items[irand];
-                m_items[irand] = temp;
+                var temp = items[i];
+                items[i] = items[irand];
+                items[irand] = temp;
             }
             m_iCursor = 0;
             updateTerm();
@@ -261,6 +287,43 @@ namespace test_universalApp
         private void back_Click(object sender, RoutedEventArgs e)
         {
             this.Frame.Navigate(typeof(chapters));
+        }
+
+        private void starChk_Checked(object sender, RoutedEventArgs e)
+        {
+            wordItem i;
+            if (m_option.showMarked)
+            {
+                i = m_markedItems[m_iCursor];
+            }else {
+                i = m_items[m_iCursor];
+            }
+
+            i.marked = (bool)starChk.IsChecked;
+            if (i.marked)
+            {
+                m_markedItems.Add(i);
+            }else
+            {
+                m_markedItems.Remove(i);
+            }
+
+            if (m_option.showMarked) {
+                if (m_markedItems.Count == 0)
+                {
+                    m_option.showMarked = false;
+                    optStarChk.IsChecked = false;
+                    m_iCursor = 0;
+                    updateTerm();
+                    updateNum();
+                }
+                else if (m_iCursor == m_markedItems.Count) {
+                    m_iCursor--;
+                    Debug.Assert(m_iCursor >= 0);
+                    updateTerm();
+                    updateNum();
+                }
+            }
         }
     }
 }

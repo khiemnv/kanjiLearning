@@ -9,61 +9,102 @@
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
-            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="35"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
             <ColumnDefinition Width="100"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-       <SplitView Name="split"
-                  Grid.Row="1"
+        <Grid Grid.Row="1"
                   Grid.ColumnSpan="3"
-                   Height="auto"
-                  Width="auto"
-                   Margin="10,10,0,0"
-                   IsPaneOpen="False"
-                   DisplayMode="Overlay"
-                   OpenPaneLength="200">
-            <SplitView.Pane>
-                <StackPanel Name="optionsStack" Background="DarkGray">
-                    <StackPanel Margin="48, 0, 0, 0">
-                        <TextBlock>Options</TextBlock>
-                        <CheckBox Name="detailChk" Margin="10,0,0,0">Show detail</CheckBox>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Width="50">Term</TextBlock>
-                            <ComboBox Name="termCmb" Margin="10,0,0,0"></ComboBox>
+              Background="Silver">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+                <ColumnDefinition Width="30"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <SplitView Name="split"
+                  Grid.Row="0"
+                Height="auto"
+                Width="auto"
+                IsPaneOpen="False"
+                DisplayMode="Overlay"
+                OpenPaneLength="250">
+                <SplitView.Pane>
+                    <Grid Name="optionsStack" Background="DarkGray">
+                        <StackPanel Margin="48, 0, 0, 0">
+                            <TextBlock>Options</TextBlock>
+                            <CheckBox Name="detailChk" Margin="10,0,0,0">Show detail</CheckBox>
+                            <CheckBox Name="optStarChk" Margin="10,0,0,0">Marked words</CheckBox>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Width="50">Term</TextBlock>
+                                <ComboBox Name="termCmb" Margin="10,0,0,0"></ComboBox>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Width="50">Define</TextBlock>
+                                <ComboBox Name="defineCmb" Margin="10,0,0,0"></ComboBox>
+                            </StackPanel>
+                            <TextBlock>Speak</TextBlock>
+                            <CheckBox Margin="10,0,0,0">Term</CheckBox>
+                            <CheckBox Margin="10,0,0,0">Define</CheckBox>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Width="50">Define</TextBlock>
-                            <ComboBox Name="defineCmb" Margin="10,0,0,0"></ComboBox>
-                        </StackPanel>
-                        <TextBlock>Speak</TextBlock>
-                        <CheckBox Margin="10,0,0,0">Term</CheckBox>
-                        <CheckBox Margin="10,0,0,0">Define</CheckBox>
-                    </StackPanel>
-                </StackPanel>
-            </SplitView.Pane>
-            <SplitView.Content>
-                <Grid Background="Silver" Tapped="term_Tapped" >
-                    <StackPanel Margin="0,0,0, 50" >
-                        <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" VerticalAlignment="Top"/>
-                        <TextBlock Name="detail" Text="detail" TextWrapping="Wrap" FontSize="12" Foreground="Black" VerticalAlignment="Bottom"/>
-                    </StackPanel>
-                </Grid>
-            </SplitView.Content>
-        </SplitView>
-        <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom"
-                    Margin="0,0,0,35">
-            <Button Name="optionBtn">...</Button>
-            <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
-            <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
-            <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
-            <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
+                    </Grid>
+                </SplitView.Pane>
+                <SplitView.Content>
+                    <Grid Background="Silver" Tapped="term_Tapped" >
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="30"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="30"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Name="term"
+                                   Text="term"
+                                   FontSize="48"
+                                   Foreground="Green"
+                                   Grid.Row="0"
+                               Grid.ColumnSpan="2"
+                                   Width="auto"/>
+                        <TextBlock Name="detail"
+                                   Text="detail"
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Foreground="Black"
+                                   Grid.Row="1"
+                                   Width="auto"/>
+                    </Grid>
+                </SplitView.Content>
+            </SplitView>
+                        <CheckBox Name="starChk"
+                                  VerticalAlignment="Bottom"
+                              Grid.Column="1"/>
+        </Grid>
+        <StackPanel Orientation="Horizontal"
+                    Height="auto"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    Grid.Row="2"
+                    Grid.ColumnSpan="3"
+                    Margin="1,1,1,1">
+            <Button Name="optionBtn" Content="..."/>
+            <Button x:Name="sulfBnt" Content="Sulf"
+                    Click="sulfBnt_Click"/>
+            <Button Name="prevBtn" Content="Prev"
+                    Click="prevBtn_Click"/>
+            <TextBox Name="numberTxt" Text="1"/>
+            <Button x:Name="nextBtn" Content="Next"
+                    Click="nextBtn_Click"/>
             <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
         </StackPanel>
-        <Button Name="back" Content="Back" VerticalAlignment="Bottom" Click="back_Click"></Button>
+        <Button Name="back" Content="Back"
+                Grid.Row="3"
+                HorizontalAlignment="Left"
+                Click="back_Click"/>
     </Grid>
 </Page>
