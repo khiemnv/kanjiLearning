@@ -1,0 +1,57 @@
+﻿<Page
+    x:Class="test_universalApp.study"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:test_universalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel Orientation="Horizontal" Height="50" VerticalAlignment="Bottom">
+            <Button Name="optionBtn">...</Button>
+            <Button x:Name="sulfBnt" Content="Sulf" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="sulfBnt_Click"/>
+            <Button Name="prevBtn" Content="Prev" VerticalAlignment="Center" HorizontalAlignment="Left" Click="prevBtn_Click"></Button>
+            <TextBox Name="numberTxt" Text="1" VerticalAlignment="Center"></TextBox>
+            <Button x:Name="nextBtn" Content="Next" HorizontalAlignment="Stretch" VerticalAlignment="Center" Click="nextBtn_Click"/>
+            <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
+        </StackPanel>
+        <SplitView Name="split"
+                   HorizontalAlignment="Left"
+                   Height="298"
+                   Margin="10,10,0,0"
+                   Width="340"
+                   IsPaneOpen="False"
+                   DisplayMode="Overlay">
+            <SplitView.Pane>
+                <StackPanel Name="optionsStack" Background="DarkGray">
+                    <StackPanel Margin="48, 0, 0, 0">
+                        <TextBlock>Options</TextBlock>
+                        <CheckBox Name="detailChk" Margin="10,0,0,0">Show detail</CheckBox>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Width="50">Term</TextBlock>
+                            <ComboBox Name="termCmb" Margin="10,0,0,0"></ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Width="50">Define</TextBlock>
+                            <ComboBox Name="defineCmb" Margin="10,0,0,0"></ComboBox>
+                        </StackPanel>
+                        <TextBlock>Speak</TextBlock>
+                        <CheckBox Margin="10,0,0,0">Term</CheckBox>
+                        <CheckBox Margin="10,0,0,0">Define</CheckBox>
+                    </StackPanel>
+                </StackPanel>
+            </SplitView.Pane>
+            <SplitView.Content>
+                <Grid Name="contentGrid">
+                    <Grid Tapped="term_Tapped" Background="Silver">
+                        <StackPanel  VerticalAlignment="Center">
+                            <TextBlock Name="term" Text="term" FontSize="48" Foreground="Green" />
+                            <TextBlock Name="detail" Text="detail" FontSize="12" Foreground="Black"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </SplitView.Content>
+        </SplitView>
+    </Grid>
+</Page>
