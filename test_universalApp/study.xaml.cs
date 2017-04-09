@@ -1,4 +1,4 @@
-﻿#define test_study_page
+﻿//#define test_study_page
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -56,12 +57,22 @@ namespace test_universalApp
             split.PaneClosed += Split_PaneClosed;
         }
 
-        private void OptStarChk_Click(object sender, RoutedEventArgs e)
+        private async void OptStarChk_Click(object sender, RoutedEventArgs e)
         {
-            m_option.showMarked = (bool)optStarChk.IsChecked;
-            m_iCursor = 0;
-            updateTerm();
-            updateNum();
+            if (m_markedItems.Count > 0)
+            {
+                m_option.showMarked = (bool)optStarChk.IsChecked;
+                m_iCursor = 0;
+                updateTerm();
+                updateNum();
+            }
+            else
+            {
+                MessageDialog msgbox = new MessageDialog("No marked word");
+                msgbox.Title = "Show marked word error!";
+                await msgbox.ShowAsync();
+                optStarChk.IsChecked = false;
+            }
         }
 
         private void Split_PaneClosed(SplitView sender, object args)
@@ -115,7 +126,7 @@ namespace test_universalApp
         {
             public word word;
             public itemStatus status;
-            public bool marked;
+            public bool marked { get { return word.isMarked; } set { word.isMarked = value; } }
             private string getDefine(mode m)
             {
                 switch (m)
@@ -167,13 +178,17 @@ namespace test_universalApp
 
         private void loadData()
         {
+            m_markedItems.Clear();
+            m_items.Clear();
 #if !test_study_page
-            foreach( var i in s_cp.m_selectedChapters)
+            foreach ( var i in s_cp.m_selectedChapters)
             {
                 var chapterWords = s_cp.m_chapters[i];
                 foreach(var w in chapterWords)
                 {
-                    m_items.Add(new wordItem() { word = w, status = itemStatus.term});
+                    var item = new wordItem() { word = w, status = itemStatus.term };
+                    m_items.Add(item);
+                    if (item.marked) { m_markedItems.Add(item); }
                 }
             }
 #else
@@ -185,7 +200,15 @@ namespace test_universalApp
                 m_items.Add(new wordItem() { word = w, status = itemStatus.term });
             }
 #endif
-            numberTxt.Text = m_items.Count.ToString();
+
+            //update option panel
+            //+ show marked
+            if (m_markedItems.Count == 0) {
+                m_option.showMarked = false;
+            }
+            optStarChk.IsChecked = m_option.showMarked;
+            //+ show detail
+            detailChk.IsChecked = m_option.showDetail;
 
             m_iCursor = 0;
             updateTerm();
@@ -291,19 +314,15 @@ namespace test_universalApp
 
         private void starChk_Checked(object sender, RoutedEventArgs e)
         {
-            wordItem i;
-            if (m_option.showMarked)
-            {
-                i = m_markedItems[m_iCursor];
-            }else {
-                i = m_items[m_iCursor];
-            }
+            var items = getCurItems();
+            var i = items[m_iCursor];
 
             i.marked = (bool)starChk.IsChecked;
             if (i.marked)
             {
                 m_markedItems.Add(i);
-            }else
+            }
+            else
             {
                 m_markedItems.Remove(i);
             }
@@ -314,15 +333,15 @@ namespace test_universalApp
                     m_option.showMarked = false;
                     optStarChk.IsChecked = false;
                     m_iCursor = 0;
-                    updateTerm();
-                    updateNum();
+                    //updateTerm();
+                    //updateNum();
                 }
                 else if (m_iCursor == m_markedItems.Count) {
                     m_iCursor--;
-                    Debug.Assert(m_iCursor >= 0);
-                    updateTerm();
-                    updateNum();
                 }
+                Debug.Assert(m_iCursor >= 0);
+                updateTerm();
+                updateNum();
             }
         }
     }

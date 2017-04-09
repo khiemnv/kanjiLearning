@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -48,7 +49,7 @@ namespace test_universalApp
             }
         }
 
-        private void StudyBtn_Click(object sender, RoutedEventArgs e)
+        private async void StudyBtn_Click(object sender, RoutedEventArgs e)
         {
             if (chapterList.SelectedItems.Count > 0)
             {
@@ -59,6 +60,12 @@ namespace test_universalApp
                     s_cp.m_selectedChapters.Add(i.name);
                 }
                 this.Frame.Navigate(typeof(study));
+            }
+            else
+            {
+                MessageDialog msgbox = new MessageDialog("No selected chapter");
+                msgbox.Title = "Study selected chapter error!";
+                await msgbox.ShowAsync();
             }
         }
 

@@ -73,8 +73,8 @@ namespace test_universalApp
                     // configuring the new page by passing required information as a navigation
                     // parameter
 
-                    //rootFrame.Navigate(typeof(MainPage), e.Arguments);
-                    rootFrame.Navigate(typeof(study), e.Arguments);
+                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    //rootFrame.Navigate(typeof(study), e.Arguments);
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();
