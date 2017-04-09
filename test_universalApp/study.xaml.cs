@@ -183,7 +183,7 @@ namespace test_universalApp
 #if !test_study_page
             foreach ( var i in s_cp.m_selectedChapters)
             {
-                var chapterWords = s_cp.m_chapters[i];
+                var chapterWords = s_cp.m_chapters[i].words;
                 foreach(var w in chapterWords)
                 {
                     var item = new wordItem() { word = w, status = itemStatus.term };

@@ -14,12 +14,13 @@ namespace test_universalApp
     public class contentProvider
     {
         public readonly content m_content;
-        public readonly Dictionary<string, List<word>> m_chapters;
+
+        public readonly Dictionary<string, chapter> m_chapters;
         public List<string> m_selectedChapters;
         contentProvider()
         {
             m_content = new content();
-            m_chapters = new Dictionary<string, List<word>>();
+            m_chapters = new Dictionary<string, chapter>();
 
             m_content.SaveCompleted += M_content_SaveCompleted;
             m_content.LoadCompleted += M_content_LoadCompleted;
@@ -111,13 +112,13 @@ namespace test_universalApp
         {
             if (m_chapters.ContainsKey(key))
             {
-                var oldWords = m_chapters[key];
-                m_chapters[key] = words;
+                var oldWords = m_chapters[key].words;
+                m_chapters[key].words = words;
                 oldWords.Clear();
             }
             else
             {
-                m_chapters.Add(key, words);
+                m_chapters.Add(key, new chapter() { words = words, name = key });
             }
         }
         private void updateDict()
@@ -227,6 +228,13 @@ namespace test_universalApp
                 }
             }
         }
+    }
+
+    public class chapter
+    {
+        public bool selected;
+        public string name;
+        public List<word> words;
     }
 
     public class content

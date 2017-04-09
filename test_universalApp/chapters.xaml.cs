@@ -43,9 +43,20 @@ namespace test_universalApp
         {
             //load chapter data
             chapterList.Items.Clear();
+            int iCur = 0;
             foreach (var i in s_cp.m_chapters)
             {
-                chapterList.Items.Add(new chapterItem() { name = i.Key, count = i.Value.Count });
+                var chapter = i.Value;
+                Debug.Assert(i.Key == chapter.name);
+                chapterList.Items.Add(new chapterItem() { name = chapter.name, count = chapter.words.Count });
+                //check selected chapter
+                //var ret = s_cp.m_selectedChapters.Find(input => i.Key.Equals(input));
+                //var ret = s_cp.m_selectedChapters.Find(delegate(string input) { return i.Key.Equals(input); });
+                if (chapter.selected)
+                {
+                    chapterList.SelectedIndex = iCur;
+                }
+                iCur++;
             }
         }
 
@@ -58,6 +69,7 @@ namespace test_universalApp
                 {
                     Debug.WriteLine("{0} {1}", i.name, i.count);
                     s_cp.m_selectedChapters.Add(i.name);
+                    s_cp.m_chapters[i.name].selected = true;
                 }
                 this.Frame.Navigate(typeof(study));
             }
