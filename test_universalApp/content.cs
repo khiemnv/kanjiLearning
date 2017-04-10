@@ -8,6 +8,8 @@ using Windows.Storage;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Windows.Storage.Search;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace test_universalApp
 {
@@ -15,7 +17,7 @@ namespace test_universalApp
     {
         public readonly content m_content;
 
-        public readonly Dictionary<string, chapter> m_chapters;
+        public Dictionary<string, chapter> m_chapters { get; private set; }
         public List<string> m_selectedChapters;
         contentProvider()
         {
@@ -26,6 +28,30 @@ namespace test_universalApp
             m_content.LoadCompleted += M_content_LoadCompleted;
 
             m_selectedChapters = new List<string>();
+        }
+
+        string dataFileName = "data.txt";
+        public async void saveData()
+        {
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(dataFileName, CreationCollisionOption.ReplaceExisting);
+            Stream writeStream = await dataFile.OpenStreamForWriteAsync();
+            DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
+            serializer.WriteObject(writeStream, m_chapters);
+            await writeStream.FlushAsync();
+            writeStream.Dispose();
+        }
+        public async void restoreData()
+        {
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(dataFileName, CreationCollisionOption.OpenIfExists);
+            if (dataFile != null) {
+                Stream readStream = await dataFile.OpenStreamForReadAsync();
+                Debug.Assert(readStream != null);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
+                var ret = (Dictionary<string, chapter>)serializer.ReadObject(readStream);
+                Debug.Assert(ret != null);
+                readStream.Dispose();
+                m_chapters = ret;
+            }
         }
 
         //load multiple chapter
@@ -152,13 +178,20 @@ namespace test_universalApp
         }
     }
 
+    [DataContract]
     public class word
     {
+        [DataMember]
         public string kanji;
+        [DataMember]
         public string hiragana;
+        [DataMember]
         public string hn;
+        [DataMember]
         public string vn;
+        [DataMember]
         public bool isEmpty;
+        [DataMember]
         public bool isMarked;
 
         public override string ToString()
@@ -230,10 +263,14 @@ namespace test_universalApp
         }
     }
 
+    [DataContract]
     public class chapter
     {
+        [DataMember]
         public bool selected;
+        [DataMember]
         public string name;
+        [DataMember]
         public List<word> words;
     }
 

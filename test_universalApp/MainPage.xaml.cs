@@ -41,6 +41,25 @@ namespace test_universalApp
 
             s_content.LoadChapterCompleted += C_LoadCompleted;
             s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
+
+            this.Loaded += MainPage_Loaded;
+            this.LayoutUpdated += MainPage_LayoutUpdated;
+            this.Unloaded += MainPage_Unloaded;
+        }
+
+        private void MainPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("unloaded");
+        }
+
+        private void MainPage_LayoutUpdated(object sender, object e)
+        {
+            Debug.WriteLine("layoutUpdated");
+        }
+
+        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("loaded");
         }
 
         private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
