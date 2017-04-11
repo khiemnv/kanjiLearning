@@ -109,7 +109,8 @@ namespace test_universalApp
             hn,
             vn
         }
-        class option
+
+        class studyOption
         {
             public mode termMode;
             public mode defineMode;
@@ -117,7 +118,7 @@ namespace test_universalApp
             public bool showMarked;
         }
 
-        static option m_option = new option() {
+        static studyOption m_option = new studyOption() {
             termMode = mode.kanji, defineMode = mode.hiragana,
             showDetail = false,
         };
@@ -181,14 +182,16 @@ namespace test_universalApp
             m_markedItems.Clear();
             m_items.Clear();
 #if !test_study_page
-            foreach ( var i in s_cp.m_selectedChapters)
+            foreach ( var chapter in s_cp.m_chapters.Values)
             {
-                var chapterWords = s_cp.m_chapters[i].words;
-                foreach(var w in chapterWords)
-                {
-                    var item = new wordItem() { word = w, status = itemStatus.term };
-                    m_items.Add(item);
-                    if (item.marked) { m_markedItems.Add(item); }
+                if (chapter.selected) { 
+                    var words = chapter.words;
+                    foreach(var w in words)
+                    {
+                        var item = new wordItem() { word = w, status = itemStatus.term };
+                        m_items.Add(item);
+                        if (item.marked) { m_markedItems.Add(item); }
+                    }
                 }
             }
 #else

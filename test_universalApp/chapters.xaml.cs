@@ -30,6 +30,7 @@ namespace test_universalApp
         {
             public string name { get; set; }
             public int count { get; set; }
+            public chapter c;
         }
 
         public chapters()
@@ -48,13 +49,15 @@ namespace test_universalApp
             {
                 var chapter = i.Value;
                 Debug.Assert(i.Key == chapter.name);
-                chapterList.Items.Add(new chapterItem() { name = chapter.name, count = chapter.words.Count });
+                var item = new chapterItem() { name = chapter.name, count = chapter.words.Count, c = chapter };
+                chapterList.Items.Add(item);
                 //check selected chapter
                 //var ret = s_cp.m_selectedChapters.Find(input => i.Key.Equals(input));
                 //var ret = s_cp.m_selectedChapters.Find(delegate(string input) { return i.Key.Equals(input); });
                 if (chapter.selected)
                 {
-                    chapterList.SelectedIndex = iCur;
+                    chapterList.SelectedItems.Add(item);
+                    chapter.selected = false;
                 }
                 iCur++;
             }
@@ -64,12 +67,10 @@ namespace test_universalApp
         {
             if (chapterList.SelectedItems.Count > 0)
             {
-                s_cp.m_selectedChapters.Clear();
                 foreach (chapterItem i in chapterList.SelectedItems)
                 {
                     Debug.WriteLine("{0} {1}", i.name, i.count);
-                    s_cp.m_selectedChapters.Add(i.name);
-                    s_cp.m_chapters[i.name].selected = true;
+                    i.c.selected = true;
                 }
                 this.Frame.Navigate(typeof(study));
             }

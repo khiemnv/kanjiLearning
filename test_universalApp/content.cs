@@ -13,12 +13,14 @@ using System.Runtime.Serialization;
 
 namespace test_universalApp
 {
+    [DataContract]
     public class contentProvider
     {
         public readonly content m_content;
 
+        [DataMember]
         public Dictionary<string, chapter> m_chapters { get; private set; }
-        public List<string> m_selectedChapters;
+
         contentProvider()
         {
             m_content = new content();
@@ -26,18 +28,18 @@ namespace test_universalApp
 
             m_content.SaveCompleted += M_content_SaveCompleted;
             m_content.LoadCompleted += M_content_LoadCompleted;
-
-            m_selectedChapters = new List<string>();
         }
 
         string dataFileName = "data.txt";
-        public async void saveData()
+        public async Task saveData()
         {
             StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(dataFileName, CreationCollisionOption.ReplaceExisting);
             Stream writeStream = await dataFile.OpenStreamForWriteAsync();
+            //writeStream.Seek(0, SeekOrigin.Begin);
             DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
             serializer.WriteObject(writeStream, m_chapters);
             await writeStream.FlushAsync();
+            //writeStream.Flush();
             writeStream.Dispose();
         }
         public async void restoreData()
@@ -46,11 +48,15 @@ namespace test_universalApp
             if (dataFile != null) {
                 Stream readStream = await dataFile.OpenStreamForReadAsync();
                 Debug.Assert(readStream != null);
-                DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
-                var ret = (Dictionary<string, chapter>)serializer.ReadObject(readStream);
-                Debug.Assert(ret != null);
+                try {
+                    DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
+                    var m_chapters = (Dictionary<string, chapter>)serializer.ReadObject(readStream);
+                    Debug.Assert(m_chapters != null);
+                } catch
+                {
+                    Debug.WriteLine("read data error");
+                }
                 readStream.Dispose();
-                m_chapters = ret;
             }
         }
 

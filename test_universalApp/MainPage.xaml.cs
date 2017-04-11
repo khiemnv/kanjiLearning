@@ -42,9 +42,9 @@ namespace test_universalApp
             s_content.LoadChapterCompleted += C_LoadCompleted;
             s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
 
-            this.Loaded += MainPage_Loaded;
-            this.LayoutUpdated += MainPage_LayoutUpdated;
-            this.Unloaded += MainPage_Unloaded;
+            //this.Loaded += MainPage_Loaded;
+            //this.LayoutUpdated += MainPage_LayoutUpdated;
+            //this.Unloaded += MainPage_Unloaded;
         }
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
