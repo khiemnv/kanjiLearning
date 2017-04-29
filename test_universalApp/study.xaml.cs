@@ -1,4 +1,7 @@
 ﻿//#define test_study_page
+#define init_status
+#define item_editable
+//#define start_use_checkbox
 
 using System;
 using System.Collections.Generic;
@@ -52,7 +55,11 @@ namespace test_universalApp
 
             detailChk.Tapped += DetailChk_Tapped;
             optStarChk.Click += OptStarChk_Click;
+#if start_use_checkbox
             starChk.Click += starChk_Checked;
+#else
+            starCanvas.Tapped += starChk_Checked;
+#endif
 
             split.PaneClosed += Split_PaneClosed;
         }
@@ -143,13 +150,33 @@ namespace test_universalApp
                 }
                 return "";
             }
+            private string getExclude(mode m)
+            {
+                switch (m)
+                {
+                    case mode.kanji:
+                        return string.Join(" ", new List<string> { word.hiragana, word.hn, word.vn });
+                        //return word.kanji;
+                    case mode.hiragana:
+                        return string.Join(" ", new List<string> { word.kanji, word.hn, word.vn });
+                        //return word.hiragana;
+                    case mode.hn:
+                        return string.Join(" ", new List<string> { word.kanji, word.hiragana, word.vn });
+                    //return word.hn;
+                    case mode.vn:
+                        return string.Join(" ", new List<string> { word.kanji, word.hiragana, word.hn });
+                        //return word.vn;
+                }
+                return "";
+            }
             public string term {
                 get {
                     return getDefine(m_option.termMode);
                 }
             }
+
             public string define { get { return getDefine(m_option.defineMode); } }
-            public string detail { get { return string.Join(" ", new List<string> { word.hn, word.vn }); } }
+            public string detail { get { return getExclude(m_option.defineMode); } }
             public void rotate()
             {
                 switch(status)
@@ -241,6 +268,9 @@ namespace test_universalApp
                     break;
             }
             starChk.IsChecked = curItem.marked;
+#if !start_use_checkbox
+            updateStarCanvas();
+#endif
         }
 
         private List<wordItem> getCurItems()
@@ -270,6 +300,9 @@ namespace test_universalApp
             if (m_iCursor < (items.Count - 1))
             {
                 m_iCursor++;
+#if init_status
+                items[m_iCursor].status = itemStatus.term;
+#endif
                 updateTerm();
                 updateNum();
             }
@@ -280,6 +313,10 @@ namespace test_universalApp
             if (m_iCursor > 0)
             {
                 m_iCursor--;
+#if init_status
+                var items = getCurItems();
+                items[m_iCursor].status = itemStatus.term;
+#endif
                 updateTerm();
                 updateNum();
             }
@@ -315,8 +352,39 @@ namespace test_universalApp
             this.Frame.Navigate(typeof(chapters));
         }
 
+        class myChkBox
+        {
+            public bool IsChecked;
+        };
+        static myChkBox starChk = new myChkBox();
+
+        public void updateStarCanvas()
+        {
+            if (starChk.IsChecked)
+            {
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow };
+                starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
+                starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
+            }
+            else
+            {
+                //SolidColorBrush mySolidColorBrush = new SolidColorBrush();
+                //mySolidColorBrush.Color = Color.FromArgb(255, 0, 255, 0);
+                // Describes the brush's color using RGB values. 
+                // Each value has a range of 0-255.
+
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver };
+                starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
+                starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
+            }
+        }
+
         private void starChk_Checked(object sender, RoutedEventArgs e)
         {
+#if !start_use_checkbox
+            starChk.IsChecked = !starChk.IsChecked;
+            updateStarCanvas();
+#endif
             var items = getCurItems();
             var i = items[m_iCursor];
 
@@ -345,6 +413,20 @@ namespace test_universalApp
                 Debug.Assert(m_iCursor >= 0);
                 updateTerm();
                 updateNum();
+            }
+        }
+
+        private void term_swiped(object sender, ManipulationCompletedRoutedEventArgs e)
+        {
+            if (e.Cumulative.Translation.X < 0)
+            {
+                //move right
+                nextBtn_Click(sender, e);
+            }
+            else
+            {
+                //move left
+                prevBtn_Click(sender, e);
             }
         }
     }

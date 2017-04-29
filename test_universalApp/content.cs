@@ -225,6 +225,7 @@ namespace test_universalApp
             string pattern = @"(\w+) (\w+) (\(.*\)) (.*)";
             string pattern2 = @"(\w+) (\w+) (\(.*\))";
             string pattern3 = @"(\w+) (\(.*\))";
+            string pattern4 = @"(.*); (.*); (.*); (.*)";
             Match m = null;
             var func1 = new voidDelegate(() =>
             {
@@ -247,8 +248,16 @@ namespace test_universalApp
                 hn = m.Groups[2].Value;
                 vn = "";
             });
+            var func4 = new voidDelegate(() =>
+            {
+                kanji = m.Groups[1].Value;
+                hiragana = m.Groups[2].Value;
+                hn = m.Groups[3].Value;
+                vn = m.Groups[4].Value;
+            });
 
             List<myMap> arr = new List<myMap> {
+                    new myMap() {pattern = pattern4, function = func4},
                     new myMap() {pattern = pattern, function = func1},
                     new myMap() {pattern = pattern2, function = func2},
                     new myMap() {pattern = pattern3, function = func3},

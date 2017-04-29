@@ -24,10 +24,18 @@
               Background="Silver">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="30"></ColumnDefinition>
+                <ColumnDefinition Width="75"></ColumnDefinition>
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="75"/>
+            </Grid.RowDefinitions>
+
+
             <SplitView Name="split"
                   Grid.Row="0"
+                       Grid.ColumnSpan="2"
+                       Grid.RowSpan="2"
                 Height="auto"
                 Width="auto"
                 IsPaneOpen="False"
@@ -54,7 +62,9 @@
                     </Grid>
                 </SplitView.Pane>
                 <SplitView.Content>
-                    <Grid Background="Silver" Tapped="term_Tapped" >
+                    <Grid Background="Silver" Tapped="term_Tapped"
+                          ManipulationMode="TranslateX"
+                          ManipulationCompleted="term_swiped">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="4*"/>
                             <RowDefinition Height="1*"/>
@@ -66,10 +76,11 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Name="term"
                                    Text="term"
+                                   TextWrapping="Wrap"
                                    FontSize="48"
                                    Foreground="Green"
                                    Grid.Row="0"
-                               Grid.ColumnSpan="2"
+                                   Grid.ColumnSpan="2"
                                    Width="auto"/>
                         <TextBlock Name="detail"
                                    Text="detail"
@@ -81,9 +92,33 @@
                     </Grid>
                 </SplitView.Content>
             </SplitView>
-                        <CheckBox Name="starChk"
-                                  VerticalAlignment="Bottom"
-                              Grid.Column="1"/>
+            <Canvas Name="starCanvas"
+                    Grid.Column="1"
+                    Grid.Row="1"
+                    >
+                <Ellipse  
+                  Name="starEllipse"
+                  Fill="#FFFFFF00"  
+                  Height="75"  
+                  Width="75"  
+                  StrokeThickness="5"
+                  Stroke="#FFFFFFFF"
+                    />
+                <Polyline
+                Name="starPolyline"
+                Canvas.Top="25"
+                Canvas.Left="25"
+                    Points="0,5 10,20 25,0"
+                    Stroke="Black"
+                    StrokeThickness="5"/>
+                <!--<CheckBox 
+                Canvas.Top="20"
+                Canvas.Left="25"
+                Name="starChk"
+                      Width="30"
+                      Height="30"
+                      />-->
+            </Canvas>
         </Grid>
         <StackPanel Orientation="Horizontal"
                     Height="auto"

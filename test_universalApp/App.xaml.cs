@@ -66,7 +66,9 @@ namespace test_universalApp
 
                 Debug.WriteLine("{0} {1} PreviousExecutionState {2}", this, "restoreData", e.PreviousExecutionState);
 
+#if save_data
                 s_cp.restoreData();
+#endif
 
                 // Place the frame in the current Window
                 Window.Current.Content = rootFrame;
@@ -109,9 +111,12 @@ namespace test_universalApp
         {
             var deferral = e.SuspendingOperation.GetDeferral();
             //TODO: Save application state and stop any background activity
+
+#if save_data
             Debug.WriteLine("{0} {1}", this, "saveData");
             var t = Task.Run(s_cp.saveData);
             t.Wait();
+#endif
 
             deferral.Complete();
         }
