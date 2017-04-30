@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define test_study_page
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -82,8 +84,11 @@ namespace test_universalApp
                     // configuring the new page by passing required information as a navigation
                     // parameter
 
+#if test_study_page
+                    rootFrame.Navigate(typeof(study), e.Arguments);
+#else
                     rootFrame.Navigate(typeof(MainPage), e.Arguments);
-                    //rootFrame.Navigate(typeof(study), e.Arguments);
+#endif
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();

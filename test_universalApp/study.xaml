@@ -24,18 +24,17 @@
               Background="Silver">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="75"></ColumnDefinition>
+                <ColumnDefinition Width="80"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="75"/>
+                <RowDefinition Height="80"/>
             </Grid.RowDefinitions>
 
-
             <SplitView Name="split"
-                  Grid.Row="0"
-                       Grid.ColumnSpan="2"
-                       Grid.RowSpan="2"
+                Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Grid.RowSpan="2"
                 Height="auto"
                 Width="auto"
                 IsPaneOpen="False"
@@ -68,20 +67,16 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="4*"/>
                             <RowDefinition Height="1*"/>
-                            <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="30"/>
-                        </Grid.ColumnDefinitions>
+                        <!--<Border Grid.Row="0" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
                         <TextBlock Name="term"
                                    Text="term"
                                    TextWrapping="Wrap"
                                    FontSize="48"
                                    Foreground="Green"
                                    Grid.Row="0"
-                                   Grid.ColumnSpan="2"
                                    Width="auto"/>
+                        <!--<Border Grid.Row="1" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
                         <TextBlock Name="detail"
                                    Text="detail"
                                    TextWrapping="Wrap"
@@ -89,9 +84,70 @@
                                    Foreground="Black"
                                    Grid.Row="1"
                                    Width="auto"/>
+                        <TextBox Name="editTxt"
+                                 Grid.Row="0"
+                                 Grid.RowSpan="2"
+                                 Visibility="Collapsed"
+                                 Background="White"/>
                     </Grid>
                 </SplitView.Content>
             </SplitView>
+            
+            <Grid
+                Grid.Column="1"
+                Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="80"/>
+                </Grid.RowDefinitions>
+                <Canvas Name="canvasEdit"
+                    Grid.Column="0"
+                    Grid.Row="0">
+                    <Ellipse
+                          Fill="LightGray"
+                          Height="80"  
+                          Width="80"  
+                          StrokeThickness="5"
+                          Stroke="White"/>
+                    <Image Canvas.Top="15"
+                    Canvas.Left="15"
+                    Source="Assets/pencil.png"
+                    Height="50"
+                    Width="50"/>
+                </Canvas>
+                <Canvas Name="canvasAccept"
+                    Grid.Column="0"
+                    Grid.Row="0"
+                        Visibility="Collapsed">
+                    <Ellipse
+                      Fill="LightGray"
+                      Height="80"  
+                      Width="80"  
+                      StrokeThickness="5"
+                      Stroke="White"/>
+                    <Image Canvas.Top="15"
+                    Canvas.Left="15"
+                    Source="Assets/accept.png"
+                    Height="50"
+                    Width="50"/>
+                </Canvas>
+                <Canvas Name="canvasCancel"
+                    Grid.Column="0"
+                    Grid.Row="1"
+                        Visibility="Collapsed">
+                    <Ellipse Fill="LightGray"
+                      Height="80"  
+                      Width="80"  
+                      StrokeThickness="5"
+                      Stroke="White"/>
+                    <Image Canvas.Top="15"
+                    Canvas.Left="15"
+                    Source="Assets/cancel.png"
+                    Height="50"
+                    Width="50"/>
+                </Canvas>
+            </Grid>
             <Canvas Name="starCanvas"
                     Grid.Column="1"
                     Grid.Row="1"
@@ -99,18 +155,26 @@
                 <Ellipse  
                   Name="starEllipse"
                   Fill="#FFFFFF00"  
-                  Height="75"  
-                  Width="75"  
+                  Height="80"  
+                  Width="80"  
                   StrokeThickness="5"
                   Stroke="#FFFFFFFF"
                     />
-                <Polyline
+                <Path
+                    Name="starPolyline"
+                    Canvas.Top="25"
+                    Canvas.Left="20"
+                    Stroke="DarkGoldenRod" 
+                    StrokeThickness="5"
+                    Data="M 0,16 C 14,34 22,34 40,4"
+                    />
+                <!--<Polyline
                 Name="starPolyline"
                 Canvas.Top="25"
                 Canvas.Left="25"
                     Points="0,5 10,20 25,0"
                     Stroke="Black"
-                    StrokeThickness="5"/>
+                    StrokeThickness="5"/>-->
                 <!--<CheckBox 
                 Canvas.Top="20"
                 Canvas.Left="25"

@@ -218,14 +218,29 @@ namespace test_universalApp
             //string txt = "言葉 ことば  (NGÔN DIỆP) Câu nói";
             //txt = "積極 せいこう (THÀNH CÔNG)";
             //txt = "心配 (TÂM PHỐI)";
+            //（～に）関する;  \t（～に）かんする; (QUAN); về～, liên quan～
 
             Regex reg = new Regex(@"\s+");
             var refine = reg.Replace(txt, " ");
 
+            {//with separator ";"
+                string part = @";\s*";
+                Regex regSplit = new Regex(part);
+                var tmp = regSplit.Split(refine);
+                if (tmp.Length == 4)
+                {
+                    kanji = tmp[0];
+                    hiragana = tmp[1];
+                    hn = tmp[2];
+                    vn = tmp[3];
+                    return;
+                }
+            }
+
             string pattern = @"(\w+) (\w+) (\(.*\)) (.*)";
             string pattern2 = @"(\w+) (\w+) (\(.*\))";
             string pattern3 = @"(\w+) (\(.*\))";
-            string pattern4 = @"(.*); (.*); (.*); (.*)";
+            //string pattern4 = @"(.*); (.*); (.*); (.*)";
             Match m = null;
             var func1 = new voidDelegate(() =>
             {
@@ -248,16 +263,16 @@ namespace test_universalApp
                 hn = m.Groups[2].Value;
                 vn = "";
             });
-            var func4 = new voidDelegate(() =>
-            {
-                kanji = m.Groups[1].Value;
-                hiragana = m.Groups[2].Value;
-                hn = m.Groups[3].Value;
-                vn = m.Groups[4].Value;
-            });
+            //var func4 = new voidDelegate(() =>
+            //{
+            //    kanji = m.Groups[1].Value;
+            //    hiragana = m.Groups[2].Value;
+            //    hn = m.Groups[3].Value;
+            //    vn = m.Groups[4].Value;
+            //});
 
             List<myMap> arr = new List<myMap> {
-                    new myMap() {pattern = pattern4, function = func4},
+                    //new myMap() {pattern = pattern4, function = func4},
                     new myMap() {pattern = pattern, function = func1},
                     new myMap() {pattern = pattern2, function = func2},
                     new myMap() {pattern = pattern3, function = func3},

@@ -1,4 +1,4 @@
-﻿//#define test_study_page
+﻿#define test_study_page
 #define init_status
 #define item_editable
 //#define start_use_checkbox
@@ -62,6 +62,58 @@ namespace test_universalApp
 #endif
 
             split.PaneClosed += Split_PaneClosed;
+
+#if item_editable
+            canvasEdit.Tapped += CanvasEdit_Tapped;
+            canvasAccept.Tapped += CanvasAccept_Tapped;
+            canvasCancel.Tapped += CanvasCancel_Tapped;
+#endif
+        }
+
+        private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            finishEdit(false);
+        }
+
+        void startEdit()
+        {
+            canvasEdit.Visibility = Visibility.Collapsed;
+            canvasAccept.Visibility = Visibility.Visible;
+            canvasCancel.Visibility = Visibility.Visible;
+
+            editTxt.Visibility = Visibility.Visible;
+            editTxt.Width = 300;
+            editTxt.Height = 600;
+            term.Visibility = Visibility.Collapsed;
+            detail.Visibility = Visibility.Collapsed;
+
+            var items = getCurItems();
+
+            editTxt.Text = items[m_iCursor].word.ToString();
+            editTxt.Focus(FocusState.Pointer);
+        }
+        void finishEdit(bool isAccept)
+        {
+            canvasEdit.Visibility = Visibility.Visible;
+            canvasAccept.Visibility = Visibility.Collapsed;
+            canvasCancel.Visibility = Visibility.Collapsed;
+
+            editTxt.Visibility = Visibility.Collapsed;
+            term.Visibility = Visibility.Visible;
+            detail.Visibility = Visibility.Visible;
+            if (isAccept)
+            {
+                string txt = editTxt.Text;
+                var w = new word(txt);
+            }
+        }
+        private void CanvasAccept_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            finishEdit(true);
+        }
+        private void CanvasEdit_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            startEdit();
         }
 
         private async void OptStarChk_Click(object sender, RoutedEventArgs e)
