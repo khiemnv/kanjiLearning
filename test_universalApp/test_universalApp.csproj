@@ -116,8 +116,8 @@
   <ItemGroup>
     <Content Include="Assets\accept.png" />
     <Content Include="Assets\cancel.png" />
-    <Content Include="Assets\pencil.jpg" />
     <Content Include="Assets\pencil.png" />
+    <Content Include="Assets\speak.png" />
     <Content Include="Assets\star_m.png" />
     <Content Include="Assets\star_u.png" />
     <Content Include="Assets\hand.png" />

@@ -1,4 +1,4 @@
-﻿#define test_study_page
+﻿//#define test_study_page
 #define init_status
 #define item_editable
 //#define start_use_checkbox
@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.SpeechSynthesis;
 using Windows.UI;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
@@ -67,7 +68,76 @@ namespace test_universalApp
             canvasEdit.Tapped += CanvasEdit_Tapped;
             canvasAccept.Tapped += CanvasAccept_Tapped;
             canvasCancel.Tapped += CanvasCancel_Tapped;
+
+            editTxt.AcceptsReturn = true;
+            editTxt.TextWrapping = TextWrapping.Wrap;
+            //editTxt.Header = "Editing word (please use \";\" as separator)";
+            editTxt.PlaceholderText = "Using \";\" as separator";
+            ScrollViewer.SetVerticalScrollBarVisibility(editTxt, ScrollBarVisibility.Auto);
 #endif
+
+            canvasSpeak.Tapped += CanvasSpeak_Tapped;
+
+            initCtrls();
+        }
+
+        bool getJapaness(out VoiceInformation jp)
+        {
+            jp = SpeechSynthesizer.DefaultVoice;
+            foreach (var v in SpeechSynthesizer.AllVoices)
+            {
+                if (v.Language.Contains("ja-JP"))
+                {
+                    jp = v;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        async void speakTxt(string txt)
+        {
+            //txt = "hello world";
+
+            //IEnumerable<VoiceInformation> frenchVoices = from voice in SpeechSynthesizer.AllVoices
+            //                                             where voice.Language == "fr-FR"
+            //                                             select voice;
+            VoiceInformation jp;
+            bool ret = getJapaness(out jp);
+            if (true)
+            {
+                SpeechSynthesizer synth = new SpeechSynthesizer();
+                synth.Voice = (jp);
+                SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(txt);
+                // The media object for controlling and playing audio.
+                MediaElement mediaElement = media;
+                mediaElement.SetSource(stream, stream.ContentType);
+                mediaElement.Play();
+            }
+            else
+            {
+                MessageDialog msgbox = new MessageDialog("Not found japanese void info");
+                msgbox.Title = "Speak word error!";
+                await msgbox.ShowAsync();
+            }
+        }
+
+        private void CanvasSpeak_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            //speak text
+            string txt = termTxt.Text;
+            speakTxt(txt);
+        }
+
+        private void initCtrls()
+        {
+            editEllipse.Stroke = new SolidColorBrush(Colors.White);
+            cancelEllipse.Stroke = new SolidColorBrush(Colors.White);
+            acceptEllipse.Stroke = new SolidColorBrush(Colors.White);
+            starEllipse.Stroke = new SolidColorBrush(Colors.White);
+
+            detailTxt.Text = "";
+            termTxt.Text = "";
         }
 
         private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
@@ -75,6 +145,7 @@ namespace test_universalApp
             finishEdit(false);
         }
 
+        wordItem m_editingItem;
         void startEdit()
         {
             canvasEdit.Visibility = Visibility.Collapsed;
@@ -82,15 +153,12 @@ namespace test_universalApp
             canvasCancel.Visibility = Visibility.Visible;
 
             editTxt.Visibility = Visibility.Visible;
-            editTxt.Width = 300;
-            editTxt.Height = 600;
-            term.Visibility = Visibility.Collapsed;
-            detail.Visibility = Visibility.Collapsed;
+            termTxt.Visibility = Visibility.Collapsed;
+            detailTxt.Visibility = Visibility.Collapsed;
 
             var items = getCurItems();
-
-            editTxt.Text = items[m_iCursor].word.ToString();
-            editTxt.Focus(FocusState.Pointer);
+            m_editingItem = items[m_iCursor];
+            editTxt.Text = m_editingItem.word.ToString();
         }
         void finishEdit(bool isAccept)
         {
@@ -99,13 +167,46 @@ namespace test_universalApp
             canvasCancel.Visibility = Visibility.Collapsed;
 
             editTxt.Visibility = Visibility.Collapsed;
-            term.Visibility = Visibility.Visible;
-            detail.Visibility = Visibility.Visible;
+            termTxt.Visibility = Visibility.Visible;
+            detailTxt.Visibility = Visibility.Visible;
             if (isAccept)
             {
                 string txt = editTxt.Text;
                 var w = new word(txt);
+                if (!w.isEmpty)
+                {
+                    var item = m_editingItem;
+                    int count = 0;
+
+                    if (item.word.kanji.CompareTo(w.kanji) != 0)
+                    {
+                        item.word.kanji = w.kanji;
+                        count++;
+                    }
+                    if (item.word.hiragana.CompareTo(w.hiragana)!=0)
+                    {
+                        item.word.hiragana = w.hiragana;
+                        count++;
+                    }
+                    if (item.word.hn.CompareTo(w.hn) != 0)
+                    {
+                        item.word.hn = w.hn;
+                        count++;
+                    }
+                    if (item.word.vn.CompareTo(w.vn) != 0)
+                    {
+                        item.word.vn = w.vn;
+                        count++;
+                    }
+
+                    if (count > 0)
+                    {
+                        updateTerm();
+                        s_cp.saveChapter(item.c);
+                    }
+                }
             }
+            m_editingItem = null;
         }
         private void CanvasAccept_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -184,6 +285,7 @@ namespace test_universalApp
 
         class wordItem
         {
+            public chapter c = null;
             public word word;
             public itemStatus status;
             public bool marked { get { return word.isMarked; } set { word.isMarked = value; } }
@@ -267,7 +369,7 @@ namespace test_universalApp
                     var words = chapter.words;
                     foreach(var w in words)
                     {
-                        var item = new wordItem() { word = w, status = itemStatus.term };
+                        var item = new wordItem() {c = chapter, word = w, status = itemStatus.term };
                         m_items.Add(item);
                         if (item.marked) { m_markedItems.Add(item); }
                     }
@@ -305,17 +407,17 @@ namespace test_universalApp
             switch (curItem.status)
             {
                 case itemStatus.term:
-                    term.Text = curItem.term;
-                    term.Foreground = new SolidColorBrush() { Color = Colors.Blue };
-                    detail.Visibility = Visibility.Collapsed;
+                    termTxt.Text = curItem.term;
+                    termTxt.Foreground = new SolidColorBrush() { Color = Colors.Blue };
+                    detailTxt.Visibility = Visibility.Collapsed;
                     break;
                 case itemStatus.define:
-                    term.Text = curItem.define;
-                    term.Foreground = new SolidColorBrush() { Color = Colors.Green };
+                    termTxt.Text = curItem.define;
+                    termTxt.Foreground = new SolidColorBrush() { Color = Colors.Green };
                     if (m_option.showDetail)
                     {
-                        detail.Text = curItem.detail;
-                        detail.Visibility = Visibility.Visible;
+                        detailTxt.Text = curItem.detail;
+                        detailTxt.Visibility = Visibility.Visible;
                     }
                     break;
             }
@@ -415,7 +517,7 @@ namespace test_universalApp
             if (starChk.IsChecked)
             {
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow };
-                starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
+                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
             }
             else
@@ -426,7 +528,7 @@ namespace test_universalApp
                 // Each value has a range of 0-255.
 
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver };
-                starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
+                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
             }
         }
@@ -463,6 +565,9 @@ namespace test_universalApp
                     m_iCursor--;
                 }
                 Debug.Assert(m_iCursor >= 0);
+#if init_status
+                items[m_iCursor].status = itemStatus.term;
+#endif
                 updateTerm();
                 updateNum();
             }
@@ -470,15 +575,19 @@ namespace test_universalApp
 
         private void term_swiped(object sender, ManipulationCompletedRoutedEventArgs e)
         {
-            if (e.Cumulative.Translation.X < 0)
+            //not in editing state
+            if (m_editingItem == null)
             {
-                //move right
-                nextBtn_Click(sender, e);
-            }
-            else
-            {
-                //move left
-                prevBtn_Click(sender, e);
+                if (e.Cumulative.Translation.X < 0)
+                {
+                    //move right
+                    nextBtn_Click(sender, e);
+                }
+                else
+                {
+                    //move left
+                    prevBtn_Click(sender, e);
+                }
             }
         }
     }

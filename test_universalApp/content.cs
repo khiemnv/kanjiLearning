@@ -84,7 +84,7 @@ namespace test_universalApp
                     var words = parse(txt);
                     if (words.Count > 0)
                     {
-                        updateDict(file.Name, words);
+                        updateDict(file, words);
                     }
                 }
                 OnLoadMultiChaperCompleted(new LoadChapterCompletedEventArgs() { path = folder.Path});
@@ -111,6 +111,37 @@ namespace test_universalApp
             if (m_instance == null)
                 m_instance = new contentProvider();
             return m_instance;
+        }
+
+        public async Task<int> saveWords(StorageFile file, List<word> words)
+        {
+            var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.ReadWrite);
+            var outputStream = stream.GetOutputStreamAt(0);
+            var dataWriter = new Windows.Storage.Streams.DataWriter(outputStream);
+
+            uint len = 0;
+            foreach (var w in words)
+            {
+                len += dataWriter.WriteString(w.ToString() + "\r\n");
+            }
+            await dataWriter.StoreAsync();
+            await outputStream.FlushAsync();
+            dataWriter.Dispose();
+            outputStream.Dispose();
+            stream.Size = len;
+            stream.Dispose();
+
+            return 0;
+        }
+
+        public async void saveChapter(chapter c)
+        {
+            //open file & save
+            StorageFile file = c.file;
+            if (file!=null)
+            {
+                await saveWords(file, c.words);
+            }
         }
 
         //txt: words list
@@ -140,8 +171,10 @@ namespace test_universalApp
         {
             updateDict();
         }
-        private void updateDict(string key, List<word> words)
+        private void updateDict(StorageFile file, List<word> words)
         {
+            string path = file.Path;
+            string key = Path.GetFileName(path);
             if (m_chapters.ContainsKey(key))
             {
                 var oldWords = m_chapters[key].words;
@@ -150,15 +183,15 @@ namespace test_universalApp
             }
             else
             {
-                m_chapters.Add(key, new chapter() { words = words, name = key });
+                m_chapters.Add(key, new chapter() { words = words, name = key, path = path, file = file });
             }
         }
         private void updateDict()
         {
             //update chapters dict
-            var key = m_content.m_fileName;
+            var file = m_content.m_file;
             var words = m_content.m_words;
-            updateDict(key, words);
+            updateDict(file, words);
         }
 
         public async Task<int> loadChapter()
@@ -299,9 +332,13 @@ namespace test_universalApp
         [DataMember]
         public bool selected;
         [DataMember]
+        public string path;
+        [DataMember]
         public string name;
         [DataMember]
         public List<word> words;
+
+        public StorageFile file;
     }
 
     public class content
@@ -318,6 +355,7 @@ namespace test_universalApp
         }
 
         public List<word> m_words;
+        public StorageFile m_file;
         public string m_fileName;
 
         public async Task<int> loadData()
@@ -334,6 +372,7 @@ namespace test_universalApp
 
             if (file != null)
             {
+                m_file = file;
                 m_fileName = file.Name;
                 if (m_words == null) m_words = new List<word>();
                 loadData(file);

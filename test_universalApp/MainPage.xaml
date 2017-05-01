@@ -13,6 +13,7 @@
             <RowDefinition Height="35" />
             <RowDefinition Height="*" />
             <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"></ColumnDefinition>
@@ -43,12 +44,13 @@
         </StackPanel>
         <TextBox Grid.Row="2"
                  Grid.ColumnSpan="2"
-                 x:Name="TextBox"
+                 x:Name="txtBox"
                  TextWrapping="NoWrap"
                  Text="kotoba"
                  Width="auto"
-                 Height="auto"/>
-        <Button Grid.Row="3"
+                 Height="auto"
+                 Background="Silver"/>
+        <Button Grid.Row="4"
                 Grid.Column="1"
                 x:Name="nextBtn" Content="Next"
                 HorizontalAlignment="Right"

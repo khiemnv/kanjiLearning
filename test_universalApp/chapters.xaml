@@ -10,7 +10,9 @@
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="35"/>
+            <RowDefinition Height="35" />
             <RowDefinition Height="*"/>
+            <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -19,17 +21,17 @@
         </Grid.ColumnDefinitions>
         
         <TextBlock x:Name="textBox"
-                 Grid.Row="0"
-                 Text="Chapter list"
-                 HorizontalAlignment="Left"/>
+                Grid.Row="1"
+                Grid.Column="0"
+                Text="Chapter list"
+                HorizontalAlignment="Left"/>
         <ListView x:Name="chapterList"
                   Width="auto"
                   Height="auto"
-                  Grid.Row="1"
+                  Grid.Row="2"
                   Grid.ColumnSpan="2"
                   SelectionMode="Multiple"
-                  BorderThickness="1"
-                  BorderBrush="Black">
+                  Background="Silver">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Vertical">
@@ -49,14 +51,14 @@
             </ListView.ItemTemplate>
         </ListView>
         <Button x:Name="StudyBtn" Content="Study"
-                Grid.Row="2"
+                Grid.Row="4"
                 Grid.Column="1"
                 Click="StudyBtn_Click"
                 HorizontalAlignment="Right"
                 />
         <Button x:Name="Back" Content="Back"
                 HorizontalAlignment="Left"
-                Grid.Row="2"
+                Grid.Row="4"
                 Click="Back_Click"/>
     </Grid>
 </Page>

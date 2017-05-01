@@ -45,6 +45,17 @@ namespace test_universalApp
             //this.Loaded += MainPage_Loaded;
             //this.LayoutUpdated += MainPage_LayoutUpdated;
             //this.Unloaded += MainPage_Unloaded;
+            initCtrls();
+        }
+
+        private void initCtrls()
+        {
+            txtBox.Text = "";
+            txtBox.AcceptsReturn = true;
+            txtBox.TextWrapping = TextWrapping.Wrap;
+            //txtBox.Header = "Word list";
+            txtBox.PlaceholderText = "Please use \";\" as seprator";
+            ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
         }
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
@@ -110,12 +121,12 @@ namespace test_universalApp
                 txt = txt + word.ToString() + "\r\n";
             }
             Debug.WriteLine(txt);
-            TextBox.Text = txt;
+            txtBox.Text = txt;
         }
 
         private async void addBtn_Click(object sender, RoutedEventArgs e)
         {
-            string txt = TextBox.Text;
+            string txt = txtBox.Text;
             int ret = await s_content.saveChapter(txt);
         }
 
