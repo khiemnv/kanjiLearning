@@ -235,7 +235,7 @@ namespace test_universalApp
 
         public override string ToString()
         {
-            return string.Format("{0} {1} {2} {3}", kanji, hiragana, hn, vn);
+            return string.Format("{0}; {1}; {2}; {3}", kanji, hiragana, hn, vn);
         }
 
         delegate void voidDelegate();

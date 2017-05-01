@@ -1,5 +1,5 @@
 ﻿//#define test_study_page
-#define init_status
+//#define init_status
 #define item_editable
 //#define start_use_checkbox
 
@@ -401,9 +401,14 @@ namespace test_universalApp
 
         private void updateTerm()
         {
+            updateTerm(true);
+        }
+        private void updateTerm(bool reqInit)
+        {
             var items = getCurItems();
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
             wordItem curItem = items[m_iCursor];
+            curItem.status = reqInit? itemStatus.term: curItem.status;
             switch (curItem.status)
             {
                 case itemStatus.term:
@@ -445,7 +450,7 @@ namespace test_universalApp
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
             wordItem curItem = items[m_iCursor];
             curItem.rotate();
-            updateTerm();
+            updateTerm(false);
         }
 
         private void nextBtn_Click(object sender, RoutedEventArgs e)

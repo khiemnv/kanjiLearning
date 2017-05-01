@@ -98,16 +98,15 @@
                 Grid.Row="0"
                   Grid.RowSpan="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="80"/>
-                    <RowDefinition Height="80"/>
-                    <RowDefinition Height="80"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="80"/>
+                    <RowDefinition Height="80"/>
                     <RowDefinition Height="80"/>
                     <RowDefinition Height="80"/>
                 </Grid.RowDefinitions>
                 <Canvas Name="canvasEdit"
                     Grid.Column="0"
-                    Grid.Row="0">
+                    Grid.Row="2">
                     <Ellipse Name="editEllipse"
                           Fill="LightGray"
                           Height="80"  
@@ -122,7 +121,7 @@
                 </Canvas>
                 <Canvas Name="canvasAccept"
                     Grid.Column="0"
-                    Grid.Row="0"
+                    Grid.Row="2"
                         Visibility="Collapsed">
                     <Ellipse Name="acceptEllipse"
                       Fill="LightGray"
@@ -154,7 +153,7 @@
                 </Canvas>
                 <Canvas Name="canvasSpeak"
                     Grid.Column="0"
-                    Grid.Row="4">
+                    Grid.Row="3">
                     <Ellipse Name="speakEllipse"
                         Fill="LightGray"
                         Height="80"  
@@ -169,7 +168,7 @@
                 </Canvas>
                 <Canvas Name="starCanvas"
                     Grid.Column="0"
-                    Grid.Row="5">
+                    Grid.Row="4">
                     <Ellipse Name="starEllipse"
                       Fill="#FFFFFF00"  
                       Height="80"  
