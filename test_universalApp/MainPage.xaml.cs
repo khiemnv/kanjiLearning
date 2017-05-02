@@ -67,7 +67,7 @@ namespace test_universalApp
             worker.DoWork += Worker_DoWork;
 #if true
             worker.ProgressChanged += Worker_ProgressChanged;
-#if else
+#else
             worker.ProgressChanged += (s, e) => { browserProg.Value = e.ProgressPercentage; };
 #endif
             worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
@@ -121,7 +121,7 @@ namespace test_universalApp
 
         private void onLoadDataComplete()
         {
-            
+
         }
 
         private async void reloadBtn_Click(object sender, RoutedEventArgs e)
@@ -192,7 +192,7 @@ namespace test_universalApp
         {
             Debug.WriteLine("Worker_DoWork start");
 #if !track_progress
-            Task t = Task.Run(()=> s_content.loadMultipleChapter(worker, folder));
+            Task t = Task.Run(() => s_content.loadMultipleChapter(worker, folder));
             t.Wait();
 #else
             m_progress = 0;

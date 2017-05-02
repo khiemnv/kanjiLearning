@@ -46,9 +46,12 @@
                 Click="browserBtn_Click"
                 Margin="1,1,1,1">
             </Button>
-            <ProgressBar Name="browserProg"
-                Grid.ColumnSpan="2"
-                VerticalAlignment="Bottom"
+            <ProgressBar
+                Name="browserProg"
+                Margin="1,1,1,1"
+                Grid.Column="0"
+                VerticalAlignment="Stretch"
+                Background="Transparent"
                 Visibility="Collapsed"/>
         </Grid>
         <!--load single chapter-->

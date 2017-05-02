@@ -2,6 +2,7 @@
 //#define init_status
 #define item_editable
 //#define start_use_checkbox
+#define once_synth
 
 using System;
 using System.Collections.Generic;
@@ -138,14 +139,14 @@ namespace test_universalApp
             speakTxtEnd(true);
         }
 
-        bool getVoice(out VoiceInformation jp, string lang)
+        bool getVoice(out VoiceInformation voice, string lang)
         {
-            jp = SpeechSynthesizer.DefaultVoice;
+            voice = SpeechSynthesizer.DefaultVoice;
             foreach (var v in SpeechSynthesizer.AllVoices)
             {
                 if (v.Language.Contains(lang))
                 {
-                    jp = v;
+                    voice = v;
                     return true;
                 }
             }
@@ -190,7 +191,8 @@ namespace test_universalApp
         SpeechSynthesizer lastTTSsynth;
         SpeechSynthesisStream lastTTSstream;
 #else
-        SpeechSynthesizer synth = new SpeechSynthesizer()
+        SpeechSynthesizer lastTTSsynth = new SpeechSynthesizer();
+        SpeechSynthesisStream lastTTSstream;
 #endif
 
         async void speakTxt(string txt, string lang)

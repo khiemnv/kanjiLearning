@@ -38,6 +38,7 @@
                 <RowDefinition Height="80"/>
             </Grid.RowDefinitions>
 
+            <!--term & options-->
             <SplitView
                 Name="split"
                 Grid.Row="0"
