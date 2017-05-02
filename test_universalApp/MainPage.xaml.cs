@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define use_worker
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +19,8 @@ using Windows.UI.Xaml.Navigation;
 using System.Threading;
 using System.Diagnostics;
 using Windows.UI.ViewManagement;
+using System.ComponentModel;
+using Windows.Storage;
 
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -48,6 +52,7 @@ namespace test_universalApp
             initCtrls();
         }
 
+        BackgroundWorker worker;
         private void initCtrls()
         {
             txtBox.Text = "";
@@ -56,6 +61,18 @@ namespace test_universalApp
             //txtBox.Header = "Word list";
             txtBox.PlaceholderText = "Please use \";\" as seprator";
             ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
+
+#if use_worker
+            worker = new BackgroundWorker();
+            worker.DoWork += Worker_DoWork;
+#if true
+            worker.ProgressChanged += Worker_ProgressChanged;
+#if else
+            worker.ProgressChanged += (s, e) => { browserProg.Value = e.ProgressPercentage; };
+#endif
+            worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
+            worker.WorkerReportsProgress = true;
+#endif
         }
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
@@ -130,9 +147,64 @@ namespace test_universalApp
             int ret = await s_content.saveChapter(txt);
         }
 
+        StorageFolder folder;
         private async void browserBtn_Click(object sender, RoutedEventArgs e)
         {
+#if use_worker
+            //pick folder
+            var picker = new Windows.Storage.Pickers.FolderPicker();
+            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation =
+                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add("*");
+            folder = await picker.PickSingleFolderAsync();
+            //show progress bar
+            browserProg.Visibility = Visibility.Visible;
+            browserProg.Value = 0;
+            browserProg.Maximum = 100;
+            //start work
+            worker.RunWorkerAsync();
+#else
             int ret = await s_content.loadMultipleChapter();
+#endif
         }
+
+        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Debug.WriteLine("Worker_RunWorkerCompleted {0}", e.Result);
+            browserPath.Text = folder.Path;
+            browserProg.Visibility = Visibility.Collapsed;
+        }
+
+#if track_progress
+        int m_progress;
+#endif
+        private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+#if track_progress
+            m_progress = e.ProgressPercentage;
+#endif
+            browserProg.Value = e.ProgressPercentage;
+            Debug.WriteLine("Worker_ProgressChanged {0}", e.ProgressPercentage);
+        }
+#if use_worker
+        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Debug.WriteLine("Worker_DoWork start");
+#if !track_progress
+            Task t = Task.Run(()=> s_content.loadMultipleChapter(worker, folder));
+            t.Wait();
+#else
+            m_progress = 0;
+            s_content.loadMultipleChapter(worker, folder);
+            int i = 0;
+            while (m_progress != 100)
+            {
+                Debug.WriteLine("Worker_DoWork wait {0} {1}", i++, m_progress);
+                Task.Delay(1000);
+            }
+#endif
+        }
+#endif
     }
 }

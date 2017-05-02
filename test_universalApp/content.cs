@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using Windows.Storage.Search;
 using System.IO;
 using System.Runtime.Serialization;
+using System.ComponentModel;
+using Windows.Foundation;
 
 namespace test_universalApp
 {
@@ -61,23 +63,18 @@ namespace test_universalApp
         }
 
         //load multiple chapter
-        public async Task<int> loadMultipleChapter()
+        public async Task<int> loadMultipleChapter(BackgroundWorker worker, StorageFolder folder)
         {
-            var picker = new Windows.Storage.Pickers.FolderPicker();
-            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation =
-                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
-            picker.FileTypeFilter.Add("*");
-
-            StorageFolder folder = await picker.PickSingleFolderAsync();
-            if (folder != null) { 
+            if (folder != null)
+            {
                 //var fileTypeFilter = new string[] { ".txt", ".dat" };
                 //QueryOptions queryOptions = new QueryOptions(CommonFileQuery.OrderBySearchRank, fileTypeFilter);
                 //queryOptions.UserSearchFilter = "chapter";
                 //StorageFileQueryResult queryResult = folder.CreateFileQueryWithOptions(queryOptions);
                 //IReadOnlyList<StorageFile> files = queryResult.GetFilesAsync().GetResults();
                 IReadOnlyList<StorageFile> fileList = await folder.GetFilesAsync();
-                foreach(var file in fileList)
+                int count = 0;
+                foreach (var file in fileList)
                 {
                     Debug.WriteLine(file.Name);
                     string txt = await FileIO.ReadTextAsync(file);
@@ -86,8 +83,10 @@ namespace test_universalApp
                     {
                         updateDict(file, words);
                     }
+                    count++;
+                    worker.ReportProgress(count * 100 / fileList.Count);
                 }
-                OnLoadMultiChaperCompleted(new LoadChapterCompletedEventArgs() { path = folder.Path});
+                //OnLoadMultiChaperCompleted(new LoadChapterCompletedEventArgs() { path = folder.Path });
             }
             return -1;
         }
