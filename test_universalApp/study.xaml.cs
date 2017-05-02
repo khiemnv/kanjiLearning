@@ -5,10 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.SpeechSynthesis;
@@ -20,6 +22,7 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
@@ -37,32 +40,39 @@ namespace test_universalApp
         {
             this.InitializeComponent();
 
+            //option panel
+            #region option_ctrls
             optionBtn.Click += OptionBtn_Click;
 
-            termCmb.Items.Add("kanji");
-            termCmb.Items.Add("hiragana");
-            termCmb.Items.Add("hán nôm");
-            termCmb.Items.Add("vietnamese");
-            termCmb.SelectedIndex = 0;
+            optWordTermCmb.Items.Add("kanji");
+            optWordTermCmb.Items.Add("hiragana");
+            optWordTermCmb.Items.Add("hán nôm");
+            optWordTermCmb.Items.Add("vietnamese");
+            optWordTermCmb.SelectedIndex = 0;
 
-            defineCmb.Items.Add("kanji");
-            defineCmb.Items.Add("hiragana");
-            defineCmb.Items.Add("hán nôm");
-            defineCmb.Items.Add("vietnamese");
-            defineCmb.SelectedIndex = 1;
+            optWordTermDefineCmb.Items.Add("kanji");
+            optWordTermDefineCmb.Items.Add("hiragana");
+            optWordTermDefineCmb.Items.Add("hán nôm");
+            optWordTermDefineCmb.Items.Add("vietnamese");
+            optWordTermDefineCmb.SelectedIndex = 1;
 
-            defineCmb.SelectionChanged += DefineCmb_SelectionChanged;
-            termCmb.SelectionChanged += TermCmb_SelectionChanged;
+            optWordTermDefineCmb.SelectionChanged += DefineCmb_SelectionChanged;
+            optWordTermCmb.SelectionChanged += TermCmb_SelectionChanged;
 
-            detailChk.Tapped += DetailChk_Tapped;
-            optStarChk.Click += OptStarChk_Click;
+            optWordDetailChk.Tapped += DetailChk_Tapped;
+            optWordStarChk.Click += OptStarChk_Click;
+
+            optSpkTermChk.Click += OptSpkTermChk_Click;
+            optSpkDefineChk.Click += OptSpkDefineChk_Click;
+            #endregion
+            split.PaneClosed += Split_PaneClosed;
+
+            //canvas buttons
 #if start_use_checkbox
             starChk.Click += starChk_Checked;
 #else
-            starCanvas.Tapped += starChk_Checked;
+            canvasStar.Tapped += starChk_Checked;
 #endif
-
-            split.PaneClosed += Split_PaneClosed;
 
 #if item_editable
             canvasEdit.Tapped += CanvasEdit_Tapped;
@@ -78,15 +88,62 @@ namespace test_universalApp
 
             canvasSpeak.Tapped += CanvasSpeak_Tapped;
 
+            //register play end event
+            media.MediaOpened += Media_MediaOpened;
+            media.MediaEnded += Media_MediaEnded;
+            media.MediaFailed += Media_MediaFailed;
+
+            //decorate
             initCtrls();
         }
 
-        bool getJapaness(out VoiceInformation jp)
+        private void OptSpkDefineChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.spkDefine = (bool)optSpkDefineChk.IsChecked;
+        }
+
+        private void OptSpkTermChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
+        }
+
+        private void Media_MediaOpened(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("{0} Media_MediaOpened play start", this);
+            m_speakStat = speakStatus.engine_played;
+            speakImage.Source = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
+        }
+
+        void speakTxtEnd(bool isSucess)
+        {
+            speakImage.Source = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
+#if !once_synth
+            lastTTSstream.Dispose();
+            lastTTSsynth.Dispose();
+#endif
+            m_speakStat = speakStatus.end;
+        }
+
+        private void Media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            m_speakStat = speakStatus.engine_finished;
+            Debug.WriteLine("{0} Media_MediaFailed play failed {1}", this, e.ErrorMessage);
+            speakTxtEnd(false);
+        }
+
+        private void Media_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            m_speakStat = speakStatus.engine_finished;
+            Debug.WriteLine("{0} Media_MediaEnded play success", this);
+            speakTxtEnd(true);
+        }
+
+        bool getVoice(out VoiceInformation jp, string lang)
         {
             jp = SpeechSynthesizer.DefaultVoice;
             foreach (var v in SpeechSynthesizer.AllVoices)
             {
-                if (v.Language.Contains("ja-JP"))
+                if (v.Language.Contains(lang))
                 {
                     jp = v;
                     return true;
@@ -95,40 +152,92 @@ namespace test_universalApp
             return false;
         }
 
-        async void speakTxt(string txt)
+        enum speakStatus
         {
-            //txt = "hello world";
+            begin,
+            called,
+            engine_played,
+            engine_finished,
+            end
+        }
+        speakStatus m_speakStat = speakStatus.end;
 
+        void speakTxt()
+        {
+            if (m_speakStat != speakStatus.end)
+            {
+                Debug.WriteLine("{0} speakTxt m_speakStat {1}", this, m_speakStat.ToString());
+                return;
+            }
+            m_speakStat = speakStatus.begin;
+
+            //need disable all action
+            
+
+            var items = getCurItems();
+            var item = items[m_iCursor];
+            string txt;
+            string lang;
+            item.getSpeakInfo(item.status, out txt, out lang);
+#if test_study_page
+            txt = "hello world";
+            lang = "en-US";
+#endif
+            speakTxt(txt, lang);
+        }
+
+#if !once_synth
+        SpeechSynthesizer lastTTSsynth;
+        SpeechSynthesisStream lastTTSstream;
+#else
+        SpeechSynthesizer synth = new SpeechSynthesizer()
+#endif
+
+        async void speakTxt(string txt, string lang)
+        {
+            Debug.WriteLine("{0} speakTxt call play", this);
+            //txt = "hello world";
             //IEnumerable<VoiceInformation> frenchVoices = from voice in SpeechSynthesizer.AllVoices
             //                                             where voice.Language == "fr-FR"
             //                                             select voice;
-            VoiceInformation jp;
-            bool ret = getJapaness(out jp);
-            if (true)
+            VoiceInformation voice;
+            bool ret = getVoice(out voice, lang);
+            if (ret)
             {
-                SpeechSynthesizer synth = new SpeechSynthesizer();
-                synth.Voice = (jp);
-                SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(txt);
+                m_speakStat = speakStatus.called;
+#if !once_synth
+                lastTTSsynth = new SpeechSynthesizer();
+#endif
+                lastTTSsynth.Voice = voice;
+                lastTTSstream = await lastTTSsynth.SynthesizeTextToStreamAsync(txt);
                 // The media object for controlling and playing audio.
                 MediaElement mediaElement = media;
-                mediaElement.SetSource(stream, stream.ContentType);
+                //MediaElement mediaElement = new MediaElement();
+                mediaElement.SetSource(lastTTSstream, lastTTSstream.ContentType);
+                Debug.WriteLine("  + call play()");
                 mediaElement.Play();
+                Debug.WriteLine("  + play() return");
             }
             else
             {
-                MessageDialog msgbox = new MessageDialog("Not found japanese void info");
+                MessageDialog msgbox = new MessageDialog(
+                    string.Format("Not found {0} voice infomation. " +
+                    "Maybe {0} voice recognition was not installed!", lang));
                 msgbox.Title = "Speak word error!";
                 await msgbox.ShowAsync();
+                m_speakStat = speakStatus.end;
             }
         }
 
         private void CanvasSpeak_Tapped(object sender, TappedRoutedEventArgs e)
         {
             //speak text
-            string txt = termTxt.Text;
-            speakTxt(txt);
+            speakTxt();
+            Debug.WriteLine("{0} CanvasSpeak_Tapped speak return", this);
         }
 
+        List<UIElement> grp1;
+        List<UIElement> grp2;
         private void initCtrls()
         {
             editEllipse.Stroke = new SolidColorBrush(Colors.White);
@@ -138,6 +247,12 @@ namespace test_universalApp
 
             detailTxt.Text = "";
             termTxt.Text = "";
+
+            grp1 = new List<UIElement>() { canvasEdit, termTxt, detailTxt,
+                nextBtn, backBtn,
+                bntStack,
+                canvasSpeak, canvasStar};
+            grp2 = new List<UIElement>() { canvasAccept, canvasCancel, editTxt };
         }
 
         private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
@@ -146,15 +261,16 @@ namespace test_universalApp
         }
 
         wordItem m_editingItem;
+        void showHideCtrls(bool editMode)
+        {
+            var grp1V = editMode ? Visibility.Collapsed : Visibility.Visible;
+            var grp2V = editMode ? Visibility.Visible : Visibility.Collapsed;
+            foreach (var e in grp1) { e.Visibility = grp1V; }
+            foreach (var e in grp2) { e.Visibility = grp2V; }
+        }
         void startEdit()
         {
-            canvasEdit.Visibility = Visibility.Collapsed;
-            canvasAccept.Visibility = Visibility.Visible;
-            canvasCancel.Visibility = Visibility.Visible;
-
-            editTxt.Visibility = Visibility.Visible;
-            termTxt.Visibility = Visibility.Collapsed;
-            detailTxt.Visibility = Visibility.Collapsed;
+            showHideCtrls(true);
 
             var items = getCurItems();
             m_editingItem = items[m_iCursor];
@@ -162,13 +278,7 @@ namespace test_universalApp
         }
         void finishEdit(bool isAccept)
         {
-            canvasEdit.Visibility = Visibility.Visible;
-            canvasAccept.Visibility = Visibility.Collapsed;
-            canvasCancel.Visibility = Visibility.Collapsed;
-
-            editTxt.Visibility = Visibility.Collapsed;
-            termTxt.Visibility = Visibility.Visible;
-            detailTxt.Visibility = Visibility.Visible;
+            showHideCtrls(false);
             if (isAccept)
             {
                 string txt = editTxt.Text;
@@ -221,7 +331,7 @@ namespace test_universalApp
         {
             if (m_markedItems.Count > 0)
             {
-                m_option.showMarked = (bool)optStarChk.IsChecked;
+                m_option.showMarked = (bool)optWordStarChk.IsChecked;
                 m_iCursor = 0;
                 updateTerm();
                 updateNum();
@@ -231,7 +341,7 @@ namespace test_universalApp
                 MessageDialog msgbox = new MessageDialog("No marked word");
                 msgbox.Title = "Show marked word error!";
                 await msgbox.ShowAsync();
-                optStarChk.IsChecked = false;
+                optWordStarChk.IsChecked = false;
             }
         }
 
@@ -242,7 +352,7 @@ namespace test_universalApp
 
         private void DetailChk_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            m_option.showDetail = (bool)detailChk.IsChecked;
+            m_option.showDetail = (bool)optWordDetailChk.IsChecked;
         }
 
         private void TermCmb_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -276,6 +386,8 @@ namespace test_universalApp
             public mode defineMode;
             public bool showDetail;
             public bool showMarked;
+            public bool spkTerm;
+            public bool spkDefine;
         }
 
         static studyOption m_option = new studyOption() {
@@ -326,6 +438,29 @@ namespace test_universalApp
             public string term {
                 get {
                     return getDefine(m_option.termMode);
+                }
+            }
+            public void getSpeakInfo(itemStatus status, out string txt, out string key)
+            {
+                mode m = status == itemStatus.term ? m_option.termMode : m_option.defineMode;
+                switch (m)
+                {
+                    case mode.kanji:
+                        txt = word.kanji;
+                        key = "ja-JP";
+                        break;
+                    case mode.hiragana:
+                        txt = word.hiragana;
+                        key = "ja-JP";
+                        break;
+                    case mode.hn:
+                        txt = word.hn;
+                        key = "vi-VN";
+                        break;
+                    default:
+                        txt = word.vn;
+                        key = "vi-VN";
+                        break;
                 }
             }
 
@@ -390,9 +525,9 @@ namespace test_universalApp
             if (m_markedItems.Count == 0) {
                 m_option.showMarked = false;
             }
-            optStarChk.IsChecked = m_option.showMarked;
+            optWordStarChk.IsChecked = m_option.showMarked;
             //+ show detail
-            detailChk.IsChecked = m_option.showDetail;
+            optWordDetailChk.IsChecked = m_option.showDetail;
 
             m_iCursor = 0;
             updateTerm();
@@ -405,16 +540,21 @@ namespace test_universalApp
         }
         private void updateTerm(bool reqInit)
         {
+            //not change term while speak
+            Debug.Assert(m_speakStat == speakStatus.end);
+
             var items = getCurItems();
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
             wordItem curItem = items[m_iCursor];
             curItem.status = reqInit? itemStatus.term: curItem.status;
+
             switch (curItem.status)
             {
                 case itemStatus.term:
                     termTxt.Text = curItem.term;
                     termTxt.Foreground = new SolidColorBrush() { Color = Colors.Blue };
                     detailTxt.Visibility = Visibility.Collapsed;
+                    if (m_option.spkTerm) { speakTxt(); }
                     break;
                 case itemStatus.define:
                     termTxt.Text = curItem.define;
@@ -424,6 +564,7 @@ namespace test_universalApp
                         detailTxt.Text = curItem.detail;
                         detailTxt.Visibility = Visibility.Visible;
                     }
+                    if (m_option.spkDefine) { speakTxt(); }
                     break;
             }
             starChk.IsChecked = curItem.marked;
@@ -561,7 +702,7 @@ namespace test_universalApp
                 if (m_markedItems.Count == 0)
                 {
                     m_option.showMarked = false;
-                    optStarChk.IsChecked = false;
+                    optWordStarChk.IsChecked = false;
                     m_iCursor = 0;
                     //updateTerm();
                     //updateNum();
