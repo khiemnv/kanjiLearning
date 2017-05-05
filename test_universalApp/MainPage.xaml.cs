@@ -30,7 +30,7 @@ namespace test_universalApp
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
+    public sealed partial class MainPage : Page, IDisposable
     {
         static contentProvider s_content = contentProvider.getInstance();
 
@@ -40,8 +40,8 @@ namespace test_universalApp
 
             //test();
             //testWriteData();
-            ApplicationView.PreferredLaunchViewSize = new Size(480, 800);
-            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
+            //ApplicationView.PreferredLaunchViewSize = new Size(480, 800);
+            //ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
             s_content.LoadChapterCompleted += C_LoadCompleted;
             s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
@@ -50,17 +50,27 @@ namespace test_universalApp
             //this.LayoutUpdated += MainPage_LayoutUpdated;
             //this.Unloaded += MainPage_Unloaded;
             initCtrls();
+
+            browserBtn.Click += browserBtn_Click;
+            reloadBtn.Click += reloadBtn_Click;
+            addBtn.Click += addBtn_Click;
+            nextBtn.Click += nextBtn_Click;
+        }
+
+        void initEvents()
+        {
+            
         }
 
         BackgroundWorker worker;
         private void initCtrls()
         {
             txtBox.Text = "";
-            txtBox.AcceptsReturn = true;
-            txtBox.TextWrapping = TextWrapping.Wrap;
-            //txtBox.Header = "Word list";
             txtBox.PlaceholderText = "Please use \";\" as seprator";
-            ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
+            //txtBox.AcceptsReturn = true;
+            //txtBox.TextWrapping = TextWrapping.Wrap;
+            //txtBox.Header = "Word list";
+            //ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
 
 #if use_worker
             worker = new BackgroundWorker();
@@ -174,6 +184,8 @@ namespace test_universalApp
             Debug.WriteLine("Worker_RunWorkerCompleted {0}", e.Result);
             browserPath.Text = folder.Path;
             browserProg.Visibility = Visibility.Collapsed;
+
+            //initEvents();
         }
 
 #if track_progress
@@ -194,6 +206,7 @@ namespace test_universalApp
 #if !track_progress
             Task t = Task.Run(() => s_content.loadMultipleChapter(worker, folder));
             t.Wait();
+            Debug.WriteLine("Worker_DoWork end");
 #else
             m_progress = 0;
             s_content.loadMultipleChapter(worker, folder);
@@ -205,6 +218,42 @@ namespace test_universalApp
             }
 #endif
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                worker.Dispose();
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        ~MainPage()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
 #endif
+
     }
 }

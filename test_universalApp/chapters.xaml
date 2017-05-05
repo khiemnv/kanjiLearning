@@ -49,6 +49,7 @@
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
+            
         </ListView>
         <!--next & back to page-->
         <Button x:Name="StudyBtn"

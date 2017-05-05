@@ -11,10 +11,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.SpeechSynthesis;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
 using Windows.UI;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
@@ -33,61 +36,13 @@ namespace test_universalApp
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class study : Page
+    public sealed partial class study : Page, IDisposable
     {
         static contentProvider s_cp = contentProvider.getInstance();
 
         public study()
         {
             this.InitializeComponent();
-
-            //option panel
-            #region option_ctrls
-            optionBtn.Click += OptionBtn_Click;
-
-            optWordTermCmb.Items.Add("kanji");
-            optWordTermCmb.Items.Add("hiragana");
-            optWordTermCmb.Items.Add("hán nôm");
-            optWordTermCmb.Items.Add("vietnamese");
-            optWordTermCmb.SelectedIndex = 0;
-
-            optWordTermDefineCmb.Items.Add("kanji");
-            optWordTermDefineCmb.Items.Add("hiragana");
-            optWordTermDefineCmb.Items.Add("hán nôm");
-            optWordTermDefineCmb.Items.Add("vietnamese");
-            optWordTermDefineCmb.SelectedIndex = 1;
-
-            optWordTermDefineCmb.SelectionChanged += DefineCmb_SelectionChanged;
-            optWordTermCmb.SelectionChanged += TermCmb_SelectionChanged;
-
-            optWordDetailChk.Tapped += DetailChk_Tapped;
-            optWordStarChk.Click += OptStarChk_Click;
-
-            optSpkTermChk.Click += OptSpkTermChk_Click;
-            optSpkDefineChk.Click += OptSpkDefineChk_Click;
-            #endregion
-            split.PaneClosed += Split_PaneClosed;
-
-            //canvas buttons
-#if start_use_checkbox
-            starChk.Click += starChk_Checked;
-#else
-            canvasStar.Tapped += starChk_Checked;
-#endif
-
-#if item_editable
-            canvasEdit.Tapped += CanvasEdit_Tapped;
-            canvasAccept.Tapped += CanvasAccept_Tapped;
-            canvasCancel.Tapped += CanvasCancel_Tapped;
-
-            editTxt.AcceptsReturn = true;
-            editTxt.TextWrapping = TextWrapping.Wrap;
-            //editTxt.Header = "Editing word (please use \";\" as separator)";
-            editTxt.PlaceholderText = "Using \";\" as separator";
-            ScrollViewer.SetVerticalScrollBarVisibility(editTxt, ScrollBarVisibility.Auto);
-#endif
-
-            canvasSpeak.Tapped += CanvasSpeak_Tapped;
 
             //register play end event
             media.MediaOpened += Media_MediaOpened;
@@ -123,6 +78,8 @@ namespace test_universalApp
 #if !once_synth
             lastTTSstream.Dispose();
             lastTTSsynth.Dispose();
+#else
+            lastTTSstream.Dispose();
 #endif
             m_speakStat = speakStatus.end;
         }
@@ -251,10 +208,34 @@ namespace test_universalApp
         List<UIElement> grp2;
         private void initCtrls()
         {
-            editEllipse.Stroke = new SolidColorBrush(Colors.White);
-            cancelEllipse.Stroke = new SolidColorBrush(Colors.White);
-            acceptEllipse.Stroke = new SolidColorBrush(Colors.White);
-            starEllipse.Stroke = new SolidColorBrush(Colors.White);
+
+            //option panel
+            #region option_ctrls
+            optWordTermCmb.Items.Add("kanji");
+            optWordTermCmb.Items.Add("hiragana");
+            optWordTermCmb.Items.Add("hán nôm");
+            optWordTermCmb.Items.Add("vietnamese");
+            optWordTermCmb.SelectedIndex = 0;
+
+            optWordTermDefineCmb.Items.Add("kanji");
+            optWordTermDefineCmb.Items.Add("hiragana");
+            optWordTermDefineCmb.Items.Add("hán nôm");
+            optWordTermDefineCmb.Items.Add("vietnamese");
+            optWordTermDefineCmb.SelectedIndex = 1;
+            #endregion
+
+#if item_editable
+            //editTxt.AcceptsReturn = true;
+            //editTxt.TextWrapping = TextWrapping.Wrap;
+            //editTxt.Header = "Editing word (please use \";\" as separator)";
+            editTxt.PlaceholderText = "Using \";\" as separator";
+            //ScrollViewer.SetVerticalScrollBarVisibility(editTxt, ScrollBarVisibility.Auto);
+#endif
+
+            //editEllipse.Stroke = new SolidColorBrush(Colors.White);
+            //cancelEllipse.Stroke = new SolidColorBrush(Colors.White);
+            //acceptEllipse.Stroke = new SolidColorBrush(Colors.White);
+            //starEllipse.Stroke = new SolidColorBrush(Colors.White);
 
             detailTxt.Text = "";
             termTxt.Text = "";
@@ -359,6 +340,7 @@ namespace test_universalApp
         private void Split_PaneClosed(SplitView sender, object args)
         {
             updateTerm();
+            m_option.save();
         }
 
         private void DetailChk_Tapped(object sender, TappedRoutedEventArgs e)
@@ -391,23 +373,75 @@ namespace test_universalApp
             vn
         }
 
+        [DataContract]
         class studyOption
         {
+            [DataMember]
             public mode termMode;
+            [DataMember]
             public mode defineMode;
+            [DataMember]
             public bool showDetail;
+            [DataMember]
             public bool showMarked;
+            [DataMember]
             public bool spkTerm;
+            [DataMember]
             public bool spkDefine;
+
+            public studyOption() { }
+
+            static studyOption m_option;
+            public static async Task<studyOption> getInstance()
+            {
+                if (m_option == null)
+                {
+                    m_option = await load();
+                    if (m_option == null) m_option = new studyOption
+                    { termMode = mode.kanji, defineMode = mode.hiragana};
+                }
+                return m_option;
+            }
+
+            static string m_optionFile = "option.cfg";
+            static async Task<studyOption> load()
+            {
+                studyOption ret = null;
+                StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                    m_optionFile, CreationCollisionOption.OpenIfExists);
+                BasicProperties bs = await dataFile.GetBasicPropertiesAsync();
+                if (bs.Size > 0)
+                {
+                    Stream stream = await dataFile.OpenStreamForReadAsync();
+                    stream.Seek(0, SeekOrigin.Begin);
+                    DataContractSerializer serializer = new DataContractSerializer(typeof(studyOption));
+                    var obj = (studyOption)serializer.ReadObject(stream);
+                    if (obj != null) { ret = obj; }
+                    stream.Dispose();
+                }
+                //await Task.Delay(1000);
+                Debug.WriteLine("{0} load complete {1}", "studyOpt", Environment.TickCount);
+                return ret;
+            }
+            public async void save()
+            {
+                StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                    m_optionFile, CreationCollisionOption.OpenIfExists);
+                Stream writeStream = await dataFile.OpenStreamForWriteAsync();
+                writeStream.SetLength(0);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(studyOption));
+                serializer.WriteObject(writeStream, m_option);
+                await writeStream.FlushAsync();
+                writeStream.Dispose();
+            }
         }
 
-        static studyOption m_option = new studyOption() {
-            termMode = mode.kanji, defineMode = mode.hiragana,
-            showDetail = false,
-        };
+        static studyOption m_option;
 
         class wordItem
         {
+            //public wordItem(studyOption option) { m_option = option; }
+            //studyOption m_option;
             public chapter c = null;
             public int index;
             public word word;
@@ -530,13 +564,61 @@ namespace test_universalApp
             optWordStarChk.IsChecked = m_option.showMarked;
             //+ show detail
             optWordDetailChk.IsChecked = m_option.showDetail;
+            //+ cmb
+            optWordTermCmb.SelectedIndex = (int)m_option.termMode;
+            optWordTermDefineCmb.SelectedIndex = (int)m_option.defineMode;
+            //+ speak
+            optSpkDefineChk.IsChecked = m_option.spkDefine;
+            optSpkTermChk.IsChecked = m_option.spkTerm;
 
             //update term
             m_iCursor = 0;
             updateTerm();
             updateNum();
 
+            //setup EventHandler
+            initEvents();
+
             loadProgress.Visibility = Visibility.Collapsed;
+        }
+
+        private void initEvents()
+        {
+            termGrid.Tapped += term_Tapped;
+            termGrid.ManipulationCompleted += term_swiped;
+
+            sulfBnt.Click += sulfBnt_Click;
+            prevBtn.Click += prevBtn_Click;
+            nextBtn.Click += nextBtn_Click;
+            backBtn.Click += back_Click;
+
+            //canvas buttons
+#if start_use_checkbox
+            starChk.Click += starChk_Checked;
+#else
+            canvasStar.Tapped += starChk_Checked;
+#endif
+
+            //option ctrls
+            optionBtn.Click += OptionBtn_Click;
+            optWordTermDefineCmb.SelectionChanged += DefineCmb_SelectionChanged;
+            optWordTermCmb.SelectionChanged += TermCmb_SelectionChanged;
+
+            optWordDetailChk.Tapped += DetailChk_Tapped;
+            optWordStarChk.Click += OptStarChk_Click;
+
+            optSpkTermChk.Click += OptSpkTermChk_Click;
+            optSpkDefineChk.Click += OptSpkDefineChk_Click;
+
+            split.PaneClosed += Split_PaneClosed;
+
+#if item_editable
+            canvasEdit.Tapped += CanvasEdit_Tapped;
+            canvasAccept.Tapped += CanvasAccept_Tapped;
+            canvasCancel.Tapped += CanvasCancel_Tapped;
+#endif
+            //speak
+            canvasSpeak.Tapped += CanvasSpeak_Tapped;
         }
 
         private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -549,7 +631,7 @@ namespace test_universalApp
         {
             var loadDb = Task.Run(() => s_cp.loadData());
             loadDb.Wait();
-            m_worker.ReportProgress(1);
+            m_worker.ReportProgress(40);
 
             m_markedItems.Clear();
             m_items.Clear();
@@ -580,7 +662,7 @@ namespace test_universalApp
                     }
                 }
                 loadedChapter++;
-                m_worker.ReportProgress(1 + (loadedChapter * 99 / totalChaptes));
+                m_worker.ReportProgress(40 + (loadedChapter * 30 / totalChaptes));
                 Debug.WriteLine("{0} M_worker_DoWork loadedChapter {1} ", this, loadedChapter);
             }
 #else
@@ -600,6 +682,12 @@ namespace test_universalApp
                     c = ch, index = i++, marked = marked });
             }
 #endif
+            //load option
+            Debug.WriteLine("{0} call load option {1}", this, Environment.TickCount);
+            var loadOpt = Task.Run(async () => { m_option = await studyOption.getInstance(); });
+            loadOpt.Wait();
+            Debug.WriteLine("{0} load option return {1}", this, Environment.TickCount);
+            m_worker.ReportProgress(100);
         }
 
         private void updateTerm()
@@ -749,7 +837,7 @@ namespace test_universalApp
             }
         }
 
-        private async void starChk_Checked(object sender, RoutedEventArgs e)
+        private void starChk_Checked(object sender, RoutedEventArgs e)
         {
 #if !start_use_checkbox
             starChk.IsChecked = !starChk.IsChecked;
@@ -802,17 +890,54 @@ namespace test_universalApp
             //not in editing state
             if (m_editingItem == null)
             {
-                if (e.Cumulative.Translation.X < 0)
+                if (e.Cumulative.Translation.X < 5)
                 {
                     //move right
                     nextBtn_Click(sender, e);
                 }
-                else
+                else if (e.Cumulative.Translation.X > 5)
                 {
                     //move left
                     prevBtn_Click(sender, e);
                 }
             }
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        public void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+                m_worker.Dispose();
+                lastTTSsynth.Dispose();
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~study() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

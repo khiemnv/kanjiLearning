@@ -15,7 +15,7 @@ using Microsoft.Data.Sqlite.Internal;
 namespace test_universalApp
 {
     [DataContract]
-    public class contentProvider
+    public class contentProvider:IDisposable
     {
         public readonly content m_content;
 
@@ -23,6 +23,9 @@ namespace test_universalApp
         public Dictionary<string, chapter> m_chapters { get; private set; }
 
         public SqliteConnection m_cnn;
+        public void loadConfig()
+        {
+        }
         public async void loadData()
         {
             if (m_cnn == null)
@@ -41,10 +44,12 @@ namespace test_universalApp
         }
         public void unloadDb()
         {
+            Debug.WriteLine("{0} unloadDb {1}", this, m_cnn);
             if (m_cnn != null)
             {
                 m_cnn.Close();
                 m_cnn.Dispose();
+                m_cnn = null;
             }
         }
         contentProvider()
@@ -415,6 +420,41 @@ namespace test_universalApp
         {
             LoadMultiChapterCompleted?.Invoke(this, e);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                unloadDb();
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        ~contentProvider()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 
     [DataContract]

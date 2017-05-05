@@ -50,7 +50,6 @@
                 Content=". . ."
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
-                Click="browserBtn_Click"
                 Margin="1,1,1,1">
             </Button>
         </Grid>
@@ -60,27 +59,26 @@
                     >
                 <Button x:Name="reloadBtn"
                         Content="Open"
-                        Click="reloadBtn_Click"
                         Margin="1,1,1,1"/>
                 <Button x:Name="addBtn"
                         Content="Save"
-                        Click="addBtn_Click"
                         Margin="1,1,1,1"/>
         </StackPanel>
-        <TextBox Grid.Row="2"
-                 Margin="1,1,1,1"
-                 x:Name="txtBox"
-                 TextWrapping="NoWrap"
-                 Text="kotoba"
-                 Width="auto"
-                 Height="auto"
-                 Background="Silver"/>
+        <TextBox
+            Grid.Row="2"
+            Margin="1,1,1,1"
+            x:Name="txtBox"
+            TextWrapping="Wrap"
+            Text="kotoba"
+            AcceptsReturn="True"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            Background="Silver"/>
         <!--next page-->
-        <Button Grid.Row="4"
-                Margin="1,1,1,1"
-                x:Name="nextBtn"
-                Content="Next"
-                HorizontalAlignment="Right"
-                Click="nextBtn_Click"/>
+        <Button
+            Grid.Row="4"
+            Margin="1,1,1,1"
+            x:Name="nextBtn"
+            Content="Next"
+            HorizontalAlignment="Right"/>
     </Grid>
 </Page>
