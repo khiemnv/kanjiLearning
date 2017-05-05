@@ -108,16 +108,18 @@ namespace test_universalApp
             m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
         }
 
+        BitmapImage speakBM = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
+        BitmapImage speakBM2 = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
         private void Media_MediaOpened(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("{0} Media_MediaOpened play start", this);
             m_speakStat = speakStatus.engine_played;
-            speakImage.Source = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
+            speakImage.Source = speakBM2;
         }
 
         void speakTxtEnd(bool isSucess)
         {
-            speakImage.Source = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
+            speakImage.Source = speakBM;
 #if !once_synth
             lastTTSstream.Dispose();
             lastTTSsynth.Dispose();
@@ -139,18 +141,25 @@ namespace test_universalApp
             speakTxtEnd(true);
         }
 
+        Dictionary<string, VoiceInformation> voiceDict = new Dictionary<string, VoiceInformation>();
         bool getVoice(out VoiceInformation voice, string lang)
         {
-            voice = SpeechSynthesizer.DefaultVoice;
-            foreach (var v in SpeechSynthesizer.AllVoices)
-            {
-                if (v.Language.Contains(lang))
+            voice = null;
+            if (voiceDict.ContainsKey(lang)) {
+                voice = voiceDict[lang];
+            }
+            else {
+                foreach(var v in SpeechSynthesizer.AllVoices)
                 {
-                    voice = v;
-                    return true;
+                    if (v.Language.Contains(lang))
+                    {
+                        voiceDict.Add(lang, v);
+                        voice = v;
+                        break;
+                    }
                 }
             }
-            return false;
+            return voice != null;
         }
 
         enum speakStatus
@@ -400,6 +409,7 @@ namespace test_universalApp
         class wordItem
         {
             public chapter c = null;
+            public int index;
             public word word;
             public itemStatus status;
             public bool marked { get { return word.isMarked; } set { word.isMarked = value; } }
@@ -513,12 +523,20 @@ namespace test_universalApp
                 }
             }
 #else
+            chapter ch = new chapter() { path = @"C:\Users\Khiem\Documents\kotoba\chapter_1_1.txt",
+                name = "chapter_1_1"};
+
             string txt = "言葉 ことば (NGÔN DIỆP) Câu nói \n"
                 + "積極 せいこう (THÀNH CÔNG) \n"
                 + "心配 (TÂM PHỐI) \n";
             var words = s_cp.parse(txt);
-            foreach(var w in words) {
-                m_items.Add(new wordItem() { word = w, status = itemStatus.term });
+            var t = Task.Run(()=> s_cp.getMarked(ch));
+            t.Wait();
+            int i = 0; bool marked;
+            foreach (var w in words) {
+                marked = ch.markedIndexs.Contains(i);
+                m_items.Add(new wordItem() { word = w, status = itemStatus.term,
+                    c = ch, index = i++, marked = marked });
             }
 #endif
 
@@ -691,14 +709,18 @@ namespace test_universalApp
             var i = items[m_iCursor];
 
             i.marked = (bool)starChk.IsChecked;
+
             if (i.marked)
             {
                 m_markedItems.Add(i);
+                i.c.markedIndexs.Add(i.index);
             }
             else
             {
                 m_markedItems.Remove(i);
+                i.c.markedIndexs.Remove(i.index);
             }
+            s_cp.updateMarked(i.c);
 
             if (m_option.showMarked) {
                 if (m_markedItems.Count == 0)

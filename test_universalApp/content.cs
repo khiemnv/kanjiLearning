@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Data.Common;
 using Windows.Storage;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Windows.Storage.Search;
 using System.IO;
 using System.Runtime.Serialization;
 using System.ComponentModel;
-using Windows.Foundation;
+using System.Xml;
+using Windows.Storage.Streams;
 
 namespace test_universalApp
 {
@@ -132,6 +129,112 @@ namespace test_universalApp
 
             return 0;
         }
+
+        public async void getMarked(chapter c)
+        {
+            List<int> indexs = new List<int>();
+            XmlDocument xd = new XmlDocument();
+            StorageFile file;
+
+            XmlElement found = null;
+            do
+            {
+                try
+                {
+                    file = await ApplicationData.Current.LocalFolder.GetFileAsync(path);
+                }
+                catch
+                {
+                    //if file not exist, create new
+                    break;
+                }
+
+                IRandomAccessStream textStream = await file.OpenAsync(FileAccessMode.ReadWrite);
+                Stream stream = textStream.AsStreamForRead();
+
+                xd.Load(stream);
+                XmlElement root = xd.DocumentElement;
+
+                foreach (XmlElement node in root.ChildNodes)
+                {
+                    if (node.GetAttribute("path") == c.path)
+                    {
+                        found = node;
+                        break;
+                    }
+                }
+                stream.Dispose();
+            } while (false);
+            if (found!=null)
+            {
+                string txt = found.GetAttribute("markedIndex");
+                var arr = txt.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var i in arr)
+                {
+                    indexs.Add(int.Parse(i));
+                }
+            }
+            c.markedIndexs = indexs;
+        }
+        string path = "study.data";
+        public async void updateMarked(chapter c)
+        {
+            XmlDocument xd = new XmlDocument();
+            StorageFile file;
+            bool isNewFile = false;
+
+            try
+            {
+                file = await ApplicationData.Current.LocalFolder.GetFileAsync(path);
+            } catch { 
+                //if file not exist, create new
+                file = await ApplicationData.Current.LocalFolder.CreateFileAsync(path, CreationCollisionOption.OpenIfExists);
+                isNewFile = true;
+            }
+
+            IRandomAccessStream textStream = await file.OpenAsync(FileAccessMode.ReadWrite);
+            Stream stream = textStream.AsStreamForRead();
+
+            XmlElement root = null;
+            if (isNewFile)
+            {
+                root = xd.CreateElement("chapter");
+                xd.AppendChild(root);
+            }
+            else
+            {
+                xd.Load(stream);
+                root = xd.DocumentElement;
+            }
+
+            XmlElement found = null;
+            foreach (XmlElement node in root.ChildNodes)
+            {
+                if (node.GetAttribute("path") == c.path)
+                {
+                    found = node;
+                    break;
+                }
+            }
+
+            string txt = string.Join(";", c.markedIndexs);
+            if (found == null)
+            {
+                XmlElement e = xd.CreateElement(c.name);
+                e.SetAttribute("path", c.path);
+                e.SetAttribute("markedIndex", txt);
+                root.AppendChild(e);
+            } else
+            {
+                found.SetAttribute("markedIndex", txt);
+            }
+
+            stream.SetLength(0);
+            xd.Save(stream);
+            stream.Dispose();
+            textStream.Dispose();
+        }
+
 
         public async void saveChapter(chapter c)
         {
@@ -335,6 +438,8 @@ namespace test_universalApp
         [DataMember]
         public string name;
         [DataMember]
+        public List<int> markedIndexs;
+
         public List<word> words;
 
         public StorageFile file;
