@@ -9,6 +9,8 @@ using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Xml;
 using Windows.Storage.Streams;
+using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite.Internal;
 
 namespace test_universalApp
 {
@@ -20,6 +22,31 @@ namespace test_universalApp
         [DataMember]
         public Dictionary<string, chapter> m_chapters { get; private set; }
 
+        public SqliteConnection m_cnn;
+        public async void loadData()
+        {
+            if (m_cnn == null)
+            {
+                string path = Path.Combine(ApplicationData.Current.LocalFolder.Path, "db.sqlite");
+                SqliteEngine.UseWinSqlite3();
+                m_cnn = new SqliteConnection("Filename=study.db");
+                await m_cnn.OpenAsync();
+                string sql = " CREATE TABLE IF NOT EXISTS chapterInfo ("
+                + " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + " path text,"
+                + " marked text)";
+                var cmd = new SqliteCommand(sql, m_cnn);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+        public void unloadDb()
+        {
+            if (m_cnn != null)
+            {
+                m_cnn.Close();
+                m_cnn.Dispose();
+            }
+        }
         contentProvider()
         {
             m_content = new content();
@@ -132,6 +159,77 @@ namespace test_universalApp
 
         public async void getMarked(chapter c)
         {
+            string pathField = "path";
+            string markedField = "marked";
+            string table = "chapterInfo";
+            SqliteParameter param = new SqliteParameter()
+            {
+                ParameterName = string.Format("@{0}", pathField),
+                Value = c.path
+            };
+            string sql = string.Format("select {2} from {0} where {1}=@{1}", table, pathField, markedField);
+            SqliteCommand cmd = new SqliteCommand(sql, m_cnn);
+            cmd.Parameters.Add(param);
+            var ret = await cmd.ExecuteScalarAsync();
+            var indexs = new List<int>();
+            if (ret!=null)
+            {
+                string txt = ret.ToString();
+                var arr = txt.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var i in arr)
+                {
+                    indexs.Add(int.Parse(i));
+                }
+            }
+            c.markedIndexs = indexs;
+        }
+        public async void updateMarked(chapter c)
+        {
+            string pathField = "path";
+            string idField = "id";
+            string markedField = "marked";
+            string table = "chapterInfo";
+
+            string sql = string.Format("select {2} from {0} where {1}=@{1}", table, pathField, idField);
+            SqliteParameter param = new SqliteParameter
+            {
+                ParameterName = string.Format("@{0}", pathField),
+                Value = c.path,
+                DbType = System.Data.DbType.String
+            };
+            SqliteCommand cmd = new SqliteCommand(sql, m_cnn);
+            cmd.Parameters.Add(param);
+            var ret = await cmd.ExecuteScalarAsync();
+            Debug.WriteLine("{0} updateMarked find {2} {1}", this, ret, c.path);
+
+            string markedVal = string.Join(";", c.markedIndexs);
+            List<SqliteParameter> arrParams = new List<SqliteParameter> {
+                new SqliteParameter {ParameterName = "@"+markedField, Value = markedVal,
+                    DbType =System.Data.DbType.String }
+            };
+
+            if (ret != null)
+            {
+                string idVal = ret.ToString();
+                sql = string.Format("update {0} set {1}=@{1} where {2}=@{2}", table, markedField, idField);
+                arrParams.Add(new SqliteParameter { ParameterName="@"+idField, Value=idVal,
+                    DbType =System.Data.DbType.UInt64 });
+            }
+            else
+            {
+                sql = string.Format("insert into {0} ({1}, {2}) values (@{1}, @{2}) ",
+                    table, pathField, markedField);
+                arrParams.Add(new SqliteParameter { ParameterName = "@" + pathField, Value = c.path, DbType = System.Data.DbType.String });
+            }
+            cmd.CommandText = sql;
+            cmd.Parameters.Clear();
+            cmd.Parameters.AddRange(arrParams);
+            int x = await cmd.ExecuteNonQueryAsync();
+            Debug.WriteLine("{0} updateMarked complete {1} {2}", this, x, Environment.TickCount);
+        }
+#if not_use_sqlite
+        public async void getMarked(chapter c)
+        {
             List<int> indexs = new List<int>();
             XmlDocument xd = new XmlDocument();
             StorageFile file;
@@ -234,7 +332,7 @@ namespace test_universalApp
             stream.Dispose();
             textStream.Dispose();
         }
-
+#endif //not_use_sqlite
 
         public async void saveChapter(chapter c)
         {
@@ -547,4 +645,5 @@ namespace test_universalApp
             stream.Dispose();
         }
     }
+
 }

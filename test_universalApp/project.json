@@ -1,7 +1,8 @@
 ﻿{
   "dependencies": {
     "Callisto": "1.4.0",
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.1.0",
+    "Microsoft.Data.SQLite": "1.1.0",
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.2",
     "System.Data.SQLite": "1.0.104"
   },
   "frameworks": {

@@ -19,10 +19,16 @@
         <Grid
             Grid.Row="0"
             Background="Blue">
-            <TextBlock 
+            <TextBlock Name="headerTxt"
                 Margin="1,1,1,1"
                 Foreground="White"
                 Text="Tab to flip"/>
+            <ProgressBar 
+                Margin="1,1,1,1"
+                Name="loadProgress"
+                VerticalAlignment="Stretch"
+                Background="Transparent"
+                Visibility="Collapsed"/>
             <MediaElement Name="media"/>
         </Grid>
         <!--split view-->

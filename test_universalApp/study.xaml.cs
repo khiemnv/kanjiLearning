@@ -505,22 +505,83 @@ namespace test_universalApp
             loadData();
         }
 
+        #region loadData
+        BackgroundWorker m_worker = new BackgroundWorker();
         private void loadData()
         {
+            loadProgress.Visibility = Visibility.Visible;
+            loadProgress.Maximum = 100;
+
+            m_worker.DoWork += M_worker_DoWork;
+            m_worker.ProgressChanged += M_worker_ProgressChanged;
+            m_worker.WorkerReportsProgress = true;
+            m_worker.RunWorkerCompleted += M_worker_RunWorkerCompleted;
+            m_worker.RunWorkerAsync();
+        }
+
+        private void M_worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            //update option panel
+            //+ show marked
+            if (m_markedItems.Count == 0)
+            {
+                m_option.showMarked = false;
+            }
+            optWordStarChk.IsChecked = m_option.showMarked;
+            //+ show detail
+            optWordDetailChk.IsChecked = m_option.showDetail;
+
+            //update term
+            m_iCursor = 0;
+            updateTerm();
+            updateNum();
+
+            loadProgress.Visibility = Visibility.Collapsed;
+        }
+
+        private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            loadProgress.Value = e.ProgressPercentage;
+            Debug.WriteLine("{0} M_worker_ProgressChanged loadedChapter {1} ", this, e.ProgressPercentage);
+        }
+
+        private void M_worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var loadDb = Task.Run(() => s_cp.loadData());
+            loadDb.Wait();
+            m_worker.ReportProgress(1);
+
             m_markedItems.Clear();
             m_items.Clear();
 #if !test_study_page
-            foreach ( var chapter in s_cp.m_chapters.Values)
+            int loadedChapter = 0;
+            int totalChaptes = s_cp.m_chapters.Values.Count;
+            foreach (var chapter in s_cp.m_chapters.Values)
             {
-                if (chapter.selected) { 
+                if (chapter.selected)
+                {
+                    var t = Task.Run(() => s_cp.getMarked(chapter));
+                    t.Wait();
                     var words = chapter.words;
-                    foreach(var w in words)
+                    int i = 0; bool marked;
+                    foreach (var w in words)
                     {
-                        var item = new wordItem() {c = chapter, word = w, status = itemStatus.term };
+                        marked = chapter.markedIndexs.Contains(i);
+                        var item = new wordItem()
+                        {
+                            word = w,
+                            status = itemStatus.term,
+                            c = chapter,
+                            index = i++,
+                            marked = marked
+                        };
                         m_items.Add(item);
                         if (item.marked) { m_markedItems.Add(item); }
                     }
                 }
+                loadedChapter++;
+                m_worker.ReportProgress(1 + (loadedChapter * 99 / totalChaptes));
+                Debug.WriteLine("{0} M_worker_DoWork loadedChapter {1} ", this, loadedChapter);
             }
 #else
             chapter ch = new chapter() { path = @"C:\Users\Khiem\Documents\kotoba\chapter_1_1.txt",
@@ -539,25 +600,14 @@ namespace test_universalApp
                     c = ch, index = i++, marked = marked });
             }
 #endif
-
-            //update option panel
-            //+ show marked
-            if (m_markedItems.Count == 0) {
-                m_option.showMarked = false;
-            }
-            optWordStarChk.IsChecked = m_option.showMarked;
-            //+ show detail
-            optWordDetailChk.IsChecked = m_option.showDetail;
-
-            m_iCursor = 0;
-            updateTerm();
-            updateNum();
         }
 
         private void updateTerm()
         {
             updateTerm(true);
         }
+        #endregion
+
         private void updateTerm(bool reqInit)
         {
             //not change term while speak
@@ -699,7 +749,7 @@ namespace test_universalApp
             }
         }
 
-        private void starChk_Checked(object sender, RoutedEventArgs e)
+        private async void starChk_Checked(object sender, RoutedEventArgs e)
         {
 #if !start_use_checkbox
             starChk.IsChecked = !starChk.IsChecked;
@@ -720,9 +770,12 @@ namespace test_universalApp
                 m_markedItems.Remove(i);
                 i.c.markedIndexs.Remove(i.index);
             }
+            Debug.WriteLine("{0} call updateMarked start {1}", this, Environment.TickCount);
             s_cp.updateMarked(i.c);
+            Debug.WriteLine("{0} call updateMarked end {1}", this, Environment.TickCount);
 
-            if (m_option.showMarked) {
+            if (m_option.showMarked)
+            {
                 if (m_markedItems.Count == 0)
                 {
                     m_option.showMarked = false;
@@ -731,7 +784,8 @@ namespace test_universalApp
                     //updateTerm();
                     //updateNum();
                 }
-                else if (m_iCursor == m_markedItems.Count) {
+                else if (m_iCursor == m_markedItems.Count)
+                {
                     m_iCursor--;
                 }
                 Debug.Assert(m_iCursor >= 0);

@@ -122,6 +122,7 @@ namespace test_universalApp
             var t = Task.Run(s_cp.saveData);
             t.Wait();
 #endif
+            s_cp.unloadDb();
 
             deferral.Complete();
         }
