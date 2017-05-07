@@ -21,6 +21,11 @@ using System.Diagnostics;
 using Windows.UI.ViewManagement;
 using System.ComponentModel;
 using Windows.Storage;
+using Windows.UI.Popups;
+using Windows.Storage.FileProperties;
+using System.Runtime.Serialization;
+using Windows.Storage.Pickers;
+using Windows.Storage.AccessCache;
 
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -33,6 +38,9 @@ namespace test_universalApp
     public sealed partial class MainPage : Page, IDisposable
     {
         static contentProvider s_content = contentProvider.getInstance();
+        BackgroundWorker m_worker;
+        myConfig m_config;
+        bool isLoadingData = false;
 
         public MainPage()
         {
@@ -46,9 +54,11 @@ namespace test_universalApp
             s_content.LoadChapterCompleted += C_LoadCompleted;
             s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
 
-            //this.Loaded += MainPage_Loaded;
-            //this.LayoutUpdated += MainPage_LayoutUpdated;
-            //this.Unloaded += MainPage_Unloaded;
+            //this page events
+            Loaded += MainPage_Loaded;
+            //LayoutUpdated += MainPage_LayoutUpdated;
+            Unloaded += MainPage_Unloaded;
+
             initCtrls();
 
             browserBtn.Click += browserBtn_Click;
@@ -57,12 +67,6 @@ namespace test_universalApp
             nextBtn.Click += nextBtn_Click;
         }
 
-        void initEvents()
-        {
-            
-        }
-
-        BackgroundWorker worker;
         private void initCtrls()
         {
             txtBox.Text = "";
@@ -73,16 +77,17 @@ namespace test_universalApp
             //ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
 
 #if use_worker
-            worker = new BackgroundWorker();
-            worker.DoWork += Worker_DoWork;
+            m_worker = new BackgroundWorker();
+            m_worker.DoWork += Worker_DoWork;
 #if true
-            worker.ProgressChanged += Worker_ProgressChanged;
+            m_worker.ProgressChanged += Worker_ProgressChanged;
 #else
             worker.ProgressChanged += (s, e) => { browserProg.Value = e.ProgressPercentage; };
 #endif
-            worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            worker.WorkerReportsProgress = true;
+            m_worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
+            m_worker.WorkerReportsProgress = true;
 #endif
+            Debug.WriteLine("{0} initCtrls done", this);
         }
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
@@ -90,14 +95,42 @@ namespace test_universalApp
             Debug.WriteLine("unloaded");
         }
 
-        private void MainPage_LayoutUpdated(object sender, object e)
-        {
-            Debug.WriteLine("layoutUpdated");
-        }
-
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("loaded");
+            m_config = myConfig.getInstance();
+            if (m_config.m_lastFolder != null) {
+                browserPath.Text = m_config.m_lastFolder.Path;
+            }
+            else
+            {
+                loadLastPath();
+            }
+        }
+
+        private async void loadLastPath()
+        {
+            //load last selected folder
+            var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+            foreach (AccessListEntry entry in mru.Entries)
+            {
+                if (entry.Metadata == m_config.lastPath) {
+                    string mruToken = entry.Token;
+                    string mruMetadata = entry.Metadata;
+                    IStorageItem item = await mru.GetItemAsync(mruToken);
+                    m_config.m_lastFolder = (StorageFolder)item;
+                    break;
+                }
+            }
+            if (m_config.m_lastFolder != null)
+            {
+                //show progress bar
+                browserProg.Visibility = Visibility.Visible;
+                browserProg.Value = 0;
+                browserProg.Maximum = 100;
+                //start work
+                m_worker.RunWorkerAsync();
+            }
         }
 
         private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
@@ -123,10 +156,22 @@ namespace test_universalApp
             txt = w.ToString();
         }
 
+        async void showErrMsg()
+        {
+            MessageDialog msgbox = new MessageDialog("Data is loading...");
+            msgbox.Title = "Data is loaing...!";
+            await msgbox.ShowAsync();
+        }
         private void nextBtn_Click(object sender, RoutedEventArgs e)
         {
-            //var itemId = ((MainPage)e.ClickedItem).UniqueId;
-            this.Frame.Navigate(typeof(chapters));
+            if (isLoadingData)
+            {
+                showErrMsg();
+            }
+            else
+            {
+                this.Frame.Navigate(typeof(chapters));
+            }
         }
 
         private void onLoadDataComplete()
@@ -157,23 +202,33 @@ namespace test_universalApp
             int ret = await s_content.saveChapter(txt);
         }
 
-        StorageFolder folder;
         private async void browserBtn_Click(object sender, RoutedEventArgs e)
         {
 #if use_worker
             //pick folder
-            var picker = new Windows.Storage.Pickers.FolderPicker();
-            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation =
-                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            var picker = new FolderPicker();
+            picker.ViewMode = PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
             picker.FileTypeFilter.Add("*");
-            folder = await picker.PickSingleFolderAsync();
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder == null) return;
+
+            //save last selected folder
+            if (folder.Path != m_config.lastPath)
+            {
+                m_config.selectedChapters.Clear();
+                m_config.m_lastFolder = folder;
+                m_config.lastPath = folder.Path;
+            }
+            var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+            string mruToken = mru.Add(folder, folder.Path);
+
             //show progress bar
             browserProg.Visibility = Visibility.Visible;
             browserProg.Value = 0;
             browserProg.Maximum = 100;
             //start work
-            worker.RunWorkerAsync();
+            m_worker.RunWorkerAsync();
 #else
             int ret = await s_content.loadMultipleChapter();
 #endif
@@ -182,10 +237,9 @@ namespace test_universalApp
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             Debug.WriteLine("Worker_RunWorkerCompleted {0}", e.Result);
-            browserPath.Text = folder.Path;
+            isLoadingData = false;
+            browserPath.Text = m_config.m_lastFolder.Path;
             browserProg.Visibility = Visibility.Collapsed;
-
-            //initEvents();
         }
 
 #if track_progress
@@ -203,8 +257,9 @@ namespace test_universalApp
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             Debug.WriteLine("Worker_DoWork start");
+            isLoadingData = true;
 #if !track_progress
-            Task t = Task.Run(() => s_content.loadMultipleChapter(worker, folder));
+            Task t = Task.Run(() => s_content.loadMultipleChapter(m_worker, m_config.m_lastFolder));
             t.Wait();
             Debug.WriteLine("Worker_DoWork end");
 #else
@@ -231,7 +286,7 @@ namespace test_universalApp
                     // TODO: dispose managed state (managed objects).
                 }
 
-                worker.Dispose();
+                m_worker.Dispose();
 
                 disposedValue = true;
             }

@@ -78,7 +78,6 @@
                 </SplitView.Pane>
                 <SplitView.Content>
                     <Grid Name="termGrid"
-                          ManipulationMode ="TranslateRailsX"
                           Background="Silver">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="6*"/>

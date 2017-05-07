@@ -39,6 +39,14 @@ namespace test_universalApp
     public sealed partial class study : Page, IDisposable
     {
         static contentProvider s_cp = contentProvider.getInstance();
+        List<UIElement> m_grp1;
+        List<UIElement> m_grp2;
+        wordItem m_editingItem;
+        static studyOption m_option;
+        List<wordItem> m_items = new List<wordItem>();
+        List<wordItem> m_markedItems = new List<wordItem>();
+        BackgroundWorker m_worker = new BackgroundWorker();
+        int m_iCursor;
 
         public study()
         {
@@ -51,6 +59,35 @@ namespace test_universalApp
 
             //decorate
             initCtrls();
+
+            Loaded += Study_Loaded;
+            Unloaded += Study_Unloaded;
+        }
+
+        private void Study_Unloaded(object sender, RoutedEventArgs e)
+        {
+            foreach(var s in synthDic.Values)
+            {
+                s.Dispose();
+            }
+            synthDic.Clear();
+            if (lastTTSstream!= null) lastTTSstream.Dispose();
+
+            m_grp1.Clear();
+            m_grp2.Clear();
+        }
+
+        private void Study_Loaded(object sender, RoutedEventArgs e)
+        {
+            synthDic = new Dictionary<string, SpeechSynthesizer>();
+
+            m_grp1 = new List<UIElement>() { canvasEdit, termTxt, detailTxt,
+                nextBtn, backBtn,
+                bntStack,
+                canvasSpeak, canvasStar};
+            m_grp2 = new List<UIElement>() { canvasAccept, canvasCancel, editTxt };
+
+            loadData();
         }
 
         private void OptSpkDefineChk_Click(object sender, RoutedEventArgs e)
@@ -80,6 +117,7 @@ namespace test_universalApp
             lastTTSsynth.Dispose();
 #else
             lastTTSstream.Dispose();
+            lastTTSstream = null;
 #endif
             m_speakStat = speakStatus.end;
         }
@@ -98,24 +136,24 @@ namespace test_universalApp
             speakTxtEnd(true);
         }
 
-        Dictionary<string, VoiceInformation> voiceDict = new Dictionary<string, VoiceInformation>();
+        //Dictionary<string, VoiceInformation> voiceDict = new Dictionary<string, VoiceInformation>();
         bool getVoice(out VoiceInformation voice, string lang)
         {
             voice = null;
-            if (voiceDict.ContainsKey(lang)) {
-                voice = voiceDict[lang];
-            }
-            else {
+            //if (voiceDict.ContainsKey(lang)) {
+            //    voice = voiceDict[lang];
+            //}
+            //else {
                 foreach(var v in SpeechSynthesizer.AllVoices)
                 {
                     if (v.Language.Contains(lang))
                     {
-                        voiceDict.Add(lang, v);
+                        //voiceDict.Add(lang, v);
                         voice = v;
                         break;
                     }
                 }
-            }
+            //}
             return voice != null;
         }
 
@@ -157,8 +195,25 @@ namespace test_universalApp
         SpeechSynthesizer lastTTSsynth;
         SpeechSynthesisStream lastTTSstream;
 #else
-        SpeechSynthesizer lastTTSsynth = new SpeechSynthesizer();
+        //SpeechSynthesizer lastTTSsynth = new SpeechSynthesizer();
+        Dictionary<string, SpeechSynthesizer> synthDic;
         SpeechSynthesisStream lastTTSstream;
+        SpeechSynthesizer getSpeechSynth(string lang)
+        {
+            bool ret = synthDic.ContainsKey(lang);
+            if (ret)
+            {
+                return synthDic[lang];
+            }
+
+            VoiceInformation voice;
+            ret = getVoice(out voice, lang);
+            if (!ret) return null;
+
+            var s = new SpeechSynthesizer {Voice = voice };
+            synthDic.Add(lang, s);
+            return s;
+        }
 #endif
 
         async void speakTxt(string txt, string lang)
@@ -176,8 +231,8 @@ namespace test_universalApp
 #if !once_synth
                 lastTTSsynth = new SpeechSynthesizer();
 #endif
-                lastTTSsynth.Voice = voice;
-                lastTTSstream = await lastTTSsynth.SynthesizeTextToStreamAsync(txt);
+                var synth = getSpeechSynth(lang);
+                lastTTSstream = await synth.SynthesizeTextToStreamAsync(txt);
                 // The media object for controlling and playing audio.
                 MediaElement mediaElement = media;
                 //MediaElement mediaElement = new MediaElement();
@@ -204,11 +259,8 @@ namespace test_universalApp
             Debug.WriteLine("{0} CanvasSpeak_Tapped speak return", this);
         }
 
-        List<UIElement> grp1;
-        List<UIElement> grp2;
         private void initCtrls()
         {
-
             //option panel
             #region option_ctrls
             optWordTermCmb.Items.Add("kanji");
@@ -239,12 +291,7 @@ namespace test_universalApp
 
             detailTxt.Text = "";
             termTxt.Text = "";
-
-            grp1 = new List<UIElement>() { canvasEdit, termTxt, detailTxt,
-                nextBtn, backBtn,
-                bntStack,
-                canvasSpeak, canvasStar};
-            grp2 = new List<UIElement>() { canvasAccept, canvasCancel, editTxt };
+            numberTxt.Text = "";
         }
 
         private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
@@ -252,13 +299,12 @@ namespace test_universalApp
             finishEdit(false);
         }
 
-        wordItem m_editingItem;
         void showHideCtrls(bool editMode)
         {
             var grp1V = editMode ? Visibility.Collapsed : Visibility.Visible;
             var grp2V = editMode ? Visibility.Visible : Visibility.Collapsed;
-            foreach (var e in grp1) { e.Visibility = grp1V; }
-            foreach (var e in grp2) { e.Visibility = grp2V; }
+            foreach (var e in m_grp1) { e.Visibility = grp1V; }
+            foreach (var e in m_grp2) { e.Visibility = grp2V; }
         }
         void startEdit()
         {
@@ -392,11 +438,12 @@ namespace test_universalApp
             public studyOption() { }
 
             static studyOption m_option;
-            public static async Task<studyOption> getInstance()
+            public static studyOption getInstance()
             {
                 if (m_option == null)
                 {
-                    m_option = await load();
+                    var t = Task.Run(async () => m_option = await load());
+                    t.Wait();
                     if (m_option == null) m_option = new studyOption
                     { termMode = mode.kanji, defineMode = mode.hiragana};
                 }
@@ -435,8 +482,6 @@ namespace test_universalApp
                 writeStream.Dispose();
             }
         }
-
-        static studyOption m_option;
 
         class wordItem
         {
@@ -525,8 +570,6 @@ namespace test_universalApp
                 }
             }
         }
-        List<wordItem> m_items = new List<wordItem>();
-        List<wordItem> m_markedItems = new List<wordItem>();
 
         private void OptionBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -536,11 +579,9 @@ namespace test_universalApp
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            loadData();
         }
 
         #region loadData
-        BackgroundWorker m_worker = new BackgroundWorker();
         private void loadData()
         {
             loadProgress.Visibility = Visibility.Visible;
@@ -585,6 +626,7 @@ namespace test_universalApp
         private void initEvents()
         {
             termGrid.Tapped += term_Tapped;
+            termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
@@ -629,10 +671,14 @@ namespace test_universalApp
 
         private void M_worker_DoWork(object sender, DoWorkEventArgs e)
         {
-            var loadDb = Task.Run(() => s_cp.loadData());
-            loadDb.Wait();
-            m_worker.ReportProgress(40);
+            //load option
+            m_worker.ReportProgress(20);
+            Debug.WriteLine("{0} call load option {1}", this, Environment.TickCount);
+            m_option = studyOption.getInstance();
+            Debug.WriteLine("{0} load option return {1}", this, Environment.TickCount);
+            m_worker.ReportProgress(50);
 
+            //load marked words
             m_markedItems.Clear();
             m_items.Clear();
 #if !test_study_page
@@ -642,8 +688,7 @@ namespace test_universalApp
             {
                 if (chapter.selected)
                 {
-                    var t = Task.Run(() => s_cp.getMarked(chapter));
-                    t.Wait();
+                    s_cp.m_db.getMarked(chapter);
                     var words = chapter.words;
                     int i = 0; bool marked;
                     foreach (var w in words)
@@ -662,7 +707,7 @@ namespace test_universalApp
                     }
                 }
                 loadedChapter++;
-                m_worker.ReportProgress(40 + (loadedChapter * 30 / totalChaptes));
+                m_worker.ReportProgress(50 + (loadedChapter * 50 / totalChaptes));
                 Debug.WriteLine("{0} M_worker_DoWork loadedChapter {1} ", this, loadedChapter);
             }
 #else
@@ -682,12 +727,6 @@ namespace test_universalApp
                     c = ch, index = i++, marked = marked });
             }
 #endif
-            //load option
-            Debug.WriteLine("{0} call load option {1}", this, Environment.TickCount);
-            var loadOpt = Task.Run(async () => { m_option = await studyOption.getInstance(); });
-            loadOpt.Wait();
-            Debug.WriteLine("{0} load option return {1}", this, Environment.TickCount);
-            m_worker.ReportProgress(100);
         }
 
         private void updateTerm()
@@ -699,7 +738,8 @@ namespace test_universalApp
         private void updateTerm(bool reqInit)
         {
             //not change term while speak
-            Debug.Assert(m_speakStat == speakStatus.end);
+            //Debug.Assert(m_speakStat == speakStatus.end);
+            if (m_speakStat == speakStatus.end) Debug.WriteLine("{0} updateTerm m_speakStat {1}", this, m_speakStat);
 
             var items = getCurItems();
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
@@ -735,8 +775,6 @@ namespace test_universalApp
         {
             return m_option.showMarked ? m_markedItems : m_items;
         }
-
-        int m_iCursor;
 
         private void detail_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -859,7 +897,7 @@ namespace test_universalApp
                 i.c.markedIndexs.Remove(i.index);
             }
             Debug.WriteLine("{0} call updateMarked start {1}", this, Environment.TickCount);
-            s_cp.updateMarked(i.c);
+            s_cp.m_db.saveMarked(i.c);
             Debug.WriteLine("{0} call updateMarked end {1}", this, Environment.TickCount);
 
             if (m_option.showMarked)
@@ -890,12 +928,12 @@ namespace test_universalApp
             //not in editing state
             if (m_editingItem == null)
             {
-                if (e.Cumulative.Translation.X < 5)
+                if (e.Cumulative.Translation.X < 0)
                 {
                     //move right
                     nextBtn_Click(sender, e);
                 }
-                else if (e.Cumulative.Translation.X > 5)
+                else
                 {
                     //move left
                     prevBtn_Click(sender, e);
@@ -913,12 +951,16 @@ namespace test_universalApp
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects).
+                    m_worker.Dispose();
+                    foreach (var s in synthDic.Values)
+                    {
+                        s.Dispose();
+                    }
+                    synthDic.Clear();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // TODO: set large fields to null.
-                m_worker.Dispose();
-                lastTTSsynth.Dispose();
 
                 disposedValue = true;
             }

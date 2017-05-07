@@ -9,8 +9,11 @@ using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Xml;
 using Windows.Storage.Streams;
+#if use_sqlite
 using Microsoft.Data.Sqlite;
 using Microsoft.Data.Sqlite.Internal;
+#endif
+using Windows.Storage.FileProperties;
 
 namespace test_universalApp
 {
@@ -18,14 +21,21 @@ namespace test_universalApp
     public class contentProvider:IDisposable
     {
         public readonly content m_content;
+        public myDb m_db;
+        public myConfig m_config;
 
         [DataMember]
         public Dictionary<string, chapter> m_chapters { get; private set; }
-
-        public SqliteConnection m_cnn;
-        public void loadConfig()
+        public async Task loadDbAsync()
         {
+           await m_db.loadAsync();
         }
+        public void unloadDb()
+        {
+            m_db.unload();
+        }
+#if use_sqlite
+        public SqliteConnection m_cnn;
         public async void loadData()
         {
             if (m_cnn == null)
@@ -52,19 +62,21 @@ namespace test_universalApp
                 m_cnn = null;
             }
         }
+#endif
         contentProvider()
         {
             m_content = new content();
             m_chapters = new Dictionary<string, chapter>();
+            m_db = new myDb();
 
             m_content.SaveCompleted += M_content_SaveCompleted;
             m_content.LoadCompleted += M_content_LoadCompleted;
         }
 
-        string dataFileName = "data.txt";
+        string c_dataFileName = "data.txt";
         public async Task saveData()
         {
-            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(dataFileName, CreationCollisionOption.ReplaceExisting);
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(c_dataFileName, CreationCollisionOption.ReplaceExisting);
             Stream writeStream = await dataFile.OpenStreamForWriteAsync();
             //writeStream.Seek(0, SeekOrigin.Begin);
             DataContractSerializer serializer = new DataContractSerializer(typeof(Dictionary<string, chapter>));
@@ -75,7 +87,7 @@ namespace test_universalApp
         }
         public async void restoreData()
         {
-            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(dataFileName, CreationCollisionOption.OpenIfExists);
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(c_dataFileName, CreationCollisionOption.OpenIfExists);
             if (dataFile != null) {
                 Stream readStream = await dataFile.OpenStreamForReadAsync();
                 Debug.Assert(readStream != null);
@@ -92,7 +104,7 @@ namespace test_universalApp
         }
 
         //load multiple chapter
-        public async Task<int> loadMultipleChapter(BackgroundWorker worker, StorageFolder folder)
+        public async Task<int> loadMultipleChapter(BackgroundWorker m_worker, StorageFolder folder)
         {
             if (folder != null)
             {
@@ -113,7 +125,7 @@ namespace test_universalApp
                         updateDict(file, words);
                     }
                     count++;
-                    worker.ReportProgress(count * 100 / fileList.Count);
+                    m_worker.ReportProgress(count * 100 / fileList.Count);
                 }
                 //OnLoadMultiChaperCompleted(new LoadChapterCompletedEventArgs() { path = folder.Path });
             }
@@ -162,6 +174,7 @@ namespace test_universalApp
             return 0;
         }
 
+#if use_sqlite
         public async void getMarked(chapter c)
         {
             string pathField = "path";
@@ -232,6 +245,7 @@ namespace test_universalApp
             int x = await cmd.ExecuteNonQueryAsync();
             Debug.WriteLine("{0} updateMarked complete {1} {2}", this, x, Environment.TickCount);
         }
+#endif
 #if not_use_sqlite
         public async void getMarked(chapter c)
         {
@@ -421,7 +435,7 @@ namespace test_universalApp
             LoadMultiChapterCompleted?.Invoke(this, e);
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -430,10 +444,8 @@ namespace test_universalApp
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects).
+                    unloadDb();
                 }
-
-                unloadDb();
 
                 disposedValue = true;
             }
@@ -454,7 +466,7 @@ namespace test_universalApp
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
 
     [DataContract]
@@ -566,17 +578,12 @@ namespace test_universalApp
         }
     }
 
-    [DataContract]
-    public class chapter
+    public class chapter: chapterInfo
     {
-        [DataMember]
         public bool selected;
-        [DataMember]
-        public string path;
-        [DataMember]
+//        public string path;
         public string name;
-        [DataMember]
-        public List<int> markedIndexs;
+        //public List<int> markedIndexs;
 
         public List<word> words;
 
@@ -686,4 +693,73 @@ namespace test_universalApp
         }
     }
 
+#region config
+    [DataContract]
+    public class myConfig
+    {
+        [DataMember]
+        public string mruToken;
+        [DataMember]
+        public string lastPath;
+        [DataMember]
+        public List<string> selectedChapters;
+
+        public StorageFolder m_lastFolder;
+
+        public myConfig() {
+            selectedChapters = new List<string>();
+        }
+        static myConfig m_config;
+        static string m_configFile = "config.cfg";
+
+        public static myConfig getInstance()
+        {
+            if (m_config == null)
+            {
+                var t = Task.Run(async () => m_config = await load());
+                t.Wait();
+                if (m_config == null)
+                {
+                    m_config = new myConfig();
+                }
+            }
+            return m_config;
+        }
+        static async Task<myConfig> load()
+        {
+            myConfig ret = null;
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                m_configFile, CreationCollisionOption.OpenIfExists);
+            BasicProperties bs = await dataFile.GetBasicPropertiesAsync();
+            if (bs.Size > 0)
+            {
+                Stream stream = await dataFile.OpenStreamForReadAsync();
+                stream.Seek(0, SeekOrigin.Begin);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(myConfig));
+                var obj = (myConfig)serializer.ReadObject(stream);
+                if (obj != null) { ret = obj; }
+                stream.Dispose();
+            }
+            //await Task.Delay(1000);
+            Debug.WriteLine("{0} load complete {1}", "myConfig", Environment.TickCount);
+            return ret;
+        }
+        public void save()
+        {
+            var t = Task.Run(() => saveAsyn());
+            t.Wait();
+        }
+        public async Task saveAsyn()
+        {
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                m_configFile, CreationCollisionOption.OpenIfExists);
+            Stream writeStream = await dataFile.OpenStreamForWriteAsync();
+            writeStream.SetLength(0);
+            DataContractSerializer serializer = new DataContractSerializer(typeof(myConfig));
+            serializer.WriteObject(writeStream, m_config);
+            await writeStream.FlushAsync();
+            writeStream.Dispose();
+        }
+    }
+#endregion
 }
