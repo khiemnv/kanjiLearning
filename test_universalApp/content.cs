@@ -26,9 +26,10 @@ namespace test_universalApp
 
         [DataMember]
         public Dictionary<string, chapter> m_chapters { get; private set; }
-        public async Task loadDbAsync()
+
+        public void loadDb()
         {
-           await m_db.loadAsync();
+            m_db.load();
         }
         public void unloadDb()
         {
@@ -68,6 +69,7 @@ namespace test_universalApp
             m_content = new content();
             m_chapters = new Dictionary<string, chapter>();
             m_db = new myDb();
+            m_config = myConfig.getInstance();
 
             m_content.SaveCompleted += M_content_SaveCompleted;
             m_content.LoadCompleted += M_content_LoadCompleted;
@@ -393,7 +395,8 @@ namespace test_universalApp
         private void updateDict(StorageFile file, List<word> words)
         {
             string path = file.Path;
-            string key = Path.GetFileName(path);
+            string name = Path.GetFileName(path);
+            string key = path;
             if (m_chapters.ContainsKey(key))
             {
                 var oldWords = m_chapters[key].words;
@@ -402,7 +405,7 @@ namespace test_universalApp
             }
             else
             {
-                m_chapters.Add(key, new chapter() { words = words, name = key, path = path, file = file });
+                m_chapters.Add(key, new chapter() { words = words, name = name, path = path, file = file });
             }
         }
         private void updateDict()
@@ -435,7 +438,19 @@ namespace test_universalApp
             LoadMultiChapterCompleted?.Invoke(this, e);
         }
 
-#region IDisposable Support
+        #region markerd
+        public void saveMarkeds()
+        {
+            //save marked
+            foreach (var key in m_config.selectedChapters)
+            {
+                var ch = m_chapters[key];
+                m_db.saveMarked(ch);
+            }
+        }
+        #endregion
+
+        #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -761,5 +776,5 @@ namespace test_universalApp
             writeStream.Dispose();
         }
     }
-#endregion
+    #endregion
 }

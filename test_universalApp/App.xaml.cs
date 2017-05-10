@@ -35,6 +35,15 @@ namespace test_universalApp
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            Resuming += App_Resuming;
+            
+        }
+
+        private void App_Resuming(object sender, object e)
+        {
+            Debug.WriteLine("{0} App_Resuming", this);
+            //throw new NotImplementedException();
+            s_cp.loadDb();
         }
 
         /// <summary>
@@ -122,6 +131,7 @@ namespace test_universalApp
             var t = Task.Run(s_cp.saveData);
             t.Wait();
 #endif
+            s_cp.saveMarkeds();
             s_cp.unloadDb();
 
             deferral.Complete();

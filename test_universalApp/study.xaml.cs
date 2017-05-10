@@ -3,6 +3,7 @@
 #define item_editable
 //#define start_use_checkbox
 #define once_synth
+#define reduce_disk_opp
 
 using System;
 using System.Collections.Generic;
@@ -262,7 +263,7 @@ namespace test_universalApp
         private void initCtrls()
         {
             //option panel
-            #region option_ctrls
+#region option_ctrls
             optWordTermCmb.Items.Add("kanji");
             optWordTermCmb.Items.Add("hiragana");
             optWordTermCmb.Items.Add("hán nôm");
@@ -274,7 +275,7 @@ namespace test_universalApp
             optWordTermDefineCmb.Items.Add("hán nôm");
             optWordTermDefineCmb.Items.Add("vietnamese");
             optWordTermDefineCmb.SelectedIndex = 1;
-            #endregion
+#endregion
 
 #if item_editable
             //editTxt.AcceptsReturn = true;
@@ -581,7 +582,7 @@ namespace test_universalApp
             base.OnNavigatedTo(e);
         }
 
-        #region loadData
+#region loadData
         private void loadData()
         {
             loadProgress.Visibility = Visibility.Visible;
@@ -683,10 +684,10 @@ namespace test_universalApp
             m_items.Clear();
 #if !test_study_page
             int loadedChapter = 0;
-            int totalChaptes = s_cp.m_chapters.Values.Count;
-            foreach (var chapter in s_cp.m_chapters.Values)
+            int totalChaptes = s_cp.m_config.selectedChapters.Count;
+            foreach (var key in s_cp.m_config.selectedChapters)
             {
-                if (chapter.selected)
+                var chapter = s_cp.m_chapters[key];
                 {
                     s_cp.m_db.getMarked(chapter);
                     var words = chapter.words;
@@ -733,7 +734,7 @@ namespace test_universalApp
         {
             updateTerm(true);
         }
-        #endregion
+#endregion
 
         private void updateTerm(bool reqInit)
         {
@@ -845,6 +846,9 @@ namespace test_universalApp
 
         private void back_Click(object sender, RoutedEventArgs e)
         {
+#if reduce_disk_opp
+            s_cp.saveMarkeds();
+#endif
             this.Frame.Navigate(typeof(chapters));
         }
 
@@ -896,9 +900,12 @@ namespace test_universalApp
                 m_markedItems.Remove(i);
                 i.c.markedIndexs.Remove(i.index);
             }
+
+#if !reduce_disk_opp
             Debug.WriteLine("{0} call updateMarked start {1}", this, Environment.TickCount);
             s_cp.m_db.saveMarked(i.c);
             Debug.WriteLine("{0} call updateMarked end {1}", this, Environment.TickCount);
+#endif
 
             if (m_option.showMarked)
             {
@@ -941,7 +948,7 @@ namespace test_universalApp
             }
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         public void Dispose(bool disposing)
@@ -980,6 +987,6 @@ namespace test_universalApp
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
 }

@@ -16,26 +16,24 @@ namespace test_universalApp
         public string path;
         public List<int> markedIndexs;
     }
-    //offset->  |size
-    //          |isDeleted
+    //offset->  |hdr
     //          |rKey
-    //          |rMarked
-    //          |....
     //+rKey     |key as string
     //          |....
+    //          |rMarked
     //+rMarked  |marked as string
     //          |....
     public class chapterRec
     {
-        public Int32 offset;
-        public Int32 size;
-        public Int32 isDeleted;
-        public Int32 keyLen;
+        public UInt32 offset;
+        public UInt32 size;
+        public bool isDeleted;
+        public UInt32 keyLen;
         public string key;
-        public Int32 markedLen;
+        public UInt32 markedLen;
         public string marked;
     }
-    public class myFileDb : IDisposable
+    public class myFileDb
     {
         IRandomAccessStream stream;
         public Stream readStream;
@@ -45,8 +43,28 @@ namespace test_universalApp
         public myFileDb()
         {
         }
+        public void load()
+        {
+            var t = Task.Run(async () => await loadAsync());
+            t.Wait();
+        }
+        public void drop()
+        {
+            writeStream.SetLength(0);
+            writeCursor = 0;
+            readStream.SetLength(0);
+            readCursor = 0;
+            Size = 0;
+        }
+        public void unload()
+        {
+            writeStream.Flush();
+            writeStream.Dispose();
+            readStream.Dispose();
+            stream.Dispose();
+        }
 
-        public async Task loadAsync()
+        async Task loadAsync()
         {
             StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
                 c_dataFile, CreationCollisionOption.OpenIfExists);
@@ -113,140 +131,185 @@ namespace test_universalApp
                 Debug.Assert(writeCursor == offset);
             }
         }
-
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    writeStream.Flush();
-                    readStream.Dispose();
-                    writeStream.Dispose();
-                    stream.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~myFileDb() {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
-        #endregion
     }
     public class myDb
     {
-        Dictionary<string, chapterRec> m_dict; //path - marker data offset
+        Dictionary<string, chapterRec> m_dict;  //path - marker data offset
+        Dictionary<string, chapterRec> m_cache; //path - marker data offset
+        List<chapterRec> m_deltedItem;    //header & offset
+        myFileDb m_file;
+        UInt32 c_pageSize = 32;
+        UInt32 c_nPageMark = 0x0FFFffff;
+        UInt32 c_fDeleted = 0x80000000;
+        byte[] t_buff;
+        byte[] t_page;
+        bool m_bLoaded;
 
         public myDb()
         {
-        }
+            m_bLoaded = false;
 
-        public async Task loadAsync()
-        {
-            if (m_file == null) { 
             m_dict = new Dictionary<string, chapterRec>();
+            m_cache = new Dictionary<string, chapterRec>();
+            m_deltedItem = new List<chapterRec>();
+            t_buff = new byte[1024];
+            t_page = new byte[c_pageSize];
             m_file = new myFileDb();
-            await m_file.loadAsync();
-            }
-        }
-        public void unload() {
-            if (m_file != null) { 
-            m_file.Dispose();
-            m_file = null;
-            }
         }
 
-        myFileDb m_file;
-        chapterRec firstChapter()
+        readBdError firstChapter(out chapterRec rec)
         {
+            rec = null;
             m_file.seekReadCursor(0);
-            return nextChapter();
+            return nextChapter(out rec);
         }
-        private chapterRec nextChapter()
+        enum readBdError
         {
-            chapterRec rec = new chapterRec();
-            rec.offset = m_file.readCursor;
+            success,
+            eof,
+            deletedRec,
+            dbMalform
+        };
+        private readBdError nextChapter(out chapterRec rec)
+        {
+            rec = new chapterRec();
+            rec.offset = (UInt32)m_file.readCursor;
 
-            Int32 size;
-            bool ret = m_file.readInt32(out size);
-            if (!ret) return null;
-            rec.size = size;
+            UInt32 hdr;
+            bool ret = m_file.readData(t_page, (int)c_pageSize);
+            if (!ret) return readBdError.eof;
 
-            Int32 isDeleted;
-            ret = m_file.readInt32(out isDeleted);
-            if (!ret) return null;
-            rec.isDeleted = isDeleted;
+            hdr = BitConverter.ToUInt32(t_page, 0);
+            rec.size = (hdr & c_nPageMark) * c_pageSize;
+            if ((rec.size + rec.offset) > m_file.Size)
+            {
+                return readBdError.dbMalform;
+            }
 
-            byte[] data = new byte[size];
-            ret = m_file.readData(data, size - 8);
-            if (!ret) return null;
+            if ((hdr & c_fDeleted) != 0)
+            {
+                rec.isDeleted = true;
+                return readBdError.deletedRec;
+            }
 
-            rec.keyLen = BitConverter.ToInt32(data, 0);
-            rec.markedLen = BitConverter.ToInt32(data, 4);
-            rec.key = Encoding.UTF8.GetString(data, 8, rec.keyLen);
-            rec.marked = Encoding.UTF8.GetString(data, 8 + rec.keyLen, rec.markedLen);
+            if (rec.size > t_buff.Length)
+            {
+                Array.Resize<byte>(ref t_buff, (int)rec.size);
+            }
 
-            return rec;
+            t_page.CopyTo(t_buff, 0);
+            UInt32 nRead = c_pageSize;
+            for (; nRead < rec.size; nRead += c_pageSize)
+            {
+                ret = m_file.readData(t_page, (int)c_pageSize);
+                Debug.Assert(ret);
+                t_page.CopyTo(t_buff, (int)nRead);
+            }
+
+            UInt32 iCursor = 4;
+            rec.keyLen = BitConverter.ToUInt32(t_buff, (int)iCursor);
+            iCursor += 4;
+            rec.key = Encoding.UTF8.GetString(t_buff, (int)iCursor, (int)rec.keyLen);
+            iCursor += rec.keyLen;
+            rec.markedLen = BitConverter.ToUInt32(t_buff, (int)iCursor);
+            iCursor += 4;
+            rec.marked = Encoding.UTF8.GetString(t_buff, (int)iCursor, (int)rec.markedLen);
+
+            return readBdError.success;
         }
 
         public void loadMarkeds(List<string> keys)
         {
-            keys = new List<string>(keys);
-
-            m_dict.Clear();
-            var ch = firstChapter();
-            while (ch != null)
+            m_cache.Clear();
+            foreach (var key in keys)
             {
-                if (ch.isDeleted == 0
-                 && keys.Contains(ch.key))
+                if (m_dict.ContainsKey(key))
                 {
-                    m_dict.Add(ch.key, ch);
-                    keys.Remove(ch.key);
+                    m_cache.Add(key, m_dict[key]);
                 }
-                ch = nextChapter();
             }
         }
 
+        public void unload()
+        {
+            if (!m_bLoaded) return;
+            m_bLoaded = false;
+
+            m_file.unload();
+            m_dict.Clear();
+            m_cache.Clear();
+            m_deltedItem.Clear();
+        }
+        public void load()
+        {
+            if (m_bLoaded) return;
+            m_bLoaded = true;
+
+            //open file db
+            m_file.load();
+
+            //check file db malform
+
+            //load marked info
+            chapterRec ch;
+            var error = firstChapter(out ch);
+            while (error != readBdError.eof)
+            {
+                if (error == readBdError.dbMalform)
+                {
+                    m_file.drop();
+                    m_dict.Clear();
+                    m_deltedItem.Clear();
+                    Debug.Assert(m_cache.Count == 0);
+                    break;
+                }
+                if (ch.isDeleted)
+                {
+                    m_deltedItem.Add(ch);
+                }
+                else
+                {
+                    m_dict.Add(ch.key, ch);
+                }
+                error = nextChapter(out ch);
+            }
+        }
+        chapterRec findRec(string key)
+        {
+            chapterRec rec = null;
+
+            if (m_cache.ContainsKey(key))
+            {
+                rec = m_cache[key];
+            }
+            else if (m_dict.ContainsKey(key))
+            {
+                rec = m_dict[key];
+                m_cache.Add(key, rec);
+            }
+            return rec;
+        }
         public void getMarked(chapterInfo c)
         {
             c.markedIndexs = new List<int>();
             string key = c.path;
-            if (m_dict.ContainsKey(key))
+            chapterRec rec = findRec(key);
+            if (rec == null) return;
+
+            var arr = rec.marked.Split(new char[] { ';' },
+                StringSplitOptions.RemoveEmptyEntries);
+            foreach (var i in arr)
             {
-                var rec = m_dict[key];
-                var arr = rec.marked.Split(new char[] { ';' },
-                    StringSplitOptions.RemoveEmptyEntries);
-                foreach (var i in arr)
-                {
-                    c.markedIndexs.Add(int.Parse(i));
-                }
+                c.markedIndexs.Add(int.Parse(i));
             }
         }
         public void saveMarked(chapterInfo c)
         {
             string key = c.path;
-            if (m_dict.ContainsKey(key))
+            chapterRec rec = findRec(key);
+
+            if (rec != null)
             {
-                var rec = m_dict[key];
                 rec.marked = string.Join(";", c.markedIndexs);
                 updateMarked(rec);
             }
@@ -258,58 +321,94 @@ namespace test_universalApp
                     marked = string.Join(";", c.markedIndexs)
                 };
                 addMarked(newrec);
-                m_dict.Add(newrec.key, newrec);
+
+                m_cache.Add(key, newrec);
+                m_dict.Add(key, newrec);
             }
+        }
+
+        void resizeTmpBuff(int size)
+        {
+            if (t_buff.Length < size) { Array.Resize<byte>(ref t_buff, size); }
+        }
+
+        chapterRec delListFind(UInt32 size)
+        {
+            foreach (chapterRec i in m_deltedItem)
+            {
+                if (size <= i.size)
+                {
+                    return i;
+                }
+            }
+
+            return null;
         }
 
         private void addMarked(chapterRec rec)
         {
-            //seek to end of file
-            m_file.seekWriteCursor(-1);
-            rec.offset = m_file.writeCursor;
-            rec.isDeleted = 0;
-
             //estimate req size
-            int size = 8 + 8 + (rec.key.Length + rec.marked.Length) * 2;
-            size = (size + 0xFF) & ~(0xFF);
-            byte[] buff = new byte[size];
+            UInt32 size = 4 + 8 + (UInt32)(rec.key.Length + rec.marked.Length) * 2;
+            size = (size + c_pageSize - 1) & ~(c_pageSize - 1);
 
-            Int32 offset = 16;
-            rec.keyLen = Encoding.UTF8.GetBytes(rec.key, 0, rec.key.Length, buff, offset);
+            resizeTmpBuff((int)size);
 
-            offset += rec.keyLen;
-            rec.markedLen = Encoding.UTF8.GetBytes(rec.marked, 0, rec.marked.Length, buff, offset);
+            UInt32 offset = 4;
+            rec.keyLen = (UInt32)Encoding.UTF8.GetBytes(rec.key, 0, rec.key.Length, t_buff, (int)offset + 4);
+            BitConverter.GetBytes(rec.keyLen).CopyTo(t_buff, (int)offset);
 
-            rec.size = (rec.markedLen + offset + 0xFF) & ~(0xFF);
+            offset += rec.keyLen + 4;
+            rec.markedLen = (UInt32)Encoding.UTF8.GetBytes(rec.marked, 0, rec.marked.Length, t_buff, (int)offset + 4);
+            BitConverter.GetBytes(rec.keyLen).CopyTo(t_buff, (int)offset);
 
-            BitConverter.GetBytes(rec.size).CopyTo(buff, 0);
-            BitConverter.GetBytes(rec.isDeleted).CopyTo(buff, 4);
-            BitConverter.GetBytes(rec.keyLen).CopyTo(buff, 8);
-            BitConverter.GetBytes(rec.markedLen).CopyTo(buff, 12);
+            size = (rec.markedLen + offset + 4 + c_pageSize - 1) & ~(c_pageSize - 1);
+            BitConverter.GetBytes(size / c_pageSize).CopyTo(t_buff, 0);
 
-            m_file.writeData(buff, rec.size);
+            //find in delete list
+            var reuse = delListFind(size);
+            if (reuse != null)
+            {
+                m_deltedItem.Remove(reuse);
+                rec.offset = reuse.offset;
+                m_file.seekWriteCursor((int)rec.offset);
+                rec.isDeleted = false;
+                m_file.writeData(t_buff, (int)size);
+                rec.size = reuse.size;
+                Debug.Assert(size <= reuse.size);
+            }
+            else
+            {
+                //seek to end of file
+                m_file.seekWriteCursor(-1);
+                rec.offset = (UInt32)m_file.writeCursor;
+                rec.isDeleted = false;
+                m_file.writeData(t_buff, (int)size);
+                rec.size = size;
+            }
         }
 
         private void updateMarked(chapterRec rec)
         {
             //calc size
-            byte[] arr = new byte[rec.marked.Length * 2];
-            rec.markedLen = Encoding.UTF8.GetBytes(rec.marked, 0, rec.marked.Length, arr, 0);
-            int newSize = 16 + rec.keyLen + rec.markedLen;
-            if (rec.size > newSize)
+            int estimateSize = rec.marked.Length * 2;
+            resizeTmpBuff(estimateSize);
+            rec.markedLen = (UInt32)Encoding.UTF8.GetBytes(rec.marked, 0, rec.marked.Length, t_buff, 0);
+            UInt32 newSize = 4 + 4 + rec.keyLen + 4 + rec.markedLen;
+            if (rec.size < newSize)
             {
-                m_file.seekWriteCursor(rec.offset + 12);
-                m_file.writeInt32(rec.markedLen);
-                m_file.advanceWriteCursor(rec.keyLen);
-                m_file.writeData(arr, rec.markedLen);
+                //mark rec as delete
+                m_file.seekWriteCursor((int)rec.offset);
+                UInt32 hdr = (UInt32)(rec.size / c_pageSize) | c_fDeleted;
+                m_file.writeInt32((int)hdr);
+
+                m_deltedItem.Add(new chapterRec { size = rec.size, offset = rec.offset });
+                addMarked(rec);
             }
             else
             {
-                //mark rec as delete
-                m_file.seekWriteCursor(rec.offset + 4);
-                m_file.writeInt32(-1);
-                //add new record
-                addMarked(rec);
+                m_file.seekWriteCursor((int)rec.offset + 4 + 4 + (int)rec.keyLen);    //hdr + keysize + keylen
+                m_file.writeInt32((int)rec.markedLen);
+                m_file.writeData(t_buff, (int)rec.markedLen);
             }
         }
     }

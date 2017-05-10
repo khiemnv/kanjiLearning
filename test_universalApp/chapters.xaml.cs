@@ -67,7 +67,6 @@ namespace test_universalApp
             foreach (var i in s_cp.m_chapters)
             {
                 var chapter = i.Value;
-                Debug.Assert(i.Key == chapter.name);
                 var item = new chapterItem() { name = chapter.name,
                     count = chapter.words.Count, c = chapter };
                 chapterList.Items.Add(item);
@@ -83,8 +82,7 @@ namespace test_universalApp
             }
 
             //load mydb file
-            var t = Task.Run (async () => await s_cp.loadDbAsync());
-            t.Wait();
+            s_cp.loadDb();
         }
 
         async void showError()
@@ -103,8 +101,13 @@ namespace test_universalApp
                     i.c.selected = true;
                     m_config.selectedChapters.Add(i.c.path);
                 }
+
+                //save selected chaptes
                 m_config.save();
+
+                //load chater marked info to cache
                 s_cp.m_db.loadMarkeds(m_config.selectedChapters);
+
                 this.Frame.Navigate(typeof(study));
             }
             else
