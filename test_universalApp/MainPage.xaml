@@ -36,8 +36,9 @@
             Grid.Row="1"
             >
             <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="50"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="35"/>
+                <!--<ColumnDefinition Width="50"/>-->
             </Grid.ColumnDefinitions>
             <TextBox x:Name="browserPath"
                 Grid.Column="0"
@@ -46,33 +47,65 @@
                 IsReadOnly="True"
                 BorderThickness="0"
                 Margin="1,1,1,1"/>
-            <Button x:Name="browserBtn"
-                Content=". . ."
+            <!--<Button Name="cleanPath"
+                Grid.Column="1">
+                <Image Source="ms-appx:///Assets/cancel.png"
+                    Width="50"></Image>
+            </Button>-->
+            <Canvas x:Name="browserBtn"
                 Grid.Column="1"
-                HorizontalAlignment="Stretch"
                 Margin="1,1,1,1">
-            </Button>
+                <Image 
+                    Width="32"
+                    Height="32"
+                    Source="ms-appx:///Assets/folder.png"></Image>
+            </Canvas>
         </Grid>
         <!--load single chapter-->
-        <StackPanel Grid.Row="3"
-                    Orientation="Horizontal"
-                    >
-                <Button x:Name="reloadBtn"
-                        Content="Open"
-                        Margin="1,1,1,1"/>
-                <Button x:Name="addBtn"
-                        Content="Save"
-                        Margin="1,1,1,1"/>
+        <StackPanel
+            Grid.Row="3"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <Button Name="optBtn"
+                    >. . .</Button>
+            <Button Name="clean"
+                Content="Clean"
+                Margin="1,1,1,1"/>
+            <Button x:Name="addBtn"
+                Content="Save"
+                Margin="1,1,1,1"/>
+            <Button x:Name="reloadBtn"
+                Content="Open"
+                Margin="1,1,1,1"/>
         </StackPanel>
-        <TextBox
-            Grid.Row="2"
-            Margin="1,1,1,1"
-            x:Name="txtBox"
-            TextWrapping="Wrap"
-            Text="kotoba"
-            AcceptsReturn="True"
-            ScrollViewer.VerticalScrollBarVisibility="Auto"
-            Background="Silver"/>
+
+        <SplitView
+                Name="split"
+                Grid.Row="2"
+                Grid.Column="0"
+                Height="auto"
+                Width="auto"
+                IsPaneOpen="False"
+                DisplayMode="Overlay"
+                OpenPaneLength="250">
+            <SplitView.Pane>
+                <Grid Name="optionsStack" Background="DarkGray">
+                </Grid>
+            </SplitView.Pane>
+            <SplitView.Content>
+                <Grid Name="termGrid"
+                    Background="Silver">
+                    <TextBox
+                        x:Name="txtBox"
+                        TextWrapping="Wrap"
+                        Text="kotoba"
+                        AcceptsReturn="True"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        />
+                </Grid>
+            </SplitView.Content>
+        </SplitView>
+
         <!--next page-->
         <Button
             Grid.Row="4"

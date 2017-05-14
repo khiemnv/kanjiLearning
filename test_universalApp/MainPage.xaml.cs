@@ -39,7 +39,7 @@ namespace test_universalApp
     {
         static contentProvider s_content = contentProvider.getInstance();
         BackgroundWorker m_worker;
-        myConfig m_config;
+        myConfig m_config { get { return s_content.m_config; } }
         bool isLoadingData = false;
 
         public MainPage()
@@ -61,16 +61,23 @@ namespace test_universalApp
 
             initCtrls();
 
-            browserBtn.Click += browserBtn_Click;
+            browserBtn.Tapped += browserBtn_Click;
             reloadBtn.Click += reloadBtn_Click;
-            addBtn.Click += addBtn_Click;
-            nextBtn.Click += nextBtn_Click;
+            addBtn.Click += btnAdd_Click;
+            nextBtn.Click += btnNext_Click;
+            clean.Click += btnClean_Click;
+        }
+
+        private void btnClean_Click(object sender, RoutedEventArgs e)
+        {
+            s_content.m_content.m_words.Clear();
+            txtBox.Text = "";
         }
 
         private void initCtrls()
         {
             txtBox.Text = "";
-            txtBox.PlaceholderText = "Please use \";\" as seprator";
+            txtBox.PlaceholderText = "言葉; ことば; (NGÔN DIỆP); từ\r\nPlease use \";\" as seprator";
             //txtBox.AcceptsReturn = true;
             //txtBox.TextWrapping = TextWrapping.Wrap;
             //txtBox.Header = "Word list";
@@ -98,7 +105,6 @@ namespace test_universalApp
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("loaded");
-            m_config = myConfig.getInstance();
             if (m_config.m_lastFolder != null) {
                 browserPath.Text = m_config.m_lastFolder.Path;
             }
@@ -106,6 +112,17 @@ namespace test_universalApp
             {
                 loadLastPath();
             }
+
+            //load last open file
+            {
+                foreach(var w in s_content.m_content.m_words)
+                {
+                    txtBox.Text += w.ToString() + "\r\n";
+                }
+            }
+
+            //load db
+            s_content.loadDb();
         }
 
         private async void loadLastPath()
@@ -162,7 +179,7 @@ namespace test_universalApp
             msgbox.Title = "Data is loaing...!";
             await msgbox.ShowAsync();
         }
-        private void nextBtn_Click(object sender, RoutedEventArgs e)
+        private void btnNext_Click(object sender, RoutedEventArgs e)
         {
             if (isLoadingData)
             {
@@ -196,7 +213,7 @@ namespace test_universalApp
             txtBox.Text = txt;
         }
 
-        private async void addBtn_Click(object sender, RoutedEventArgs e)
+        private async void btnAdd_Click(object sender, RoutedEventArgs e)
         {
             string txt = txtBox.Text;
             int ret = await s_content.saveChapter(txt);
@@ -216,9 +233,11 @@ namespace test_universalApp
             //save last selected folder
             if (folder.Path != m_config.lastPath)
             {
-                m_config.selectedChapters.Clear();
                 m_config.m_lastFolder = folder;
                 m_config.lastPath = folder.Path;
+                //clear prev data
+                m_config.selectedChapters.Clear();
+                s_content.m_chapters.Clear();
             }
             var mru = StorageApplicationPermissions.MostRecentlyUsedList;
             string mruToken = mru.Add(folder, folder.Path);

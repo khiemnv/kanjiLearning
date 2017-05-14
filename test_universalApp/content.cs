@@ -395,7 +395,7 @@ namespace test_universalApp
         private void updateDict(StorageFile file, List<word> words)
         {
             string path = file.Path;
-            string name = Path.GetFileName(path);
+            string name = Path.GetFileNameWithoutExtension(path);
             string key = path;
             if (m_chapters.ContainsKey(key))
             {
@@ -618,6 +618,11 @@ namespace test_universalApp
             SaveCompleted?.Invoke(this, e);
         }
 
+        public content()
+        {
+            m_words = new List<word>();
+        }
+
         public List<word> m_words;
         public StorageFile m_file;
         public string m_fileName;
@@ -638,7 +643,6 @@ namespace test_universalApp
             {
                 m_file = file;
                 m_fileName = file.Name;
-                if (m_words == null) m_words = new List<word>();
                 loadData(file);
                 return 0;
             }

@@ -19,6 +19,7 @@ using Windows.Foundation.Collections;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
+using Windows.System;
 using Windows.UI;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
@@ -662,6 +663,31 @@ namespace test_universalApp
 #endif
             //speak
             canvasSpeak.Tapped += CanvasSpeak_Tapped;
+
+            //key
+            //mainGrid.KeyDown += Study_KeyDown;
+            //split.KeyDown += Study_KeyDown;
+            //KeyDown += Study_KeyDown;
+        }
+
+        void onKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            switch( e.Key)
+            {
+                case VirtualKey.Right:
+                    nextBtn_Click(null, null);
+                    break;
+                case VirtualKey.Left:
+                    prevBtn_Click(null, null);
+                    break;
+                case VirtualKey.S:
+                    starChk_Checked(null, null);
+                    break;
+                case VirtualKey.Up:
+                case VirtualKey.Down:
+                    term_Tapped(null, null);
+                    break;
+            }
         }
 
         private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -694,6 +720,7 @@ namespace test_universalApp
                     int i = 0; bool marked;
                     foreach (var w in words)
                     {
+                        //indexs maybe sliped if chapter file is modified
                         marked = chapter.markedIndexs.Contains(i);
                         var item = new wordItem()
                         {

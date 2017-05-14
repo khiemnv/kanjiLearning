@@ -15,6 +15,10 @@ namespace test_universalApp
     {
         public string path;
         public List<int> markedIndexs;
+        public chapterInfo()
+        {
+            markedIndexs = new List<int>();
+        }
     }
     //offset->  |hdr
     //          |rKey
@@ -291,7 +295,7 @@ namespace test_universalApp
         }
         public void getMarked(chapterInfo c)
         {
-            c.markedIndexs = new List<int>();
+            c.markedIndexs.Clear();
             string key = c.path;
             chapterRec rec = findRec(key);
             if (rec == null) return;
@@ -300,7 +304,8 @@ namespace test_universalApp
                 StringSplitOptions.RemoveEmptyEntries);
             foreach (var i in arr)
             {
-                c.markedIndexs.Add(int.Parse(i));
+                int idx;
+                if (int.TryParse(i, out idx)) { c.markedIndexs.Add(idx); }
             }
         }
         public void saveMarked(chapterInfo c)
