@@ -24,7 +24,12 @@ namespace ConsoleApplication1
         {
             throw new NotImplementedException();
         }
-        public void add(string line, bool isCSV)
+        public virtual void add(string line)
+        {
+            //add(line, false);
+            throw new NotImplementedException();
+        }
+        protected void add(string line, bool isCSV)
         {
             myPaserResult m = myparser2(line);
             if (isCSV)
@@ -35,13 +40,8 @@ namespace ConsoleApplication1
             //if (!m_data.ContainsKey(rec.getKey()))
                 m_data.Add(rec.getKey(), rec);
         }
-        public virtual void add(string line)
-        {
-            //add(line, false);
-            throw new NotImplementedException();
-        }
         #region csv parser
-        public enum myTkType
+        enum myTkType
         {
             t_comma = 0,
             t_dblq,
@@ -198,6 +198,177 @@ namespace ConsoleApplication1
         public myDictHVORG(int maxWordCount) : base(maxWordCount)
         {
         }
+        public override void add(string line)
+        {
+            var res = myparser2(line);
+            var rec = new recordHVORG(res.arr.ToArray());
+            m_data.Add(rec.getKey(), rec);
+        }
+
+        #region csv parser
+        enum myTkType
+        {
+            t_comma = 0,
+            t_dblq,
+            t_other,
+        }
+        class myToken
+        {
+            public myTkType type;
+            public char val;
+            public myToken(char c)
+            {
+                switch (c)
+                {
+                    case '"':
+                        type = myTkType.t_dblq;
+                        break;
+                    case ',':
+                        type = myTkType.t_comma;
+                        break;
+                    default:
+                        type = myTkType.t_other;
+                        break;
+                }
+                val = c;
+            }
+
+            public static implicit operator string(myToken v)
+            {
+                return v.val.ToString();
+            }
+
+            public static implicit operator char(myToken v)
+            {
+                return v.val;
+            }
+
+            public static explicit operator int(myToken v)
+            {
+                return (int)v.type;
+            }
+        };
+        enum myState
+        {
+            invalid = -1,
+            s = 0,  //begin
+            a,
+            b,
+            e
+        };
+
+        class myField
+        {
+            public int iStart;
+            public int iCur;
+            public bool dblQt;
+        }
+        class myPaserResult
+        {
+            public myPaserResult(string txt)
+            {
+                line = txt;
+            }
+            public string line;
+            public List<string> arr = new List<string>();
+            //public List<myField> fields = new List<myField>();
+            public int count = 0;
+            public myField curObj = new myField();
+            public string gerCurObj()
+            {
+                return line.Substring(curObj.iStart, curObj.iCur - curObj.iStart);
+            }
+        }
+        delegate void myRule(myPaserResult res, myToken tk);
+        static void f1(myPaserResult res, myToken tk)
+        {
+
+        }
+        static void f_ss(myPaserResult res, myToken tk)
+        {
+            res.count++;
+            res.arr.Add("");
+            res.curObj.iStart = ++res.curObj.iCur;
+            //res.fields.Add(res.curObj); //to debug
+        }
+        static void f_sa(myPaserResult res, myToken tk)
+        { res.curObj.iStart = ++res.curObj.iCur; }
+        static void f_aa(myPaserResult res, myToken tk)
+        {
+            res.curObj.iCur ++;
+        }
+        static void f_bs(myPaserResult res, myToken tk)
+        {
+            res.count++;
+            res.arr.Add(res.gerCurObj());
+            res.curObj.iCur +=2;
+            //res.fields.Add(res.curObj);
+        }
+        static void f_es(myPaserResult res, myToken tk)
+        {
+            res.count++;
+            res.arr.Add(res.gerCurObj());
+            res.curObj.iCur ++;
+            //res.fields.Add(res.curObj);
+        }
+        static void f_ba(myPaserResult res, myToken tk)
+        {
+            res.curObj.iCur += 2;
+            res.curObj.dblQt = true;
+        }
+        static myState[,] tbl = new myState[4, 3] {
+            {myState.s, myState.a, myState.e, },
+            {myState.a, myState.b, myState.a, },
+            { myState.s, myState.a, myState.invalid,},
+            {myState.s, myState.invalid, myState.e, },
+        };
+        static myRule[,] clbTbl = new myRule[4, 3] {
+            {f_ss, f_sa,(res, tk) => {res.curObj.iStart = res.curObj.iCur++; }},
+            {f_aa, f1, f_aa },
+            {f_bs, f_ba, f1 },
+            {f_es, f1, f_aa },
+        };
+        static myPaserResult myparser2(string line)
+        {
+            //state table
+            //state |token
+            //      |,      |"      |other
+            //------+-------+-------+------
+            //s     |s      |a      |e
+            //a     |a      |b      |a
+            //b     |s      |a      |invalid
+            //e     |s      |invalid|e
+            myPaserResult res = new myPaserResult(line);
+            myState cur = myState.s;
+            myState nState = myState.s;
+            foreach (char c in line)
+            {
+                //myToken tk = new myToken(c);
+                myTkType type;
+                switch (c)
+                {
+                    case '"':
+                        type = myTkType.t_dblq;
+                        break;
+                    case ',':
+                        type = myTkType.t_comma;
+                        break;
+                    default:
+                        type = myTkType.t_other;
+                        break;
+                }
+                cur = nState;
+                nState = tbl[(int)cur, (int)type];
+                if (nState == myState.invalid) break;
+                myRule cb = clbTbl[(int)cur, (int)type];
+                cb(res, null);
+            }
+
+            //case eol
+            res.arr.Add(res.gerCurObj());
+            return res;
+        }
+        #endregion
     }
     public class myDictBT : myDictBase
     {
@@ -268,6 +439,8 @@ namespace ConsoleApplication1
     {
         static void Main(string[] args)
         {
+            test_dict1();
+
             string path = @"C:\Users\Khiem\Desktop\hv_org.csv";
             path = @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js";
             path = @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js";
@@ -294,7 +467,7 @@ namespace ConsoleApplication1
             rd.Close();
             rd.Dispose();
         }
-        void test_dict1()
+        static void test_dict1()
         {
             string path = @"C:\Users\Khiem\Desktop\hv_org.csv";
             //path = @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js";
@@ -304,7 +477,7 @@ namespace ConsoleApplication1
             myDictHVORG dict1 = new myDictHVORG(0);
             var line = rd.ReadLine();   //read header
             for (line = rd.ReadLine(); line != null; line =rd.ReadLine()) {
-                dict1.add(line, true);
+                dict1.add(line);
             }
             Debug.WriteLine(Environment.TickCount / 1000);
             rd.Close();
@@ -339,7 +512,7 @@ namespace ConsoleApplication1
             }
 #endif
         }
-        public enum myTkType
+        enum myTkType
         {
             t_comma = 0,
             t_dblq,
