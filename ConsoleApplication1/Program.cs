@@ -236,9 +236,29 @@ namespace ConsoleApplication1
         }
 #endregion
     }
+    public class myDefinition
+    {
+        public string text;
+        public bool bFormated;
+    }
+    public class myWord
+    {
+        public string term;
+        public string hn;
+        public List<myDefinition> definitions = new List<myDefinition>();
+    }
+    public class myKanji
+    {
+        public List<myWord> relatedWords = new List<myWord>();
+        public List<myDefinition> definitions = new List<myDefinition>();
+        public char simple;
+        public int radical, extraStrokes, totalStrokes;
+        public char zRadical;
+    }
     public interface IRecord
     {
         string getKey();
+        void format(myKanji kanji);
     }
     public class myDictHVORG : myDictBase
     {
@@ -265,6 +285,18 @@ namespace ConsoleApplication1
             {
                 return kanji;
             }
+
+            public void format(myKanji word)
+            {
+                word.radical = radical;
+                word.extraStrokes = extraStrokes;
+                word.totalStrokes = totalStrokes;
+                //word.simple = simple[0];
+                var arr = define.Split(new char[] { '/'}, StringSplitOptions.RemoveEmptyEntries);
+                foreach(var def in arr) {
+                    word.definitions.Add(new myDefinition {text = def});
+                }
+            }
         }
         protected override IRecord crtRec(string[] arr)
         {
@@ -287,6 +319,12 @@ namespace ConsoleApplication1
             {
                 radical = arr[0];
                 meaning = arr[1];
+            }
+
+            public void format(myKanji word)
+            {
+                word.zRadical = radical[0];
+                word.definitions.Add( new myDefinition { text = meaning, bFormated = true });
             }
 
             public string getKey()
@@ -319,6 +357,16 @@ namespace ConsoleApplication1
                 hn = arr[0];
                 kanji = arr[1];
                 meaning = arr[2];
+            }
+
+            public void format(myKanji kanji)
+            {
+                myWord word = kanji.relatedWords.Find((w) => { return w.term == this.kanji; });
+                if (word == null) {
+                    word = new myWord { term = this.kanji, hn = hn, };
+                    kanji.relatedWords.Add(word);
+                }
+                word.definitions.Add(new myDefinition { text = meaning, bFormated = true });
             }
 
             public string getKey()
@@ -359,6 +407,20 @@ namespace ConsoleApplication1
                 def = arr[3];
             }
 
+            public void format(myKanji kanji)
+            {
+                myWord word = kanji.relatedWords.Find((w) => { return w.term == this.word; });
+                if (word == null)
+                {
+                    word = new myWord { term = this.word, hn = this.hn, };
+                    kanji.relatedWords.Add(word);
+                }
+                foreach(var d in def.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    word.definitions.Add(new myDefinition { text = d });
+                }
+            }
+
             public string getKey()
             {
                 return word;
@@ -373,6 +435,7 @@ namespace ConsoleApplication1
             return parseLine(line, true);
         }
     }
+
     class Program
     {
         static void Main(string[] args)
@@ -381,6 +444,21 @@ namespace ConsoleApplication1
             test_dict2();   //hanvietdict.js
             test_dict3();   //bo thu
             test_dict4();   //hv_word.csv
+
+            string w = "言葉";
+            List<myKanji> kanjis = new List<myKanji>();
+            foreach (char key in w) {
+                if (myDictBase.m_kanjis.ContainsKey(key))
+                {
+                    var arr = myDictBase.m_kanjis[key].Distinct();
+                    myKanji kanji = new myKanji();
+                    foreach(var rec in arr)
+                    {
+                        rec.format(kanji);
+                    }
+                    kanjis.Add(kanji);
+                }
+            }
         }
         static void test_dict4()
         {
