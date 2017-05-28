@@ -14,16 +14,14 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
+            <RowDefinition Height="4*"/>
+            <RowDefinition Height="3*"/>
             <RowDefinition Height="1*"/>
-            <RowDefinition Height="12*"/>
-            <RowDefinition Height="2*"/>
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
         </Grid.RowDefinitions>
-        <RichTextBlock Name="rtb"
-            ScrollViewer.VerticalScrollBarVisibility="Visible"
-            ScrollViewer.HorizontalScrollBarVisibility="Visible"
-            Grid.Row="3">
+        <ScrollViewer Grid.Row="3">
+        <RichTextBlock Name="rtb">
             <Paragraph>
                 para1
                 <Run>text run</Run>
@@ -46,6 +44,7 @@
             <Paragraph>para2
             </Paragraph>
         </RichTextBlock>
+        </ScrollViewer>
         <WebView Name="wv"
             Grid.Row="4"></WebView>
     </Grid>

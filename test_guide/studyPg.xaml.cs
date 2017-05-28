@@ -37,6 +37,8 @@ namespace test_guide
         private void pgLoaded(object sender, RoutedEventArgs e)
         {
             string txt = "<div id='dataarea'><font size='6' color='darkblue'><a href='#'>阿</a><a href='#'>保</a> a bảo</font><hr><ol><li>Bảo hộ nuôi nấng. ◇Hán Thư <a href='#'>漢</a><a href='#'>書</a>: <i>Hữu a bảo chi công, giai thụ quan lộc điền trạch tài vật</i> <a href='#'>有</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>功</a>, <a href='#'>皆</a><a href='#'>受</a><a href='#'>官</a><a href='#'>祿</a><a href='#'>田</a><a href='#'>宅</a><a href='#'>財</a><a href='#'>物</a> (Tuyên đế kỉ <a href='#'>宣</a><a href='#'>帝</a><a href='#'>紀</a>) (Những người) có công bảo hộ phủ dưỡng, đều được nhận quan lộc ruộng đất nhà cửa tiền của.<li>Bảo mẫu (nữ sư dạy dỗ con cháu vương thất hay quý tộc).<li>Bề tôi thân cận, cận thần.  ◇Sử Kí <a href='#'>史</a><a href='#'>記</a>: <i>Cư thâm cung chi trung, bất li a bảo chi thủ</i> <a href='#'>居</a><a href='#'>深</a><a href='#'>宮</a><a href='#'>之</a><a href='#'>中</a>, <a href='#'>不</a><a href='#'>離</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>手</a> (Phạm Thư Thái Trạch truyện <a href='#'>范</a><a href='#'>雎</a><a href='#'>蔡</a><a href='#'>澤</a><a href='#'>傳</a>) Ở trong thâm cung, không rời tay đám bề tôi thân cận.</li></li></li></ol><hr></div>";
+            myDict dict = myDict.Load();
+            var ret = dict.Search("阿保");
 
 #if false
             Paragraph p = new Paragraph();
@@ -52,6 +54,7 @@ namespace test_guide
             var tmp = myNode.convert2(txt);
             rtb.Blocks.Clear();
             rtb.Blocks.Add(tmp);
+
             return;
             myNode node = myNode.convert(txt);
             List<Block> blocks = Properties.GenerateBlocksForHtml(txt);

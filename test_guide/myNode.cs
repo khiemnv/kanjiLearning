@@ -166,7 +166,7 @@ namespace test_guide
                     {
                         var newLine = new Span();
                         //lCur.Inlines.Add(new LineBreak());
-                        newLine.Inlines.Add(new Run() { Text = string.Format("{0}. ", lineNumber++) });
+                        newLine.Inlines.Add(new Run() { Text = string.Format("{0}. ", ++lineNumber) });
                         lCur.Inlines.Add(newLine);
                         lCur = newLine;
                     }
