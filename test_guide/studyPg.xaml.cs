@@ -32,12 +32,150 @@ namespace test_guide
         {
             this.InitializeComponent();
             Loaded += pgLoaded;
+            srchBtn.Click += searchBtn_Click;
+            myNode.OnHyberlinkClick += Hb_Click;
         }
 
+        private void searchBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string txt = srchTxt.Text;
+            search(txt);
+        }
+        void search(string txt)
+        {
+            var ret = dict.Search(txt);
+            rtb.Blocks.Clear();
+            List<myWord> words = new List<myWord>();
+            Span s = new Span();
+            foreach (var kanji in ret)
+            {
+                Hyperlink hb = crtBlck(kanji.val);
+                s.Inlines.Add(hb);
+                s.Inlines.Add(new Run { Text = string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes) });
+                hb = crtBlck(kanji.radical.zRadical);
+                s.Inlines.Add(hb);
+                //s.Inlines.Add(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
+                var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
+                if (rdInfo.Count > 0)
+                {
+                    var k = rdInfo[0];
+                    if (k.hn != "") s.Inlines.Add(new Run { Text = string.Format("({0})", k.hn) });
+                    if (k.simple != '\0') s.Inlines.Add(new Run { Text = string.Format(" simple {0}", k.simple) });
+                }
+                s.Inlines.Add(new Run { Text = ", meaning: " });
+                foreach (var def in kanji.definitions)
+                {
+                    s.Inlines.Add(crtBlck(def));
+                    break;
+                }
+                s.Inlines.Add(new LineBreak());
+                words.AddRange(kanji.relatedWords);
+            }
+            //found word
+            var found = words.Find((w)=> { return w.term == txt; });
+            var sFound = new Span();
+            if (found != null)
+            {
+                //sFound.Inlines.Add(new Run {Text = string.Format("{0}({1})", found.term, found.hn) });
+                //sFound.Inlines.Add(new LineBreak());
+                for(int i = 0; i< found.definitions.Count;i++)
+                {
+                    sFound.Inlines.Add(crtBlck(found.definitions[i]));
+                    sFound.Inlines.Add(new LineBreak());
+                    break;
+                }
+                //remove from list
+                words.Remove(found);
+            }
+            //related word
+            if (found!=null) s.Inlines.Add(sFound);
+            //s.Inlines.Add(new LineBreak());
+            //s.Inlines.Add(new Run { Text = "related word:" });
+            //s.Inlines.Add(new LineBreak());
+            foreach (var rWd in words)
+            {
+                if (txt.Contains(rWd.term)) continue;
+                if (!rWd.definitions[0].bFormated) {
+                    foreach (var kj in rWd.term) s.Inlines.Add(crtBlck(kj));
+                    s.Inlines.Add(new Run { Text = string.Format(" {0}", rWd.hn) });
+                    s.Inlines.Add(new LineBreak());
+                }
+                s.Inlines.Add(crtBlck(rWd.definitions[0]));
+                s.Inlines.Add(new LineBreak());
+            }
+
+            //create paragraph
+            var p = new Paragraph();
+            //if (found != null) p.Inlines.Add(sFound);
+            p.Inlines.Add(s);
+            rtb.Blocks.Add(p);
+        }
+
+        Span crtBlck(myDefinition def)
+        {
+            if (def.bFormated)
+            {
+                var des = myNode.convert2(def.text);
+                return des;
+            }
+            else
+            {
+                var s = new Span();
+                s.Inlines.Add(new Run() { Text = def.text });
+                s.Inlines.Add(new LineBreak());
+                return s;
+            }
+        }
+        Span crtBlck(myRadical rd)
+        {
+            //言 Radical 149, speaking, speech
+            var s = new Span();
+            var r = new Run { Text = string.Format("{0} {1}", rd.zRadical, rd.iRadical) };
+            s.Inlines.Add(r);
+            var descr = crtBlck(rd.descr);
+            s.Inlines.Add(descr);
+            return s;
+        }
+        Span crtBlck(myWord wd)
+        {
+            var s = new Span();
+            var r = new Run { Text = string.Format("{0} {1}", wd.term, wd.hn) };
+            s.Inlines.Add(r);
+            foreach(var d in wd.definitions)
+            {
+                s.Inlines.Add(new LineBreak());
+                s.Inlines.Add(crtBlck(d));
+            }
+            return s;
+        }
+        Block crtBlck(myKanji kanji)
+        {
+            var p = new Paragraph();
+            var r = new Run { Text = string.Format("{2} {0} {1}",
+                kanji.extraStrokes, kanji.totalStrokes, kanji.val) };
+            var s = new Span();
+            s.Inlines.Add(r);
+            p.Inlines.Add(s);
+            foreach(var df in kanji.definitions)
+            {
+                var tmp = crtBlck(df);
+                p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(tmp);
+            }
+            foreach(var wd in kanji.relatedWords)
+            {
+                var tmp = crtBlck(wd);
+            }
+            return p;
+        }
+
+        myDict dict;
         private void pgLoaded(object sender, RoutedEventArgs e)
         {
             string txt = "<div id='dataarea'><font size='6' color='darkblue'><a href='#'>阿</a><a href='#'>保</a> a bảo</font><hr><ol><li>Bảo hộ nuôi nấng. ◇Hán Thư <a href='#'>漢</a><a href='#'>書</a>: <i>Hữu a bảo chi công, giai thụ quan lộc điền trạch tài vật</i> <a href='#'>有</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>功</a>, <a href='#'>皆</a><a href='#'>受</a><a href='#'>官</a><a href='#'>祿</a><a href='#'>田</a><a href='#'>宅</a><a href='#'>財</a><a href='#'>物</a> (Tuyên đế kỉ <a href='#'>宣</a><a href='#'>帝</a><a href='#'>紀</a>) (Những người) có công bảo hộ phủ dưỡng, đều được nhận quan lộc ruộng đất nhà cửa tiền của.<li>Bảo mẫu (nữ sư dạy dỗ con cháu vương thất hay quý tộc).<li>Bề tôi thân cận, cận thần.  ◇Sử Kí <a href='#'>史</a><a href='#'>記</a>: <i>Cư thâm cung chi trung, bất li a bảo chi thủ</i> <a href='#'>居</a><a href='#'>深</a><a href='#'>宮</a><a href='#'>之</a><a href='#'>中</a>, <a href='#'>不</a><a href='#'>離</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>手</a> (Phạm Thư Thái Trạch truyện <a href='#'>范</a><a href='#'>雎</a><a href='#'>蔡</a><a href='#'>澤</a><a href='#'>傳</a>) Ở trong thâm cung, không rời tay đám bề tôi thân cận.</li></li></li></ol><hr></div>";
-            myDict dict = myDict.Load();
+            //var tmp = myNode.convert2(txt);
+            //rtb.Blocks.Add(tmp);
+            dict = myDict.Load();
             var ret = dict.Search("阿保");
 
 #if false
@@ -51,9 +189,25 @@ namespace test_guide
                 blocks.Add(b);
             }
 #else
-            var tmp = myNode.convert2(txt);
             rtb.Blocks.Clear();
-            rtb.Blocks.Add(tmp);
+            Span s = new Span();
+            foreach (var kanji in ret) {
+                Hyperlink hb = crtBlck(kanji.val);
+                s.Inlines.Add(hb);
+                s.Inlines.Add(new Run { Text = string.Format(" {0} ({1}) ", kanji.totalStrokes, kanji.hn)});
+                hb = crtBlck(kanji.radical.zRadical);
+                s.Inlines.Add(hb);
+                s.Inlines.Add(new Run { Text = string.Format(" {0} ", kanji.radical.iRadical) });
+                var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
+                if (rdInfo.Count > 0) {
+                    var k = rdInfo[0];
+                    s.Inlines.Add(new Run { Text = string.Format("{2} {0} ({1})", k.totalStrokes, k.hn, k.simple) });
+                }
+                s.Inlines.Add(new LineBreak());
+            }
+            var p = new Paragraph();
+            p.Inlines.Add(s);
+            rtb.Blocks.Add(p);
 
             return;
             myNode node = myNode.convert(txt);
@@ -66,6 +220,15 @@ namespace test_guide
             {
                 rtb.Blocks.Add(b);
             }
+        }
+
+        private Hyperlink crtBlck(char val)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.AccessKey = val.ToString();
+            hb.Inlines.Add(new Run() { Text = val.ToString() });
+            return hb;
         }
 
         private static string CleanText(string input)
@@ -178,7 +341,7 @@ namespace test_guide
             return s;
 #else
             Hyperlink hb = new Hyperlink();
-            hb.Click += Hb_Click;
+            //hb.Click += Hb_Click;
             hb.Inlines.Add(new Run() { Text = node.InnerText });
             //if (node.ParentNode != null && (node.ParentNode.Name == "li" || node.ParentNode.Name == "LI"))
             //    hb.Style = (Style)Application.Current.Resources["RTLinkLI"];
@@ -201,9 +364,13 @@ namespace test_guide
 #endif
         }
 
-        private static void Hb_Click(object sender, RoutedEventArgs e)
+        private void Hb_Click(object sender, RoutedEventArgs e)
         {
             //
+            var hb = (Hyperlink)sender;
+            string text = ((Run)hb.Inlines[0]).Text;
+            text = hb.AccessKey;
+            search(text);
         }
 
         private static Inline GenerateLI(XmlNode node)

@@ -20,8 +20,20 @@
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
         </Grid.RowDefinitions>
+        <TextBox Name="srchTxt"
+                 Grid.Row="1"
+                 Margin="70,0,0,0"></TextBox>
+        <Button Name="srchBtn"
+                Grid.Row="1">Search</Button>
         <ScrollViewer Grid.Row="3">
         <RichTextBlock Name="rtb">
+                <Paragraph>
+                    阿 (bảo 8) ⻖(phụ 2)
+                    <LineBreak></LineBreak>
+                    保 (an 9) ホ (moc 5)
+                    <LineBreak></LineBreak>
+                    
+                </Paragraph>
             <Paragraph>
                 para1
                 <Run>text run</Run>

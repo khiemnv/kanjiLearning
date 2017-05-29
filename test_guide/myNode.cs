@@ -54,7 +54,7 @@ namespace test_guide
             }
         }
 
-        public static TypedEventHandler<Hyperlink, HyperlinkClickEventArgs> OnHyberlinkClick { get; private set; }
+        public static TypedEventHandler<Hyperlink, HyperlinkClickEventArgs> OnHyberlinkClick { get; set; }
 
         public string zType;
 
@@ -136,7 +136,7 @@ namespace test_guide
             return converted;
         }
 
-        public static Block convert2(string htmltxt)
+        public static Span convert2(string htmltxt)
         {
             List<HtmlNode> trace = new List<HtmlNode>();
             Stack<HtmlNode> xStack = new Stack<HtmlNode>();
@@ -216,9 +216,9 @@ namespace test_guide
                 }
             }
 
-            Paragraph p = new Paragraph();
-            p.Inlines.Add(lRoot);
-            return p;
+            //Paragraph p = new Paragraph();
+            //p.Inlines.Add(lRoot);
+            return lRoot;
         }
 
         private static bool isLeaf(HtmlNode xCur)

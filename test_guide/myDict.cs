@@ -9,18 +9,40 @@ using Windows.Storage;
 
 namespace test_guide
 {
+    //ignore last line
+    public class myTextReaderJs:myTextReader
+    {
+        public override int lineCount {
+            get { return lines != null ? (lines.Count-1) : 0; }
+        }
+        public override string ReadLine()
+        {
+            string ret = (iCur < lines.Count - 1) ? lines[iCur++] : null;
+            return ret;
+        }
+    }
     public class myTextReader:IDisposable
     {
-        int iCur = 0;
-        private IList<string> lines;
-        public event EventHandler<int> OnReading;
+        protected int iCur = 0;
+        public virtual int lineCount { get { return lines!=null?lines.Count:0; } }
+        protected IList<string> lines;
+        public event EventHandler<int> Reading;
+        protected virtual void OnReading(int e)
+        {
+            Reading?.Invoke(this, e);
+        }
+        public event EventHandler LoadCompleted;
+        protected virtual void OnLoadCompleted(EventArgs e)
+        {
+            LoadCompleted?.Invoke(this, e);
+        }
         public void Open(string path)
         {
             var t = Task.Run(() => OpenAsync(path));
             int i = 0;
             for (bool done = t.Wait(100); !done; done = t.Wait(100), i++)
             {
-                OnReading(this, i);
+                OnReading(i);
             }
         }
         public void Open(Uri path)
@@ -29,7 +51,8 @@ namespace test_guide
             int i = 0;
             for(bool done = t.Wait(100); !done; done = t.Wait(100), i++)
             {
-                OnReading(this, i);
+                OnReading(i);
+                Debug.WriteLine("i {0} count {1}", i, lines!=null? lines.Count:-1);
             }
         }
         public myTextReader()
@@ -40,13 +63,14 @@ namespace test_guide
         {
             StorageFile sf = await StorageFile.GetFileFromApplicationUriAsync(uri);
             lines = await FileIO.ReadLinesAsync(sf);
+            OnLoadCompleted(new EventArgs());
         }
         public async Task OpenAsync(string path)
         {
             StorageFile sf = await StorageFile.GetFileFromPathAsync(path);
             lines = await FileIO.ReadLinesAsync(sf);
         }
-        public string ReadLine()
+        public virtual string ReadLine()
         {
             string ret = (iCur < lines.Count)?lines[iCur++]:null;
             return ret;
@@ -97,7 +121,7 @@ namespace test_guide
         {
             string path = @"Assets/hv_word.csv";
             myTextReader rd = new myTextReader();
-            rd.OnReading += Rd_OnReading;
+            rd.Reading += Rd_OnReading;
             rd.Open (getUri(path));
             int startTC = Environment.TickCount;
             var dict1 = new myDictHvWord(0);
@@ -121,7 +145,7 @@ namespace test_guide
         {
             string path = @"Assets/hv_org.csv";
             myTextReader rd = new myTextReader();
-            rd.OnReading += Rd_OnReading;
+            rd.Reading += Rd_OnReading;
             rd.Open(getUri(path));
             myDictHVORG dict1 = new myDictHVORG(0);
             var line = rd.ReadLine();   //read header
@@ -147,40 +171,83 @@ namespace test_guide
             //ms-appx-web:///
             return new Uri(string.Format("{0}{1}", "ms-appx:///", path), UriKind.Absolute);
         }
-        void load_dict2()
+        #region load_dict
+        //working state
+        enum wrkState
         {
+            init      = -1,
+            begin     = 0,
+            wait4read = 1,
+            parsing   = 2,
+            end       = 3,
+        }
+        //state trans rules
+        //init->(line count > 0) begin
+        //init->(read cmpl) end
+        //begin->(has new line) parsing
+        //begin->(wait 4 get line) wait4read
+        //wait4read->(has new line) parsing
+        //wait4read->(read cmple) end
+        //wait4read->(wait 4 get line) wait4read
+        //parsing->(has new line) parsing
+        //parsing->(wait 4 get line) wait4read
+
+        void load_dict2() {
+            var dict = new myDictHV(0);
             string path = @"Assets/hanvietdict.js";
+            myTextReader rd = new myTextReaderJs();
+            load_dict(dict, rd, path);
+            hvdict = dict;
+        }
+        void load_dict(myDictBase dict, myTextReader rd, string path)
+        {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
             //var lines = await FileIO.ReadLinesAsync(fs);
-            myTextReader rd = new myTextReader();
-            rd.OnReading += Rd_OnReading;
-            rd.Open(getUri(path));
+            Task t = Task.Run(() => rd.Open(getUri(path)));
+
             int startTC = Environment.TickCount;
-            var dict = new myDictHV(0);
-            var line = rd.ReadLine();   //read header
-            line = rd.ReadLine();
-            string[] buff = { line, "" };
-            line = rd.ReadLine();
-            buff[1] = line;
-            uint iCur = 1;
-            int count = 2;
-            for (; line != null;)
-            {
-                dict.add(buff[iCur ^ 1]);
-                iCur = iCur ^ 1;
-                line = rd.ReadLine();
-                buff[iCur] = line;
-                count++;
+            wrkState s = wrkState.init;
+            string line;
+            for(int i = 0; s!=wrkState.end; ) {
+                Debug.WriteLine("i {0} s {1}", i, s.ToString());
+                switch (s)
+                {
+                    case wrkState.init:
+                        if (rd.lineCount > 0) s = wrkState.begin;
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+                        break;
+                    case wrkState.begin:
+                        line = rd.ReadLine();   //ignore first line
+                        i++;
+                        if (i < rd.lineCount) s = wrkState.parsing;
+                        else s = wrkState.wait4read;
+                        break;
+                    case wrkState.wait4read:
+                        if (i < rd.lineCount) s = wrkState.parsing;
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+                        Task.Delay(1);
+                        break;
+                    case wrkState.parsing:
+                        var c = rd.lineCount;
+                        for (; i < c;)
+                        {
+                            line = rd.ReadLine();
+                            dict.add(line);
+                            i++;
+                        }
+                        if (i == rd.lineCount) s = wrkState.wait4read;
+                        break;
+                }
             }
             rd.Close();
             rd.Dispose();
-            hvdict = dict;
         }
+        #endregion
         void load_dict3()
         {
             string path = @"Assets/hvchubothu.js";
             myTextReader rd = new myTextReader();
-            rd.OnReading += Rd_OnReading;
+            rd.Reading += Rd_OnReading;
             rd.Open(getUri(path));
             int startTC = Environment.TickCount;
             var dict = new myDictBT(0);
@@ -213,10 +280,10 @@ namespace test_guide
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                //m_instance.load_dict1();
+                m_instance.load_dict1();
                 m_instance.load_dict2();
-                //m_instance.load_dict3();
-                //m_instance.load_dict4();
+                m_instance.load_dict3();
+                m_instance.load_dict4();
             }
             return m_instance;
         }
@@ -229,7 +296,7 @@ namespace test_guide
                 if (myDictBase.m_kanjis.ContainsKey(key))
                 {
                     var arr = myDictBase.m_kanjis[key].Distinct();
-                    myKanji kanji = new myKanji();
+                    myKanji kanji = new myKanji() { val = key };
                     foreach (var rec in arr)
                     {
                         rec.format(kanji);
@@ -491,6 +558,8 @@ namespace test_guide
     }
     public class myKanji
     {
+        public char val;
+        public string hn;
         public List<myWord> relatedWords = new List<myWord>();
         public List<myDefinition> definitions = new List<myDefinition>();
         public char simple;
@@ -507,6 +576,7 @@ namespace test_guide
         class recordHVORG : IRecord
         {
             string kanji;
+            string hn;
             int radical, extraStrokes, totalStrokes;
             string simple;
             string define;
@@ -516,6 +586,7 @@ namespace test_guide
                 //[4]hRadical,hExtraStrokes,hTotalStrokes,hTraditionalVariant,
                 //[8]hSimplifiedVariant,hDefinition
                 kanji = arr[1];
+                hn = arr[2];
                 int.TryParse(arr[4], out radical);
                 int.TryParse(arr[5], out extraStrokes);
                 int.TryParse(arr[6], out totalStrokes);
@@ -530,10 +601,11 @@ namespace test_guide
 
             public void format(myKanji word)
             {
+                word.hn = hn;
                 word.radical.iRadical = radical;
                 word.extraStrokes = extraStrokes;
                 word.totalStrokes = totalStrokes;
-                //word.simple = simple[0];
+                word.simple = simple.Length>0?simple[0]:'\0';
                 var arr = define.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var def in arr)
                 {
