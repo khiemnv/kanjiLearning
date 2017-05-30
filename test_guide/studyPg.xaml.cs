@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define dict_dist
+#define sepate_kanji
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -51,6 +53,11 @@ namespace test_guide
             {
                 Hyperlink hb = crtBlck(kanji.val);
                 s.Inlines.Add(hb);
+                var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
+                if (foundKanji != null) {
+                    s.Inlines.Add(crtBlck(foundKanji.definitions[0]));
+                }
+                else {
                 s.Inlines.Add(new Run { Text = string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes) });
                 hb = crtBlck(kanji.radical.zRadical);
                 s.Inlines.Add(hb);
@@ -69,38 +76,29 @@ namespace test_guide
                     break;
                 }
                 s.Inlines.Add(new LineBreak());
+                }
                 words.AddRange(kanji.relatedWords);
             }
             //found word
-            var found = words.Find((w)=> { return w.term == txt; });
+            myWord found = null;
+            if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
             var sFound = new Span();
             if (found != null)
             {
-                //sFound.Inlines.Add(new Run {Text = string.Format("{0}({1})", found.term, found.hn) });
-                //sFound.Inlines.Add(new LineBreak());
-                for(int i = 0; i< found.definitions.Count;i++)
-                {
-                    sFound.Inlines.Add(crtBlck(found.definitions[i]));
-                    sFound.Inlines.Add(new LineBreak());
-                    break;
-                }
+                s.Inlines.Add(crtBlck(found));
+                s.Inlines.Add(new LineBreak());
                 //remove from list
                 words.Remove(found);
             }
             //related word
             if (found!=null) s.Inlines.Add(sFound);
-            //s.Inlines.Add(new LineBreak());
             //s.Inlines.Add(new Run { Text = "related word:" });
             //s.Inlines.Add(new LineBreak());
             foreach (var rWd in words)
             {
                 if (txt.Contains(rWd.term)) continue;
-                if (!rWd.definitions[0].bFormated) {
-                    foreach (var kj in rWd.term) s.Inlines.Add(crtBlck(kj));
-                    s.Inlines.Add(new Run { Text = string.Format(" {0}", rWd.hn) });
-                    s.Inlines.Add(new LineBreak());
-                }
-                s.Inlines.Add(crtBlck(rWd.definitions[0]));
+                //s.Inlines.Add(new LineBreak());
+                s.Inlines.Add(crtBlck(rWd));
                 s.Inlines.Add(new LineBreak());
             }
 
@@ -139,13 +137,19 @@ namespace test_guide
         Span crtBlck(myWord wd)
         {
             var s = new Span();
-            var r = new Run { Text = string.Format("{0} {1}", wd.term, wd.hn) };
-            s.Inlines.Add(r);
-            foreach(var d in wd.definitions)
+#if dict_dist
+            if (!wd.definitions[0].bFormated)
+#endif
             {
+#if sepate_kanji
+                foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
+#else
+                s.Inlines.Add(crtHb(wd.term));
+#endif
+                s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
                 s.Inlines.Add(new LineBreak());
-                s.Inlines.Add(crtBlck(d));
             }
+            s.Inlines.Add(crtBlck(wd.definitions[0]));
             return s;
         }
         Block crtBlck(myKanji kanji)
@@ -228,6 +232,14 @@ namespace test_guide
             hb.Click += Hb_Click;
             hb.AccessKey = val.ToString();
             hb.Inlines.Add(new Run() { Text = val.ToString() });
+            return hb;
+        }
+        private Hyperlink crtHb(string txt)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.AccessKey = txt;
+            hb.Inlines.Add(new Run() { Text = txt });
             return hb;
         }
 
@@ -369,7 +381,7 @@ namespace test_guide
             //
             var hb = (Hyperlink)sender;
             string text = ((Run)hb.Inlines[0]).Text;
-            text = hb.AccessKey;
+            //text = hb.AccessKey;
             search(text);
         }
 

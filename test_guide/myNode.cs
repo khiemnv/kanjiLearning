@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿#define dict_dist
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -119,7 +120,9 @@ namespace test_guide
             switch (xNode.Name)
             {
                 case "hr":
+#if dict_dist
                     converted = new LineBreak();
+#endif
                     break;
                 case "a":
                     var hb = new Hyperlink();
@@ -226,6 +229,9 @@ namespace test_guide
             if (!xCur.HasChildNodes) return true;
             switch (xCur.Name)
             {
+#if !dict_dist
+                case "font":
+#endif
                 case "a":
                 case "i":
                 case "#text":

@@ -343,6 +343,7 @@ namespace test_guide
             }
             return m.arr.ToArray();
         }
+
         public void add(string line)
         {
             //add(line, false);
@@ -355,6 +356,10 @@ namespace test_guide
             //add to share kanji data
             foreach (var c in zKey)
             {
+                if (c < 0x2f00) {
+                    Debug.Write(c);
+                    continue;
+                }
                 if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
                 else m_kanjis.Add(c, new List<IRecord> { rec });
             }
