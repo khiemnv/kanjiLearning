@@ -52,32 +52,51 @@
             </Canvas>-->
         </Grid>
         <!--chapter list-->
-        <ListView x:Name="chapterList"
+        <ListBox x:Name="chapterList"
                   Grid.Row="2"
                   Grid.RowSpan="1"
                   Margin="1,1,1,1"
                   SelectionMode="Multiple"
                   Background="Silver"
                   >
-            <ListView.ItemTemplate>
+            <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock Text="{Binding name}" 
-                           Margin="20,0,20,8"
-                           FontSize="24" 
-                           FontStyle="Italic" 
-                           FontWeight="SemiBold"
-                           Foreground="DarkBlue" />
-                        <TextBlock Text="{Binding count}" 
-                           Margin="20,0,20,8"
-                           FontSize="16"
-                           Foreground="DarkCyan" 
-                           Opacity="0.8" />
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="45"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="27"></RowDefinition>
+                            <RowDefinition Height="18"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <Border
+                            Grid.Column="0"
+                            Grid.RowSpan="2"
+                            Padding="5">
+                            <Ellipse
+                            Fill="{Binding color}">
+                            </Ellipse>
+                        </Border>
+                        <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                                   Margin="5,0,0,0"
+                               FontSize="{ThemeResource TextStyleExtraLargeFontSize}"
+                               FontWeight="Medium"
+                               Text="{Binding Name}"/>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="15,0,0,0"
+                                   Text="{Binding status}"></TextBlock>
+                    </Grid>
                 </DataTemplate>
-            </ListView.ItemTemplate>
-            
-        </ListView>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Margin" Value="0,1,0,0"/>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
         <!--clear all selected-->
         <Canvas
             Background="Silver"

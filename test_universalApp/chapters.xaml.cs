@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -29,15 +30,32 @@ namespace test_universalApp
     {
         static contentProvider s_cp = contentProvider.getInstance();
         myConfig m_config;
-        ObservableCollection<chapterItem> m_data = new ObservableCollection<chapterItem>();
+        ObservableCollection<chapterItem> m_data;
 
         class chapterItem
         {
-            public string name { get; set; }
-            public int count { get; set; }
+            public string Name { get; set; }
+            public string Path { get { return c.path; } }
+            public int Count { get; set; }
+            public double Percent { get { return (Count - nMarked) / (double)Count; } }
+            private int nMarked { get { return c.markedIndexs.Count; } }
             public chapter c;
 
-            public override string ToString() { return string.Format("{0} ({1})", name, count); }
+            public override string ToString() { return string.Format("{0} ({1})", Name, Count); }
+
+            public string status { get { return string.Format("Total/Marked: {0}/{1}", Count, nMarked); } }
+            public Brush color
+            {
+                get
+                {
+                    Color[] arr = {Colors.Red, Colors.Orange, Colors.Yellow,
+                    Colors.Green, Colors.Cyan, Colors.DarkBlue, Colors.Violet };
+                    int i = (Count - nMarked) * (arr.Length - 1) / Count;
+                    Debug.WriteLine("i color {0}", i);
+                    SolidColorBrush br = new SolidColorBrush(arr[i]);
+                    return br;
+                }
+            }
         }
 
         public chapters()
@@ -54,12 +72,14 @@ namespace test_universalApp
             checkAll.Tapped += CheckAll_Tapped;
 
             chapterList.SelectionChanged += ChapterList_SelectionChanged;
+
+             m_data = new ObservableCollection<chapterItem>();
         }
 
         private void ChapterList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if(e.AddedItems.Count >0) {
-                chapterList.ScrollIntoView(e.AddedItems[0]);
+                //chapterList.ScrollIntoView(e.AddedItems[0]);
             }
         }
 
@@ -71,7 +91,7 @@ namespace test_universalApp
         private void FillterTxt_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
         {
             var ch = (chapterItem) args.SelectedItem;
-            sender.Text = ch.name;
+            sender.Text = ch.Name;
         }
 
         private void FillterTxt_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
@@ -118,7 +138,7 @@ namespace test_universalApp
             var m = new List<chapterItem>();
             foreach (chapterItem ch in chapterList.Items)
             {
-                if (ch.name.Contains(txt))
+                if (ch.Name.Contains(txt))
                 {
                     m.Add(ch);
                 }
@@ -140,7 +160,7 @@ namespace test_universalApp
             loadData();
 
             if (chapterList.SelectedItems.Count > 0) { 
-            chapterList.ScrollIntoView(chapterList.SelectedItems[0]);
+                //chapterList.ScrollIntoView(chapterList.SelectedItems[0]);
             }
         }
 
@@ -162,10 +182,11 @@ namespace test_universalApp
                 var chapter = i.Value;
                 var item = new chapterItem()
                 {
-                    name = chapter.name,
-                    count = chapter.words.Count,
+                    Name = chapter.name,
+                    Count = chapter.words.Count,
                     c = chapter
                 };
+                s_cp.m_db.getMarked(chapter);
 
                 m_data.Add(item);
 
@@ -195,7 +216,7 @@ namespace test_universalApp
             {
                 foreach (chapterItem i in chapterList.SelectedItems)
                 {
-                    Debug.WriteLine("{0} {1}", i.name, i.count);
+                    Debug.WriteLine("{0} {1}", i.Name, i.Count);
                     i.c.selected = true;
                     m_config.selectedChapters.Add(i.c.path);
                 }
@@ -218,7 +239,7 @@ namespace test_universalApp
         {
             foreach (chapterItem i in chapterList.SelectedItems)
             {
-                Debug.WriteLine("{0} {1}", i.name, i.count);
+                Debug.WriteLine("{0} {1}", i.Name, i.Count);
                 i.c.selected = true;
                 m_config.selectedChapters.Add(i.c.path);
             }
