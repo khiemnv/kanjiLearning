@@ -5,31 +5,31 @@
 #define once_synth
 #define reduce_disk_opp
 
+#define dict_dist
+#define sepate_kanji
+
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Media.SpeechSynthesis;
-using Windows.Storage;
-using Windows.Storage.FileProperties;
-using Windows.System;
+//using Windows.Data.Xml.Dom;
 using Windows.UI;
-using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Documents;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using Windows.Media.SpeechSynthesis;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
+using Windows.System;
+using Windows.UI.Popups;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -45,10 +45,14 @@ namespace test_universalApp
         List<UIElement> m_grp2;
         wordItem m_editingItem;
         static studyOption m_option;
+        static public event EventHandler<string> GetKanji;
         List<wordItem> m_items = new List<wordItem>();
         List<wordItem> m_markedItems = new List<wordItem>();
         BackgroundWorker m_worker = new BackgroundWorker();
         int m_iCursor;
+
+        //singleton dict
+        myDict dict = myDict.Load();
 
         public study()
         {
@@ -294,7 +298,235 @@ namespace test_universalApp
             detailTxt.Text = "";
             termTxt.Text = "";
             numberTxt.Text = "";
+
+            //search & dict
+            srchBtn.Click += searchBtn_Click;
+            myNode.OnHyberlinkClick += Hb_Click;
+            rtb.Blocks.Clear();
+
+            GetKanji += Study_GetKanji;
         }
+
+        private void Study_GetKanji(object sender, string e)
+        {
+            string txt = e;
+            search(txt);
+        }
+
+        #region search_rgn
+        const int m_limitContentLen = 3;
+        const int m_limitContentCnt = 7;
+
+        private void searchBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string txt = srchTxt.Text;
+            search(txt);
+        }
+
+        private void Hb_Click(object sender, RoutedEventArgs e)
+        {
+            //
+            var hb = (Hyperlink)sender;
+            string text = ((Run)hb.Inlines[0]).Text;
+            //text = hb.AccessKey;
+            search(text);
+        }
+
+        void search(string txt)
+        {
+            var ret = dict.Search(txt);
+            rtb.Blocks.Clear();
+            List<myWord> words = new List<myWord>();
+            Span s = new Span();
+            foreach (var kanji in ret)
+            {
+                Hyperlink hb = crtBlck(kanji.val);
+                s.Inlines.Add(hb);
+                var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
+                if (foundKanji != null)
+                {
+                    s.Inlines.Add(crtDefBlck(foundKanji.definitions[0]));
+                }
+                else
+                {
+                    s.Inlines.Add(new Run { Text = string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes) });
+                    hb = crtBlck(kanji.radical.zRadical);
+                    s.Inlines.Add(hb);
+                    //s.Inlines.Add(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
+                    var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
+                    if (rdInfo.Count > 0)
+                    {
+                        var k = rdInfo[0];
+                        if (k.hn != "") s.Inlines.Add(new Run { Text = string.Format("({0})", k.hn) });
+                        if (k.simple != '\0') s.Inlines.Add(new Run { Text = string.Format(" simple {0}", k.simple) });
+                    }
+                    s.Inlines.Add(new Run { Text = ", meaning: " });
+                    foreach (var def in kanji.definitions)
+                    {
+                        s.Inlines.Add(crtDefBlck(def));
+                        break;
+                    }
+                    s.Inlines.Add(new LineBreak());
+                }
+                words.AddRange(kanji.relatedWords);
+                s.Inlines.Add(new LineBreak());
+            }
+            s.Inlines.Add(new LineBreak());
+            //found word
+            myWord found = null;
+            if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
+            var sFound = new Span();
+            if (found != null)
+            {
+                s.Inlines.Add(crtWdBlck(found));
+                s.Inlines.Add(new LineBreak());
+                //remove from list
+                words.Remove(found);
+            }
+            //related word
+            if (found != null) s.Inlines.Add(sFound);
+            //s.Inlines.Add(new Run { Text = "related word:" });
+            //s.Inlines.Add(new LineBreak());
+            int count = 0;
+            foreach (var rWd in words)
+            {
+                if (txt.Contains(rWd.term)) continue;
+#if !show_brift
+                if ((count++) == m_limitContentCnt)
+                    break;
+#else
+                {
+                    s.Inlines.Add(crtWdBlck(rWd, true));
+                }
+                else
+#endif
+                {
+                    s.Inlines.Add(crtWdBlck(rWd));
+                }
+                //s.Inlines.Add(new LineBreak());
+                s.Inlines.Add(new LineBreak());
+            }
+
+            //create paragraph
+            var p = new Paragraph();
+            //if (found != null) p.Inlines.Add(sFound);
+            p.Inlines.Add(s);
+            rtb.Blocks.Add(p);
+            //TextPointer pstart = rtb.ContentStart;
+            //rtb.Select(pstart, pstart);
+            //rtbScroll.VerticalScrollMode = ScrollMode.Enabled;
+            //rtbScroll.BringIntoViewOnFocusChange = true;
+            rtbScroll.ChangeView(0, 0, null);
+            //rtbScroll.ScrollToVerticalOffset(0);
+        }
+
+        Span crtDefBlck(myDefinition def)
+        {
+            return crtDefBlck(def, m_limitContentLen);
+        }
+        Span crtDefBlck(myDefinition def, int limit)
+        {
+            if (def.bFormated)
+            {
+                var des = myNode.convert2(def.text, limit);
+                return des;
+            }
+            else
+            {
+                var s = new Span();
+                s.Inlines.Add(new Run() { Text = def.text });
+                s.Inlines.Add(new LineBreak());
+                return s;
+            }
+        }
+        Span crtBlck(myRadical rd)
+        {
+            //言 Radical 149, speaking, speech
+            var s = new Span();
+            var r = new Run { Text = string.Format("{0} {1}", rd.zRadical, rd.iRadical) };
+            s.Inlines.Add(r);
+            var descr = crtDefBlck(rd.descr);
+            s.Inlines.Add(descr);
+            return s;
+        }
+        Span crtWdBlck(myWord wd, bool showBrift)
+        {
+            var s = new Span();
+            if (showBrift)
+            {
+#if dict_dist
+                if (!wd.definitions[0].bFormated)
+#endif
+                {
+#if sepate_kanji
+                    foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
+#else
+                s.Inlines.Add(crtHb(wd.term));
+#endif
+                    //s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
+                    s.Inlines.Add(new LineBreak());
+                }
+                s.Inlines.Add(crtDefBlck(wd.definitions[0], 1));
+            }
+            return s;
+        }
+        Span crtWdBlck(myWord wd)
+        {
+            var s = new Span();
+#if dict_dist
+            if (!wd.definitions[0].bFormated)
+#endif
+            {
+#if sepate_kanji
+                foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
+#else
+                s.Inlines.Add(crtHb(wd.term));
+#endif
+                s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
+                s.Inlines.Add(new LineBreak());
+            }
+            s.Inlines.Add(crtDefBlck(wd.definitions[0]));
+            return s;
+        }
+        Block crtBlck(myKanji kanji)
+        {
+            var p = new Paragraph();
+            var r = new Run
+            {
+                Text = string.Format("{2} {0} {1}",
+                kanji.extraStrokes, kanji.totalStrokes, kanji.val)
+            };
+            var s = new Span();
+            s.Inlines.Add(r);
+            p.Inlines.Add(s);
+            foreach (var df in kanji.definitions)
+            {
+                var tmp = crtDefBlck(df);
+                p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(tmp);
+            }
+            foreach (var wd in kanji.relatedWords)
+            {
+                var tmp = crtWdBlck(wd);
+            }
+            return p;
+        }
+
+        private Hyperlink crtBlck(char val)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.Inlines.Add(new Run() { Text = val.ToString() });
+            return hb;
+        }
+        private Hyperlink crtHb(string txt)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.Inlines.Add(new Run() { Text = txt });
+            return hb;
+        }
+        #endregion
 
         private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -499,6 +731,7 @@ namespace test_universalApp
                 switch (m)
                 {
                     case mode.kanji:
+                        OnGetKanji(word.kanji);
                         return word.kanji;
                     case mode.hiragana:
                         return word.hiragana;
@@ -509,6 +742,12 @@ namespace test_universalApp
                 }
                 return "";
             }
+
+            protected virtual void OnGetKanji(string txt)
+            {
+                GetKanji?.Invoke(this, txt);
+            }
+
             private string getExclude(mode m)
             {
                 switch (m)
@@ -759,11 +998,11 @@ namespace test_universalApp
 
         private void updateTerm()
         {
-            updateTerm(true);
+            updateTerm(false);
         }
 #endregion
 
-        private void updateTerm(bool reqInit)
+        private void updateTerm(bool isTab)
         {
             //not change term while speak
             //Debug.Assert(m_speakStat == speakStatus.end);
@@ -772,7 +1011,7 @@ namespace test_universalApp
             var items = getCurItems();
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
             wordItem curItem = items[m_iCursor];
-            curItem.status = reqInit? itemStatus.term: curItem.status;
+            curItem.status = isTab? curItem.status : itemStatus.term;
 
             switch (curItem.status)
             {
@@ -815,7 +1054,7 @@ namespace test_universalApp
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
             wordItem curItem = items[m_iCursor];
             curItem.rotate();
-            updateTerm(false);
+            updateTerm(true);
         }
 
         private void nextBtn_Click(object sender, RoutedEventArgs e)

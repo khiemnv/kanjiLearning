@@ -1,29 +1,13 @@
 ﻿#define use_worker
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using System.Threading;
 using System.Diagnostics;
-using Windows.UI.ViewManagement;
 using System.ComponentModel;
 using Windows.Storage;
 using Windows.UI.Popups;
-using Windows.Storage.FileProperties;
-using System.Runtime.Serialization;
 using Windows.Storage.Pickers;
 using Windows.Storage.AccessCache;
 
@@ -123,6 +107,9 @@ namespace test_universalApp
 
             //load db
             s_content.loadDb();
+
+            //load dict
+            myDict.Load();
         }
 
         private async void loadLastPath()

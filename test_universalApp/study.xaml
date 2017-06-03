@@ -13,7 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="35"></RowDefinition>
-            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="1*"/>
             <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="35"></RowDefinition>
         </Grid.RowDefinitions>
@@ -82,9 +82,64 @@
                     <Grid Name="termGrid"
                           Background="Silver">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="6*"/>
-                            <RowDefinition Height="4*" MaxHeight="150"/>
+                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="4*"/>
                         </Grid.RowDefinitions>
+                        <!--search panel-->
+                        <Grid Name="searchPanel"
+                              Grid.Row="2"
+                              >
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="35"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                                <TextBox Name="srchTxt"
+                                 Grid.Row="0"
+                                 Margin="35,0,0,0"></TextBox>
+                                <Button Name="srchBtn"
+                                Grid.Row="0"
+                                Width="35"
+                                Height="35"
+                                Padding="0">
+                                <Image
+                                Margin="0"
+                                Width="30"
+                                Source="Assets\search.png"></Image>
+                            </Button>
+                            <ScrollViewer Name="rtbScroll" Grid.Row="1">
+                                <RichTextBlock Name="rtb">
+                                    <Paragraph>
+                                        阿 (bảo 8) ⻖(phụ 2)
+                                        <LineBreak></LineBreak>
+                                        保 (an 9) ホ (moc 5)
+                                        <LineBreak></LineBreak>
+
+                                    </Paragraph>
+                                    <Paragraph>
+                                        para1
+                                        <Run>text run</Run>
+                                        list item
+                                        <LineBreak></LineBreak>
+                                        list item 2
+                                        <Span>span1</Span>
+                                        <Span>span with linebrk
+                    line1
+                                            <LineBreak></LineBreak>
+                                            line2
+                                        </Span>
+                                        <Span>
+                                            <Span>span in span
+                                                <LineBreak></LineBreak>
+                                                linebr
+                                            </Span>
+                                        </Span>
+                                    </Paragraph>
+                                    <Paragraph>para2
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </ScrollViewer>
+                        </Grid>
                         <!--<Border Grid.Row="0" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
                         <TextBlock 
                             Name="termTxt"
@@ -92,8 +147,7 @@
                             TextWrapping="Wrap"
                             FontSize="48"
                             Foreground="Green"
-                            Grid.Row="0"
-                            Width="auto"/>
+                            Grid.Row="0"/>
                         <!--<Border Grid.Row="1" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
                         <TextBlock
                             Name="detailTxt"
@@ -215,7 +269,6 @@
             </StackPanel>
         </Grid>
 
-
         <StackPanel Name="bntStack"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
@@ -238,7 +291,6 @@
             </Border>
             <Button x:Name="nextBtn" Content="Next"
                     Margin="1,1,1,1"/>
-            <!--<Button x:Name="flipBnt" Content="Flip" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
         </StackPanel>
         <!--back to page-->
         <Button Name="backBtn"
