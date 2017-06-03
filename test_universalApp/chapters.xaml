@@ -19,7 +19,7 @@
         <Grid
             Grid.Row="0"
             Background="Blue">
-            <TextBlock 
+            <TextBlock Name="statusBar"
                 Margin="1,1,1,1"
                 Foreground="White"
                 Text="Select chapters to study"/>

@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.System;
 using Windows.UI;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
@@ -51,7 +52,7 @@ namespace test_universalApp
                     Color[] arr = {Colors.Red, Colors.Orange, Colors.Yellow,
                     Colors.Green, Colors.Cyan, Colors.DarkBlue, Colors.Violet };
                     int i = (Count - nMarked) * (arr.Length - 1) / Count;
-                    Debug.WriteLine("i color {0}", i);
+                    //Debug.WriteLine("i color {0}", i);
                     SolidColorBrush br = new SolidColorBrush(arr[i]);
                     return br;
                 }
@@ -65,9 +66,11 @@ namespace test_universalApp
             Loaded += Chapters_Loaded;
             Unloaded += Chapters_Unloaded;
 
+            //fill chapter
             fillterTxt.TextChanged += FillterTxt_TextChanged; ;
             fillterTxt.QuerySubmitted += FillterTxt_QuerySubmitted;
             fillterTxt.SuggestionChosen += FillterTxt_SuggestionChosen;
+            //fillterTxt.KeyDown += FillterTxt_KeyDown;
 
             checkAll.Tapped += CheckAll_Tapped;
 
@@ -76,11 +79,26 @@ namespace test_universalApp
              m_data = new ObservableCollection<chapterItem>();
         }
 
+        //private void FillterTxt_KeyDown(object sender, KeyRoutedEventArgs e)
+        //{
+        //    if (e.Key == VirtualKey.Enter)
+        //    {
+        //        Debug.WriteLine(string.Format("FillterTxt_KeyDown enter"));
+        //    }
+        //}
+
+        void updateStatus(string txt)
+        {
+            statusBar.Text = txt;
+            Debug.WriteLine(string.Format("[status] {0}", txt));
+        }
+
         private void ChapterList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if(e.AddedItems.Count >0) {
-                //chapterList.ScrollIntoView(e.AddedItems[0]);
+                chapterList.ScrollIntoView(e.AddedItems[0]);
             }
+            updateStatus(string.Format("Selected {0} chapters!", chapterList.SelectedItems.Count));
         }
 
         private void CheckAll_Tapped(object sender, TappedRoutedEventArgs e)
@@ -109,6 +127,7 @@ namespace test_universalApp
                 foreach (var ch in chs) { chapterList.SelectedItems.Add(ch); }
                 // Choose the first match, or clear the selection if there are no matches.
                 //SelectContact(matchingContacts.FirstOrDefault());
+                //this.Focus(FocusState.Programmatic);
             }
         }
 
@@ -187,6 +206,12 @@ namespace test_universalApp
                     c = chapter
                 };
                 s_cp.m_db.getMarked(chapter);
+                if (chapter.words.Count < chapter.markedIndexs.Count)
+                {
+                    //db malform
+                    Debug.WriteLine("[error] {0} loadData chapter {1} marked data malform", this, chapter.path);
+                    chapter.markedIndexs.Clear();
+                }
 
                 m_data.Add(item);
 

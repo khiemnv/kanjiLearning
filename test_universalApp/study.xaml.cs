@@ -30,6 +30,7 @@ using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.System;
 using Windows.UI.Popups;
+using System.Reflection;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -299,12 +300,15 @@ namespace test_universalApp
             termTxt.Text = "";
             numberTxt.Text = "";
 
-            //search & dict
-            srchBtn.Click += searchBtn_Click;
-            myNode.OnHyberlinkClick += Hb_Click;
-            rtb.Blocks.Clear();
+            termTxt.IsTextSelectionEnabled = true;
 
-            GetKanji += Study_GetKanji;
+            rtb.Blocks.Clear();
+        }
+
+        private void updateStatus(string v)
+        {
+            headerTxt.Text = v;
+            Debug.WriteLine(string.Format("[status] {0}", v));
         }
 
         private void Study_GetKanji(object sender, string e)
@@ -332,8 +336,16 @@ namespace test_universalApp
             search(text);
         }
 
+        string m_preTxt = "init";
         void search(string txt)
         {
+            //redue search
+            if (m_preTxt != txt) {
+                m_preTxt = txt;
+            } else {
+                return;
+            }
+
             var ret = dict.Search(txt);
             rtb.Blocks.Clear();
             List<myWord> words = new List<myWord>();
@@ -853,21 +865,26 @@ namespace test_universalApp
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
 
+            //setup EventHandler
+            //+ register GetKanji event before updateTerm()?
+            //  =>necessary to involked event when updateTerm
+            initEvents();
+
             //update term
             m_iCursor = 0;
             updateTerm();
             updateNum();
 
-            //setup EventHandler
-            initEvents();
-
             loadProgress.Visibility = Visibility.Collapsed;
+
+            //update status
+            updateStatus(string.Format("Marked/Total: {0}/{1}", m_markedItems.Count, m_items.Count));
         }
 
         private void initEvents()
         {
             termGrid.Tapped += term_Tapped;
-            termGrid.ManipulationMode = ManipulationModes.TranslateX;
+            termGrid.ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY;
             termGrid.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
@@ -907,6 +924,26 @@ namespace test_universalApp
             //mainGrid.KeyDown += Study_KeyDown;
             //split.KeyDown += Study_KeyDown;
             //KeyDown += Study_KeyDown;
+            flipBtn.Click += term_Tapped;
+
+            //search & dict
+            srchBtn.Click += searchBtn_Click;
+            myNode.OnHyberlinkClick += Hb_Click;
+
+            srchTxt.KeyDown += SrchTxt_KeyDown;
+
+            //set search event
+            if (GetKanji != null) {
+                foreach (Delegate d in GetKanji.GetInvocationList()) {
+                    GetKanji -= (EventHandler<string>)d;
+                }
+            }
+            GetKanji += Study_GetKanji;
+        }
+
+        private void SrchTxt_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if(e.Key == VirtualKey.Enter) { searchBtn_Click(this, e); }
         }
 
         void onKeyDown(object sender, KeyRoutedEventArgs e)
@@ -1006,7 +1043,7 @@ namespace test_universalApp
         {
             //not change term while speak
             //Debug.Assert(m_speakStat == speakStatus.end);
-            if (m_speakStat == speakStatus.end) Debug.WriteLine("{0} updateTerm m_speakStat {1}", this, m_speakStat);
+            Debug.WriteLine("{0} updateTerm m_speakStat {1}", this, m_speakStat);
 
             var items = getCurItems();
             Debug.Assert(m_iCursor >= 0 && m_iCursor < items.Count);
@@ -1047,7 +1084,7 @@ namespace test_universalApp
         {
 
         }
-        private void term_Tapped(object sender, TappedRoutedEventArgs e)
+        private void term_Tapped(object sender, RoutedEventArgs e)
         {
             var items = getCurItems();
             //rotate
@@ -1154,7 +1191,7 @@ namespace test_universalApp
             var items = getCurItems();
             var i = items[m_iCursor];
 
-            i.marked = (bool)starChk.IsChecked;
+            i.marked = starChk.IsChecked;
 
             if (i.marked)
             {
@@ -1194,22 +1231,30 @@ namespace test_universalApp
                 updateTerm();
                 updateNum();
             }
+
+            //update status bar
+            updateStatus(string.Format("Marked/Total: {0}/{1}", m_markedItems.Count, m_items.Count));
         }
 
         private void term_swiped(object sender, ManipulationCompletedRoutedEventArgs e)
         {
+            const int delta = 15;
             //not in editing state
             if (m_editingItem == null)
             {
-                if (e.Cumulative.Translation.X < 0)
+                if (e.Cumulative.Translation.X < -delta)
                 {
                     //move right
                     nextBtn_Click(sender, e);
                 }
-                else
+                else if (e.Cumulative.Translation.X > delta)
                 {
                     //move left
                     prevBtn_Click(sender, e);
+                }
+                else
+                {
+                    term_Tapped(sender, null);
                 }
             }
         }

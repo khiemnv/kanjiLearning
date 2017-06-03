@@ -20,7 +20,7 @@
             Grid.Row="0"
             Margin="1,1,1,1"
             Background="Blue">
-            <TextBlock 
+            <TextBlock Name="statusBar"
                 Foreground="White"
                 Text="Load or create chapters"/>
             <ProgressBar

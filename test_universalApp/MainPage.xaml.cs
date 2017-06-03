@@ -10,6 +10,7 @@ using Windows.Storage;
 using Windows.UI.Popups;
 using Windows.Storage.Pickers;
 using Windows.Storage.AccessCache;
+using Windows.UI.Xaml.Input;
 
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -78,8 +79,22 @@ namespace test_universalApp
             m_worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
             m_worker.WorkerReportsProgress = true;
 #endif
+            //swipe next
+            termGrid.ManipulationMode = ManipulationModes.TranslateX;
+            termGrid.ManipulationCompleted += swipedLeft;
+
             Debug.WriteLine("{0} initCtrls done", this);
         }
+
+        private void swipedLeft(object sender, ManipulationCompletedRoutedEventArgs e)
+        {
+            const int delta = 15;
+            if (e.Cumulative.Translation.X < -delta)
+            {
+                //move right
+                btnNext_Click(sender, e);
+            }
+       }
 
         private void MainPage_Unloaded(object sender, RoutedEventArgs e)
         {
@@ -91,6 +106,7 @@ namespace test_universalApp
             Debug.WriteLine("loaded");
             if (m_config.m_lastFolder != null) {
                 browserPath.Text = m_config.m_lastFolder.Path;
+                updateStatus(string.Format("Total chapters: {0}", s_content.m_chapters.Count));
             }
             else
             {
@@ -178,9 +194,10 @@ namespace test_universalApp
             }
         }
 
-        private void onLoadDataComplete()
+        void updateStatus(string txt)
         {
-
+            statusBar.Text = txt;
+            Debug.WriteLine(string.Format("[status] {0}", txt));
         }
 
         private async void reloadBtn_Click(object sender, RoutedEventArgs e)
@@ -246,6 +263,9 @@ namespace test_universalApp
             isLoadingData = false;
             browserPath.Text = m_config.m_lastFolder.Path;
             browserProg.Visibility = Visibility.Collapsed;
+
+            //update status bar
+            updateStatus(string.Format("Load {0} chapters completed!", s_content.m_chapters.Count));
         }
 
 #if track_progress

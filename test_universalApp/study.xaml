@@ -291,6 +291,8 @@
             </Border>
             <Button x:Name="nextBtn" Content="Next"
                     Margin="1,1,1,1"/>
+            <Button x:Name="flipBtn" Content="Flip"
+                    Margin="1,1,1,1"/>
         </StackPanel>
         <!--back to page-->
         <Button Name="backBtn"
