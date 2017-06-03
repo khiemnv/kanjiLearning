@@ -43,6 +43,9 @@ namespace test_guide
             string txt = srchTxt.Text;
             search(txt);
         }
+
+        const int m_limitContentLen = 3;
+        const int m_limitContentCnt = 7;
         void search(string txt)
         {
             var ret = dict.Search(txt);
@@ -55,7 +58,7 @@ namespace test_guide
                 s.Inlines.Add(hb);
                 var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
                 if (foundKanji != null) {
-                    s.Inlines.Add(crtBlck(foundKanji.definitions[0]));
+                    s.Inlines.Add(crtDefBlck(foundKanji.definitions[0]));
                 }
                 else {
                 s.Inlines.Add(new Run { Text = string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes) });
@@ -72,20 +75,21 @@ namespace test_guide
                 s.Inlines.Add(new Run { Text = ", meaning: " });
                 foreach (var def in kanji.definitions)
                 {
-                    s.Inlines.Add(crtBlck(def));
+                    s.Inlines.Add(crtDefBlck(def));
                     break;
                 }
                 s.Inlines.Add(new LineBreak());
                 }
                 words.AddRange(kanji.relatedWords);
             }
+            s.Inlines.Add(new LineBreak());
             //found word
             myWord found = null;
             if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
             var sFound = new Span();
             if (found != null)
             {
-                s.Inlines.Add(crtBlck(found));
+                s.Inlines.Add(crtWdBlck(found));
                 s.Inlines.Add(new LineBreak());
                 //remove from list
                 words.Remove(found);
@@ -94,11 +98,17 @@ namespace test_guide
             if (found!=null) s.Inlines.Add(sFound);
             //s.Inlines.Add(new Run { Text = "related word:" });
             //s.Inlines.Add(new LineBreak());
+            int count = 0;
             foreach (var rWd in words)
             {
+                if (++count > m_limitContentCnt)
+                {
+                    s.Inlines.Add(crtWdBlck(rWd, true));
+                }
+                else
+                s.Inlines.Add(crtWdBlck(rWd));
                 if (txt.Contains(rWd.term)) continue;
                 //s.Inlines.Add(new LineBreak());
-                s.Inlines.Add(crtBlck(rWd));
                 s.Inlines.Add(new LineBreak());
             }
 
@@ -107,13 +117,23 @@ namespace test_guide
             //if (found != null) p.Inlines.Add(sFound);
             p.Inlines.Add(s);
             rtb.Blocks.Add(p);
+            //TextPointer pstart = rtb.ContentStart;
+            //rtb.Select(pstart, pstart);
+            //rtbScroll.VerticalScrollMode = ScrollMode.Enabled;
+            //rtbScroll.BringIntoViewOnFocusChange = true;
+            rtbScroll.ChangeView(0, 0, null);
+            //rtbScroll.ScrollToVerticalOffset(0);
         }
 
-        Span crtBlck(myDefinition def)
+        Span crtDefBlck(myDefinition def)
+        {
+            return crtDefBlck(def, m_limitContentLen);
+        }
+        Span crtDefBlck(myDefinition def, int limit)
         {
             if (def.bFormated)
             {
-                var des = myNode.convert2(def.text);
+                var des = myNode.convert2(def.text, limit);
                 return des;
             }
             else
@@ -130,11 +150,31 @@ namespace test_guide
             var s = new Span();
             var r = new Run { Text = string.Format("{0} {1}", rd.zRadical, rd.iRadical) };
             s.Inlines.Add(r);
-            var descr = crtBlck(rd.descr);
+            var descr = crtDefBlck(rd.descr);
             s.Inlines.Add(descr);
             return s;
         }
-        Span crtBlck(myWord wd)
+        Span crtWdBlck(myWord wd, bool showBrift)
+        {
+            var s = new Span();
+            if (showBrift) {
+#if dict_dist
+                if (!wd.definitions[0].bFormated)
+#endif
+                {
+#if sepate_kanji
+                    foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
+#else
+                s.Inlines.Add(crtHb(wd.term));
+#endif
+                    //s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
+                    s.Inlines.Add(new LineBreak());
+                }
+                s.Inlines.Add(crtDefBlck(wd.definitions[0], 1));
+            }
+            return s;
+        }
+        Span crtWdBlck(myWord wd)
         {
             var s = new Span();
 #if dict_dist
@@ -149,7 +189,7 @@ namespace test_guide
                 s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
                 s.Inlines.Add(new LineBreak());
             }
-            s.Inlines.Add(crtBlck(wd.definitions[0]));
+            s.Inlines.Add(crtDefBlck(wd.definitions[0]));
             return s;
         }
         Block crtBlck(myKanji kanji)
@@ -162,13 +202,13 @@ namespace test_guide
             p.Inlines.Add(s);
             foreach(var df in kanji.definitions)
             {
-                var tmp = crtBlck(df);
+                var tmp = crtDefBlck(df);
                 p.Inlines.Add(new LineBreak());
                 p.Inlines.Add(tmp);
             }
             foreach(var wd in kanji.relatedWords)
             {
-                var tmp = crtBlck(wd);
+                var tmp = crtWdBlck(wd);
             }
             return p;
         }

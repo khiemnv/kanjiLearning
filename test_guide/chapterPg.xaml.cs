@@ -36,7 +36,7 @@ namespace test_guide
             };
             for (int i = 1; i< 50;i++)
             {
-                collection.Add(new chapter { Name = string.Format("chapter 1.{0})", i),
+                collection.Add(new chapter { Name = string.Format("chapter 1.{0}", i),
                     Count = 10 + i,
                     Nmarked = 1 + i,
                     Path = string.Format(@"c:\tmp\long long long path chapter.{0}.txt", i),

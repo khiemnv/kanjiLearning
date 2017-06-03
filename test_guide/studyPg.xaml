@@ -25,7 +25,7 @@
                  Margin="70,0,0,0"></TextBox>
         <Button Name="srchBtn"
                 Grid.Row="1">Search</Button>
-        <ScrollViewer Grid.Row="3">
+        <ScrollViewer Name="rtbScroll" Grid.Row="3">
         <RichTextBlock Name="rtb">
                 <Paragraph>
                     阿 (bảo 8) ⻖(phụ 2)

@@ -141,6 +141,10 @@ namespace test_guide
 
         public static Span convert2(string htmltxt)
         {
+            return convert2(htmltxt, -1);
+        }
+        public static Span convert2(string htmltxt, int lineCount)
+        {
             List<HtmlNode> trace = new List<HtmlNode>();
             Stack<HtmlNode> xStack = new Stack<HtmlNode>();
             Stack<Span> lStack = new Stack<Span>();
@@ -167,6 +171,10 @@ namespace test_guide
                     //crt new line
                     if (needCrtNewLine(xCur))
                     {
+                        if (lineNumber == lineCount)
+                        {
+                            break;
+                        }
                         var newLine = new Span();
                         //lCur.Inlines.Add(new LineBreak());
                         newLine.Inlines.Add(new Run() { Text = string.Format("{0}. ", ++lineNumber) });
@@ -245,7 +253,8 @@ namespace test_guide
             switch (xCur.Name)
             {
                 case "li":
-                    return true;
+                    //skip empty list node
+                    return (xCur.InnerText.Trim() != "") ? true: false;
                 default:
                     return false;
             }

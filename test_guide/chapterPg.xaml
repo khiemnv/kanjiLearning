@@ -21,15 +21,15 @@
                 <DataTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="40"></ColumnDefinition>
+                            <ColumnDefinition Width="45"></ColumnDefinition>
                             <ColumnDefinition Width="*"></ColumnDefinition>
                             <ColumnDefinition Width="40"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"></RowDefinition>
-                            <RowDefinition Height="5"></RowDefinition>
+                            <RowDefinition Height="27"></RowDefinition>
+                            <RowDefinition Height="18"></RowDefinition>
                         </Grid.RowDefinitions>
-                        <TextBlock
+                        <!--<TextBlock
                             Grid.Column="0"
                             Grid.Row="0"
                                 HorizontalAlignment="Center"
@@ -37,11 +37,19 @@
                                 TextAlignment="Center"
                                 Foreground="Green"
                                 Text="{Binding zPercent}"
-                                >2/20</TextBlock>
-                        <Border Grid.Column="1"
+                                >2/20</TextBlock>-->
+                        <Border
+                            Grid.Column="0"
+                            Grid.RowSpan="2"
+                            Padding="5">
+                        <Ellipse
+                            Fill="{Binding color}">
+                        </Ellipse>
+                        </Border>
+                        <!--<Border Grid.Column="1"
                                 Grid.ColumnSpan="2"
                                 Grid.Row="1">
-                            <Border.Background>
+                            --><!--<Border.Background>
                                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0" >
                                     <LinearGradientBrush.RelativeTransform>
                                         <CompositeTransform CenterY="0.5" CenterX="0.5" Rotation="-90"/>
@@ -53,8 +61,8 @@
                                     <GradientStop Color="White" Offset="1"/>
                                     <GradientStop Color="#FF141781" Offset="{Binding Percent}"/>
                                 </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
+                            </Border.Background>--><!--
+                        </Border>-->
                         <!--<Border
                             CornerRadius="5"
                             Width="40"
@@ -81,18 +89,25 @@
                                 />
                         </Border>-->
                         <!--FontSize="{ThemeResource TextStyleExtraLargeFontSize}"-->
+                        <!--<Border
+                            Grid.Column="0" Background="{Binding color}"></Border>-->
                         <TextBlock Grid.Column="1"
                                VerticalAlignment="Center"
-                                   Margin="5,0,5,0"
+                                   Margin="5,0,0,0"
                                FontSize="{ThemeResource TextStyleExtraLargeFontSize}"
                                FontWeight="Medium"
                                Text="{Binding Name}"/>
+                        <TextBlock Grid.Row="1"
+                                   Grid.Column="1"
+                                   Margin="15,0,0,0"
+                                   Text="{Binding status}"></TextBlock>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
-                    <Setter Property="Margin" Value="2"/>
+                    <Setter Property="Margin" Value="0,1,0,0"/>
+                    <!--<Setter Property="Padding" Value="0"></Setter>-->
                 </Style>
             </ListBox.ItemContainerStyle>
         </ListBox>
@@ -131,6 +146,6 @@
                    Height="30"
                    RadiusX="5"
                    RadiusY="5"></Rectangle>-->
-        
+
     </Grid>
 </Page>
