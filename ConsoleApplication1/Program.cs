@@ -18,6 +18,7 @@ namespace ConsoleApplication1
             string w = "言葉";
             var ret = dict.Search(w);
         }
+#if false
         void test_dict()
         {
             test_dict1();   //hv_org.csv
@@ -367,5 +368,6 @@ namespace ConsoleApplication1
                 if (nState == myState.invalid) break;
             }
         }
+#endif
     }
 }
