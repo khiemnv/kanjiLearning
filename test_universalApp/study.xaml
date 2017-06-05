@@ -75,6 +75,8 @@
                             <TextBlock>Speak</TextBlock>
                             <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
                             <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
+                            <TextBlock>Search</TextBlock>
+                            <CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>
                         </StackPanel>
                     </Grid>
                 </SplitView.Pane>
@@ -108,7 +110,7 @@
                                 Source="Assets\search.png"></Image>
                             </Button>
                             <ScrollViewer Name="rtbScroll" Grid.Row="1">
-                                <RichTextBlock Name="rtb">
+                                <RichTextBlock Name="srchRtb">
                                     <Paragraph>
                                         阿 (bảo 8) ⻖(phụ 2)
                                         <LineBreak></LineBreak>

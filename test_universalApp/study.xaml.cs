@@ -107,6 +107,11 @@ namespace test_universalApp
             m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
         }
 
+        private void OptSrchEnableChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.srchEnable = (bool)optSrchEnableChk.IsChecked;
+        }
+
         BitmapImage speakBM = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
         BitmapImage speakBM2 = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
         private void Media_MediaOpened(object sender, RoutedEventArgs e)
@@ -302,7 +307,11 @@ namespace test_universalApp
 
             termTxt.IsTextSelectionEnabled = true;
 
-            rtb.Blocks.Clear();
+            //search
+            srchRtb.Blocks.Clear();
+            srchRtb.Visibility = Visibility.Collapsed;
+            srchTxt.Visibility = Visibility.Collapsed;
+            srchBtn.Visibility = Visibility.Collapsed;
         }
 
         private void updateStatus(string v)
@@ -347,7 +356,7 @@ namespace test_universalApp
             }
 
             var ret = dict.Search(txt);
-            rtb.Blocks.Clear();
+            srchRtb.Blocks.Clear();
             List<myWord> words = new List<myWord>();
             Span s = new Span();
             foreach (var kanji in ret)
@@ -423,7 +432,7 @@ namespace test_universalApp
             var p = new Paragraph();
             //if (found != null) p.Inlines.Add(sFound);
             p.Inlines.Add(s);
-            rtb.Blocks.Add(p);
+            srchRtb.Blocks.Add(p);
             //TextPointer pstart = rtb.ContentStart;
             //rtb.Select(pstart, pstart);
             //rtbScroll.VerticalScrollMode = ScrollMode.Enabled;
@@ -631,6 +640,7 @@ namespace test_universalApp
 
         private void Split_PaneClosed(SplitView sender, object args)
         {
+            turnSearchOnOff(m_option.srchEnable);
             updateTerm();
             m_option.save();
         }
@@ -678,6 +688,8 @@ namespace test_universalApp
             public bool showMarked;
             [DataMember]
             public bool spkTerm;
+            [DataMember]
+            public bool srchEnable;
             [DataMember]
             public bool spkDefine;
 
@@ -864,6 +876,8 @@ namespace test_universalApp
             //+ speak
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
+            //+ search
+            optSrchEnableChk.IsChecked = m_option.srchEnable;
 
             //setup EventHandler
             //+ register GetKanji event before updateTerm()?
@@ -886,6 +900,7 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY;
             termGrid.ManipulationCompleted += term_swiped;
+            searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
             prevBtn.Click += prevBtn_Click;
@@ -910,6 +925,9 @@ namespace test_universalApp
             optSpkTermChk.Click += OptSpkTermChk_Click;
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
 
+            //search option
+            optSrchEnableChk.Click += OptSrchEnableChk_Click;
+
             split.PaneClosed += Split_PaneClosed;
 
 #if item_editable
@@ -933,12 +951,29 @@ namespace test_universalApp
             srchTxt.KeyDown += SrchTxt_KeyDown;
 
             //set search event
-            if (GetKanji != null) {
-                foreach (Delegate d in GetKanji.GetInvocationList()) {
+            turnSearchOnOff(m_option.srchEnable);
+        }
+
+        private void turnSearchOnOff(bool enable)
+        {
+            if (GetKanji != null)
+            {
+                foreach (Delegate d in GetKanji.GetInvocationList())
+                {
                     GetKanji -= (EventHandler<string>)d;
                 }
             }
-            GetKanji += Study_GetKanji;
+            if (enable) {
+                GetKanji += Study_GetKanji;
+                srchRtb.Visibility = Visibility.Visible;
+                srchBtn.Visibility = Visibility.Visible;
+                srchTxt.Visibility = Visibility.Visible;
+            } else
+            {
+                srchRtb.Visibility = Visibility.Collapsed;
+                srchBtn.Visibility = Visibility.Collapsed;
+                srchTxt.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void SrchTxt_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -1242,7 +1277,11 @@ namespace test_universalApp
             //not in editing state
             if (m_editingItem == null)
             {
-                if (e.Cumulative.Translation.X < -delta)
+                if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
+                {
+                    term_Tapped(sender, null);
+                }
+                else if (e.Cumulative.Translation.X < -delta)
                 {
                     //move right
                     nextBtn_Click(sender, e);
