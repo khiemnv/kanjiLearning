@@ -16,7 +16,10 @@ namespace ConsoleApplication1
         {
             myDict dict = myDict.Load();
             string w = "言葉";
-            var ret = dict.Search(w);
+            for (;;) {
+                w= "突っ込む";
+                var ret = dict.Search(w);
+            }
         }
 #if false
         void test_dict()
