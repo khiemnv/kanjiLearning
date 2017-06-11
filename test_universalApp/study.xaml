@@ -126,7 +126,7 @@
                                         list item 2
                                         <Span>span1</Span>
                                         <Span>span with linebrk
-                    line1
+                                            line1
                                             <LineBreak></LineBreak>
                                             line2
                                         </Span>
@@ -277,6 +277,8 @@
                 Grid.Row="3">
             <Button Name="optionBtn" Content=". . ."
                     Margin="1,1,1,1"/>
+            <Button x:Name="searchBnt2" Content="More"
+                    Margin="1,1,1,1"/>
             <Button x:Name="sulfBnt" Content="Sulf"
                     Margin="1,1,1,1"/>
             <Button Name="prevBtn" Content="Prev"
@@ -293,8 +295,8 @@
             </Border>
             <Button x:Name="nextBtn" Content="Next"
                     Margin="1,1,1,1"/>
-            <Button x:Name="flipBtn" Content="Flip"
-                    Margin="1,1,1,1"/>
+            <!--<Button x:Name="flipBtn" Content="Flip"
+                    Margin="1,1,1,1"/>-->
         </StackPanel>
         <!--back to page-->
         <Button Name="backBtn"

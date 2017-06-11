@@ -50,6 +50,7 @@ namespace test_universalApp
         List<wordItem> m_items = new List<wordItem>();
         List<wordItem> m_markedItems = new List<wordItem>();
         BackgroundWorker m_worker = new BackgroundWorker();
+        BackgroundWorker m_srchWorker = new BackgroundWorker();
         int m_iCursor;
 
         //singleton dict
@@ -88,7 +89,9 @@ namespace test_universalApp
         {
             synthDic = new Dictionary<string, SpeechSynthesizer>();
 
-            m_grp1 = new List<UIElement>() { canvasEdit, termTxt, detailTxt,
+            m_grp1 = new List<UIElement>() {
+                //canvasEdit,
+                termTxt, detailTxt,
                 nextBtn, backBtn,
                 bntStack,
                 canvasSpeak, canvasStar};
@@ -305,13 +308,44 @@ namespace test_universalApp
             termTxt.Text = "";
             numberTxt.Text = "";
 
-            termTxt.IsTextSelectionEnabled = true;
+            //termTxt.IsTextSelectionEnabled = true;
 
             //search
             srchRtb.Blocks.Clear();
-            srchRtb.Visibility = Visibility.Collapsed;
-            srchTxt.Visibility = Visibility.Collapsed;
-            srchBtn.Visibility = Visibility.Collapsed;
+            //srchRtb.Visibility = Visibility.Collapsed;
+            //srchTxt.Visibility = Visibility.Collapsed;
+            //srchBtn.Visibility = Visibility.Collapsed;
+            searchPanel.Visibility = Visibility.Collapsed;
+
+            rtbScroll.HorizontalScrollMode = ScrollMode.Disabled;
+
+            //init search worker
+            m_srchWorker.DoWork += M_srchWorker_DoWork;
+            m_srchWorker.ProgressChanged += M_srchWorker_ProgressChanged;
+            m_srchWorker.RunWorkerCompleted += M_srchWorker_RunWorkerCompleted;
+            m_srchWorker.WorkerReportsProgress = true;
+            m_srchWorker.WorkerSupportsCancellation = true;
+
+            canvasEdit.Visibility = Visibility.Collapsed;
+        }
+
+        private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            //throw new NotImplementedException();
+        }
+
+        private void M_srchWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            //throw new NotImplementedException();
+            Debug.WriteLine(string.Format("{0} M_srchWorker_ProgressChanged {1}", this, e.ProgressPercentage));
+            var qry = (myQryData)e.UserState;
+            qryProcess(qry.type, qry.data);
+        }
+
+        private void M_srchWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            //throw new NotImplementedException();
+            bg_search();
         }
 
         private void updateStatus(string v)
@@ -330,7 +364,7 @@ namespace test_universalApp
         const int m_limitContentLen = 3;
         const int m_limitContentCnt = 7;
 
-        private void searchBtn_Click(object sender, RoutedEventArgs e)
+        private void srchBtn_Click(object sender, RoutedEventArgs e)
         {
             string txt = srchTxt.Text;
             search(txt);
@@ -355,59 +389,145 @@ namespace test_universalApp
                 return;
             }
 
-            var ret = dict.Search(txt);
             srchRtb.Blocks.Clear();
+            rtbScroll.ChangeView(0, 0, null);
+            totalLine = 0;
+
+            while (m_srchWorker.IsBusy)
+            {
+                m_srchWorker.CancelAsync();
+            }
+            m_srchWorker.RunWorkerAsync();
+        }
+        Span curLine = new Span();
+        int totalLine = 0;
+        //run in background
+        class myQryData {
+            public displayType type;
+            public object data;
+            public myQryData(displayType type, object data)
+            {
+                this.type = type;
+                this.data = data;
+            }
+        }
+        enum displayType
+        {
+            hyperlink,
+            linebreak,
+            run,
+            define,
+            word
+        }
+        void bg_qryDisplay(displayType type, object data)
+        {
+            m_srchWorker.ReportProgress(totalLine++, new myQryData(type,data));
+        }
+        void qryProcess(displayType type, object data) {
+            switch (type)
+            {
+                case displayType.linebreak:
+                    {
+                        Paragraph p = new Paragraph();
+                        //curLine.Inlines.Add(new LineBreak());
+                        p.Inlines.Add(curLine);
+#if false
+                        m_srchWorker.ReportProgress(totalLine++, p);
+#else
+                        srchRtb.Blocks.Add(p);
+#endif
+                        curLine = new Span();
+                    }
+                    break;
+                case displayType.hyperlink:
+                    {
+                        var ch = (char)data;
+                        Hyperlink hb = crtBlck(ch);
+                        curLine.Inlines.Add(hb);
+                    }
+                    break;
+                case displayType.run:
+                    {
+                        var txt = (string)data;
+                        curLine.Inlines.Add(new Run { Text = txt });
+                    }
+                    break;
+                case displayType.define:
+                    {
+                        var def = (myDefinition)data;
+                        curLine.Inlines.Add(crtDefBlck(def));
+                    }
+                    break;
+                case displayType.word:
+                    {
+                        var wd = (myWord)data;
+                        curLine.Inlines.Add(crtWdBlck(wd));
+                    }
+                    break;
+            }
+        }
+        //run in background
+        void bg_search()
+        {
+            string txt = m_preTxt;
+            var ret = dict.Search(txt);
             List<myWord> words = new List<myWord>();
-            Span s = new Span();
+            //Span s = new Span();
             foreach (var kanji in ret)
             {
-                Hyperlink hb = crtBlck(kanji.val);
-                s.Inlines.Add(hb);
+                bg_qryDisplay(displayType.hyperlink, kanji.val);
+                if (kanji.decomposite != "") {
+                    bg_qryDisplay(displayType.run, kanji.decomposite);
+                    bg_qryDisplay(displayType.linebreak, null);
+                }
+
+                bg_qryDisplay(displayType.define, kanji.definitions[0]);
+                kanji.definitions.RemoveAt(0);
+
                 var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
                 if (foundKanji != null)
                 {
-                    s.Inlines.Add(crtDefBlck(foundKanji.definitions[0]));
+                    bg_qryDisplay(displayType.define, (foundKanji.definitions[0]));
                 }
                 else
                 {
-                    s.Inlines.Add(new Run { Text = string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes) });
-                    hb = crtBlck(kanji.radical.zRadical);
-                    s.Inlines.Add(hb);
-                    //s.Inlines.Add(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
+                    bg_qryDisplay(displayType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
+                    bg_qryDisplay(displayType.hyperlink, kanji.radical.zRadical);
+                    //bg_qryDisplay(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
                     var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
                     if (rdInfo.Count > 0)
                     {
                         var k = rdInfo[0];
-                        if (k.hn != "") s.Inlines.Add(new Run { Text = string.Format("({0})", k.hn) });
-                        if (k.simple != '\0') s.Inlines.Add(new Run { Text = string.Format(" simple {0}", k.simple) });
+                        if (k.hn != "") bg_qryDisplay(displayType.run, string.Format("({0})", k.hn));
+                        if (k.simple != '\0') bg_qryDisplay(displayType.run, string.Format(" simple {0}", k.simple));
                     }
-                    s.Inlines.Add(new Run { Text = ", meaning: " });
+                    bg_qryDisplay(displayType.run, ", meaning: ");
                     foreach (var def in kanji.definitions)
                     {
-                        s.Inlines.Add(crtDefBlck(def));
+                        bg_qryDisplay(displayType.define, (def));
                         break;
                     }
-                    s.Inlines.Add(new LineBreak());
+                    bg_qryDisplay(displayType.linebreak, null);
                 }
                 words.AddRange(kanji.relatedWords);
-                s.Inlines.Add(new LineBreak());
+                bg_qryDisplay(displayType.linebreak, null);
             }
-            s.Inlines.Add(new LineBreak());
+            bg_qryDisplay(displayType.linebreak, null);
             //found word
             myWord found = null;
             if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
-            var sFound = new Span();
+            //var sFound = new Span();
             if (found != null)
             {
-                s.Inlines.Add(crtWdBlck(found));
-                s.Inlines.Add(new LineBreak());
+                bg_qryDisplay(displayType.word, found);
+                bg_qryDisplay(displayType.linebreak, null);
                 //remove from list
                 words.Remove(found);
             }
             //related word
-            if (found != null) s.Inlines.Add(sFound);
-            //s.Inlines.Add(new Run { Text = "related word:" });
-            //s.Inlines.Add(new LineBreak());
+            //if (found != null) bg_qryDisplay(sFound);
+            //bg_qryDisplay(new Run { Text = "related word:" });
+            //bg_qryDisplay(new LineBreak());
             int count = 0;
             foreach (var rWd in words)
             {
@@ -417,17 +537,17 @@ namespace test_universalApp
                     break;
 #else
                 {
-                    s.Inlines.Add(crtWdBlck(rWd, true));
+                    bg_qryDisplay(crtWdBlck(rWd, true));
                 }
                 else
 #endif
                 {
-                    s.Inlines.Add(crtWdBlck(rWd));
+                    bg_qryDisplay(displayType.word, (rWd));
                 }
-                //s.Inlines.Add(new LineBreak());
-                s.Inlines.Add(new LineBreak());
+                //bg_qryDisplay(new LineBreak());
+                bg_qryDisplay(displayType.linebreak, null);
             }
-
+#if false
             //create paragraph
             var p = new Paragraph();
             //if (found != null) p.Inlines.Add(sFound);
@@ -439,6 +559,7 @@ namespace test_universalApp
             //rtbScroll.BringIntoViewOnFocusChange = true;
             rtbScroll.ChangeView(0, 0, null);
             //rtbScroll.ScrollToVerticalOffset(0);
+#endif
         }
 
         Span crtDefBlck(myDefinition def)
@@ -466,7 +587,7 @@ namespace test_universalApp
             var s = new Span();
             var r = new Run { Text = string.Format("{0} {1}", rd.zRadical, rd.iRadical) };
             s.Inlines.Add(r);
-            var descr = crtDefBlck(rd.descr);
+            var descr = crtDefBlck(rd.definitions[0]);
             s.Inlines.Add(descr);
             return s;
         }
@@ -547,7 +668,7 @@ namespace test_universalApp
             hb.Inlines.Add(new Run() { Text = txt });
             return hb;
         }
-        #endregion
+#endregion
 
         private void CanvasCancel_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -898,9 +1019,9 @@ namespace test_universalApp
         private void initEvents()
         {
             termGrid.Tapped += term_Tapped;
-            termGrid.ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY;
-            termGrid.ManipulationCompleted += term_swiped;
-            searchPanel.ManipulationCompleted += term_swiped;
+            split.ManipulationMode = ManipulationModes.TranslateX;
+            split.ManipulationCompleted += term_swiped;
+            //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
             prevBtn.Click += prevBtn_Click;
@@ -942,16 +1063,27 @@ namespace test_universalApp
             //mainGrid.KeyDown += Study_KeyDown;
             //split.KeyDown += Study_KeyDown;
             //KeyDown += Study_KeyDown;
-            flipBtn.Click += term_Tapped;
+            //flipBtn.Click += term_Tapped;
 
             //search & dict
-            srchBtn.Click += searchBtn_Click;
+            srchBtn.Click += srchBtn_Click;
             myNode.OnHyberlinkClick += Hb_Click;
+            searchBnt2.Click += SearchBnt2_Click;
 
             srchTxt.KeyDown += SrchTxt_KeyDown;
 
             //set search event
             turnSearchOnOff(m_option.srchEnable);
+        }
+
+        private void SearchBnt2_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.srchEnable = !m_option.srchEnable;
+            optSrchEnableChk.IsChecked = m_option.srchEnable;
+            turnSearchOnOff(m_option.srchEnable);
+            if (m_option.srchEnable) {
+                search(termTxt.Text);
+            }
         }
 
         private void turnSearchOnOff(bool enable)
@@ -965,20 +1097,22 @@ namespace test_universalApp
             }
             if (enable) {
                 GetKanji += Study_GetKanji;
-                srchRtb.Visibility = Visibility.Visible;
-                srchBtn.Visibility = Visibility.Visible;
-                srchTxt.Visibility = Visibility.Visible;
+                //srchRtb.Visibility = Visibility.Visible;
+                //srchBtn.Visibility = Visibility.Visible;
+                //srchTxt.Visibility = Visibility.Visible;
+                searchPanel.Visibility = Visibility.Visible;
             } else
             {
-                srchRtb.Visibility = Visibility.Collapsed;
-                srchBtn.Visibility = Visibility.Collapsed;
-                srchTxt.Visibility = Visibility.Collapsed;
+                //srchRtb.Visibility = Visibility.Collapsed;
+                //srchBtn.Visibility = Visibility.Collapsed;
+                //srchTxt.Visibility = Visibility.Collapsed;
+                searchPanel.Visibility = Visibility.Collapsed;
             }
         }
 
         private void SrchTxt_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if(e.Key == VirtualKey.Enter) { searchBtn_Click(this, e); }
+            if(e.Key == VirtualKey.Enter) { srchBtn_Click(this, e); }
         }
 
         void onKeyDown(object sender, KeyRoutedEventArgs e)
@@ -1277,11 +1411,12 @@ namespace test_universalApp
             //not in editing state
             if (m_editingItem == null)
             {
-                if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
-                {
-                    term_Tapped(sender, null);
-                }
-                else if (e.Cumulative.Translation.X < -delta)
+                //if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
+                //{
+                //    term_Tapped(sender, null);
+                //}
+                //else 
+                if (e.Cumulative.Translation.X < -delta)
                 {
                     //move right
                     nextBtn_Click(sender, e);

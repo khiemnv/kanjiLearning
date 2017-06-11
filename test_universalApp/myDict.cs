@@ -9,6 +9,19 @@ using Windows.Storage;
 
 namespace test_universalApp
 {
+#if console_mode
+    public class Debug
+    {
+        public static void WriteLine(object txt)
+        {
+            Console.WriteLine(txt);
+        }
+        public static void Write(object txt)
+        {
+            Console.Write(txt);
+        }
+    }
+#endif
     public class myTextReaderJs : myTextReader
     {
         public override int lineCount
@@ -47,18 +60,52 @@ namespace test_universalApp
         }
         public void Open(Uri path)
         {
+            const int timeOut = 1000;
             var t = Task.Run(() => OpenAsync(path));
             int i = 0;
-            for (bool done = t.Wait(100); !done; done = t.Wait(100), i++)
+            for (bool done = t.Wait(timeOut); !done; done = t.Wait(timeOut), i++)
             {
                 OnReading(i);
-                Debug.WriteLine("i {0} count {1}", i, lines != null ? lines.Count : -1);
+                Debug.WriteLine(string.Format("{0} Open i {1} count {2}", this, i, lines != null ? lines.Count : -1));
             }
         }
         public myTextReader()
         {
         }
         public void Close() { }
+#if console_mode
+        public async Task OpenAsync(Uri uri)
+        {
+            var name = Path.GetFileName(uri.ToString());
+            string[] arr = {
+                @"C:\Users\Khiem\Desktop\hv_word.csv",
+                @"C:\Users\Khiem\Desktop\kangxi.csv",
+                @"C:\Users\Khiem\Desktop\hv_org.csv",
+                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js",
+                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js",
+                @"C:\Users\Khiem\Desktop\hannom_index.csv",
+                @"C:\Users\Khiem\Desktop\character.csv",
+                @"C:\Users\Khiem\Desktop\character_jdict.csv",
+                @"C:\Users\Khiem\Desktop\bothu214.csv",
+            };
+            string path = arr.First((s)=> { return s.Contains(name); });
+
+            TextReader rd = File.OpenText(path);
+            var line = await rd.ReadLineAsync();
+            lines = new List<string>();
+            for (;line != null; )
+            {
+                lines.Add(line);
+                line = await rd.ReadLineAsync();
+            }
+            rd.Close();
+            rd.Dispose();
+        }
+        public async Task OpenAsync(string path)
+        {
+            throw new NotImplementedException();
+        }
+#else
         public async Task OpenAsync(Uri uri)
         {
             StorageFile sf = await StorageFile.GetFileFromApplicationUriAsync(uri);
@@ -70,6 +117,7 @@ namespace test_universalApp
             StorageFile sf = await StorageFile.GetFileFromPathAsync(path);
             lines = await FileIO.ReadLinesAsync(sf);
         }
+#endif
         public virtual string ReadLine()
         {
             string ret = (iCur < lines.Count) ? lines[iCur++] : null;
@@ -117,7 +165,12 @@ namespace test_universalApp
         myDictHVORG hv_org;     //hv_org.csv
         myDictHV hvdict;        //hanvietdict.js
         myDictBT hvbt;          //hvchubothu.js
-        void load_dict4()
+        myDictKangxi kxDict;    //kangxi.csv
+        myDictHannom hnDict;    //hannom_index.csv
+        myDictCharacter chDict; //character.csv
+        myDictJDC jdcDict;      //character_jdict.csv
+        myDict214 bt214;           //
+        void load_hv_word()
         {
             string path = @"Assets/hv_word.csv";
             myTextReader rd = new myTextReader();
@@ -138,10 +191,10 @@ namespace test_universalApp
 
         private void Rd_OnReading(object sender, int e)
         {
-            Debug.WriteLine("on reading {0}", e);
+            Debug.WriteLine(string.Format("{0} Rd_OnReading {1}", this, e));
         }
 
-        void load_dict1()
+        void load_hv_org()
         {
             string path = @"Assets/hv_org.csv";
             myTextReader rd = new myTextReader();
@@ -158,7 +211,8 @@ namespace test_universalApp
             hv_org = dict1;
             rd.Dispose();
         }
-
+#if console_mode
+#else
         string getAbsolutePath(string path)
         {
             //StorageFolder folder = Windows.ApplicationModel.Package.Current.InstalledLocation;
@@ -166,6 +220,7 @@ namespace test_universalApp
             path = string.Format("{0}{1}", "ms-appx:///", path);
             return path;
         }
+#endif
         Uri getUri(string path)
         {
             //ms-appx-web:///
@@ -192,7 +247,7 @@ namespace test_universalApp
         //parsing->(has new line) parsing
         //parsing->(wait 4 get line) wait4read
 
-        void load_dict2()
+        void load_hanvietdict()
         {
             var dict = new myDictHV(0);
             string path = @"Assets/hanvietdict.js";
@@ -211,7 +266,7 @@ namespace test_universalApp
             string line;
             for (int i = 0; s != wrkState.end;)
             {
-                Debug.WriteLine("i {0} s {1}", i, s.ToString());
+                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, i, s));
                 switch (s)
                 {
                     case wrkState.init:
@@ -245,7 +300,7 @@ namespace test_universalApp
             rd.Dispose();
         }
         #endregion
-        void load_dict3()
+        void load_hvchubothu()
         {
             string path = @"Assets/hvchubothu.js";
             myTextReader rd = new myTextReader();
@@ -273,7 +328,47 @@ namespace test_universalApp
             rd.Dispose();
             hvbt = dict;
         }
-
+        void load_kangxi()
+        {
+            var dict = new myDictKangxi(0);
+            string path = @"Assets/kangxi.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            kxDict = dict;
+        }
+        void load_hannom_index()
+        {
+            var dict = new myDictHannom(0);
+            string path = @"Assets/hannom_index.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            hnDict = dict;
+        }
+        void load_character()
+        {
+            var dict = new myDictCharacter(0);
+            string path = @"Assets/character.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            chDict = dict;
+        }
+        //character_jdict.csv
+        void load_character_jdict()
+        {
+            var dict = new myDictJDC(0);
+            string path = @"Assets/character_jdict.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            jdcDict = dict;
+        }
+        void load_bt214()
+        {
+            var dict = new myDict214(0);
+            string path = @"Assets/bothu214.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            bt214 = dict;
+        }
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
@@ -282,10 +377,17 @@ namespace test_universalApp
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                m_instance.load_dict1();
-                m_instance.load_dict2();
-                m_instance.load_dict3();
-                m_instance.load_dict4();
+                m_instance.load_character();
+
+                m_instance.load_hv_org();
+                m_instance.load_hanvietdict();
+                //m_instance.load_hvchubothu();
+                m_instance.load_hv_word();
+                m_instance.load_kangxi();
+                //m_instance.load_hannom_index();
+
+                m_instance.load_character_jdict();
+                m_instance.load_bt214();
             }
             return m_instance;
         }
@@ -305,8 +407,12 @@ namespace test_universalApp
                     }
                     if (kanji.radical.zRadical == '\0')
                     {
-                        IRecord rd = hvbt.Search(kanji.radical.iRadical);
+                        IRecord rd;
+                        //rd = hvbt.Search(kanji.radical.iRadical);
+                        //rd.format(kanji);
+                        rd = kxDict[kanji.radical.iRadical];
                         rd.format(kanji);
+                        bt214.Update(kanji);
                     }
                     kanjis.Add(kanji);
                 }
@@ -314,7 +420,86 @@ namespace test_universalApp
             return kanjis;
         }
     }
+    public class myRadicalMng : myDictBase
+    {
+        static protected List<RadRec> m_sRadicals = new List<RadRec>();
+        static protected Dictionary<char, RadRec> m_sRadDict = new Dictionary<char, RadRec>();
 
+        protected class RadRec : IRecord
+        {
+            //kangxi
+            public string alt, name, reading;
+            public char literal;
+            public int stroke_count;
+            //hn
+            public string hn, mean;
+
+            public void initKangxi(string[] arr)
+            {
+                literal = arr[1][0];
+                alt = arr[2];
+                name = arr[5];
+                reading = arr[6];
+                int.TryParse(arr[7], out stroke_count);
+                add(literal);
+                foreach (char c in alt) { add(c); }
+            }
+            void add(char c)
+            {
+                if (!isKanji(c)) return;
+                if (m_sRadDict.ContainsKey(c)) return;
+
+                m_sRadDict.Add(c, this);
+            }
+            public void initBt214(string[] arr)
+            {
+                var term = arr[1];
+                hn = arr[2];
+                mean = arr[3];
+                foreach (char c in term) { add(c); }
+            }
+
+            public void format(myKanji word)
+            {
+                //kangxi
+                word.radical.zRadical = literal;
+                word.radical.alt = alt;
+                word.radical.definitions.Add(
+                    new myDefinition { text = string.Format("{0} {1}", name, reading) }
+                    );
+                //bt214
+                word.radical.hn = hn;
+            }
+
+            public string getKey()
+            {
+                return literal.ToString();
+            }
+        }
+
+        public myRadicalMng(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        protected RadRec CrtRec(int id)
+        {
+            if (m_sRadicals.Count < id)
+            {
+                var rec = new RadRec();
+                m_sRadicals.Add(rec);
+                return rec;
+            }
+            else
+            {
+                return m_sRadicals[id - 1];
+            }
+        }
+        //public IRecord this[char rad]{get {return m_data[rad];}}
+        public IRecord this[int id] { get { return m_sRadicals[id - 1]; } }
+        protected virtual IRecord Search(char rad)
+        {
+            throw new NotImplementedException();
+        }
+    }
     public class myDictBase
     {
         public static Dictionary<char, List<IRecord>> m_kanjis = new Dictionary<char, List<IRecord>>();
@@ -346,6 +531,8 @@ namespace test_universalApp
             return m.arr.ToArray();
         }
 
+
+        public static bool isKanji(char c) { return (c >= 0x2f00); }
         public void add(string line)
         {
             //add(line, false);
@@ -353,19 +540,30 @@ namespace test_universalApp
             string[] arr = parseLine(line);
             IRecord rec = crtRec(arr);
             string zKey = rec.getKey();
-            //add to local dict
-            m_data.Add(zKey, rec);
-            //add to share kanji data
-            foreach (var c in zKey)
+            if (!m_data.ContainsKey(zKey))
             {
-                if (c < 0x2f00)
+                //add to local dict
+                m_data.Add(zKey, rec);
+                //add to share kanji data
+                foreach (var c in zKey)
                 {
-                    Debug.Write(c);
-                    continue;
+                    if (!isKanji(c))
+                    {
+                        Debug.Write(c);
+                        continue;
+                    }
+                    if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
+                    else m_kanjis.Add(c, new List<IRecord> { rec });
                 }
-                if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
-                else m_kanjis.Add(c, new List<IRecord> { rec });
             }
+            else
+            {
+                ResolveConfilct(rec);
+            }
+        }
+        protected virtual void ResolveConfilct(IRecord rec)
+        {
+
         }
         //protected virtual void add(string line, bool isCSV)
         //{
@@ -554,25 +752,24 @@ namespace test_universalApp
     }
     public class myWord
     {
-        public string term;
-        public string hn;
+        public string term; //kanjis
+        public string hn;   //hn
         public List<myDefinition> definitions = new List<myDefinition>();
     }
-    public class myRadical
+    public class myRadical : myWord
     {
         public int iRadical;
         public char zRadical;
-        public myDefinition descr = new myDefinition();
+        public string alt;
     }
-    public class myKanji
+    public class myKanji : myWord
     {
         public char val;
-        public string hn;
-        public List<myWord> relatedWords = new List<myWord>();
-        public List<myDefinition> definitions = new List<myDefinition>();
         public char simple;
         public int extraStrokes, totalStrokes;
+        public string decomposite = "";
         public myRadical radical = new myRadical();
+        public List<myWord> relatedWords = new List<myWord>();
     }
     public interface IRecord
     {
@@ -648,7 +845,12 @@ namespace test_universalApp
             public void format(myKanji word)
             {
                 word.radical.zRadical = radical[0];
-                word.radical.descr = new myDefinition { text = meaning, bFormated = true };
+                word.radical.definitions.Add(
+                    new myDefinition
+                    {
+                        text = meaning,
+                        bFormated = true
+                    });
             }
 
             public string getKey()
@@ -675,6 +877,80 @@ namespace test_universalApp
         public IRecord Search(int radical)
         {
             return m_records[radical - 1];
+        }
+    }
+    //myDictKangxi
+    public class myDictKangxi : myRadicalMng
+    {
+        public myDictKangxi(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            int id = int.Parse(arr[0]);
+            var rec = (RadRec)CrtRec(id);
+            rec.initKangxi(arr);
+            return rec;
+        }
+        protected override string[] parseLine(string line)
+        {
+            return parseLine(line, true);
+        }
+    }
+    //myDictHannom
+    public class myDictHannom : myDictBase
+    {
+        class recordHannom : IRecord
+        {
+            public string hHan;
+            public char unicode;
+            public recordHannom() { }
+            public recordHannom(string[] arr)
+            {
+                unicode = arr[1][0];
+                hHan = arr[2];
+            }
+
+            public void format(myKanji word)
+            {
+                word.radical.definitions.Add(new myDefinition { text = hHan });
+            }
+
+            public string getKey()
+            {
+                return unicode.ToString();
+            }
+        }
+        public myDictHannom(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new recordHannom(arr);
+            return rec;
+        }
+
+        protected override void ResolveConfilct(IRecord irec)
+        {
+            recordHannom rec;
+            string key = irec.getKey();
+            rec = (recordHannom)m_data[key];
+            rec.hHan += ", " + ((recordHannom)irec).hHan;
+        }
+
+        protected override string[] parseLine(string line)
+        {
+            return parseLine(line, true);
+        }
+
+        public IRecord Search(char zRadical)
+        {
+            string key = zRadical.ToString();
+            if (m_data.ContainsKey(key))
+            {
+                return m_data[key];
+            }
+            return null;
         }
     }
     public class myDictHV : myDictBase
@@ -765,6 +1041,128 @@ namespace test_universalApp
         protected override string[] parseLine(string line)
         {
             return parseLine(line, true);
+        }
+    }
+    //myDictCharacter
+    public class myDictCharacter : myDictBase
+    {
+        class recordCharacter : IRecord
+        {
+            public char literal;
+            public string reading, meaning;
+            int stroke_count, kangxi;
+            public recordCharacter() { }
+            public recordCharacter(string[] arr)
+            {
+                literal = arr[1][0];
+                reading = arr[5];
+                meaning = arr[6];
+                int.TryParse(arr[7], out stroke_count);
+                int.TryParse(arr[8], out kangxi);
+            }
+            public void format(myKanji word)
+            {
+                word.radical.iRadical = kangxi;
+                word.totalStrokes = stroke_count;
+                word.definitions.Add(
+                    new myDefinition { text = reading + " " + meaning }
+                    );
+            }
+            public string getKey()
+            {
+                return literal.ToString();
+            }
+        }
+        public myDictCharacter(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new recordCharacter(arr);
+            return rec;
+        }
+        protected override string[] parseLine(string line)
+        {
+            return parseLine(line, true);
+        }
+    }
+
+    //character jdict
+    public class myDictJDC : myDictBase
+    {
+        public myDictJDC(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        class recordJC : IRecord
+        {
+            public char literal;
+            public string decomposition;
+            public recordJC() { }
+            public recordJC(string[] arr)
+            {
+                literal = arr[1][0];
+                decomposition = arr[2];
+            }
+            public void format(myKanji word)
+            {
+                word.decomposite = decomposition;
+            }
+            public string getKey()
+            {
+                return literal.ToString();
+            }
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new recordJC(arr);
+            return rec;
+        }
+        protected override string[] parseLine(string line)
+        {
+            var arr = line.Split(',');
+            return arr;
+        }
+    }
+
+
+    public class myDict214 : myRadicalMng
+    {
+        public myDict214(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            int id = int.Parse(arr[0]);
+            var rec = CrtRec(id);
+            rec.initBt214(arr);
+            return rec;
+        }
+        public void Update(myKanji kj)
+        {
+            //update radical.hn & decomposite
+            //var rec = (RadRec)this[kj.radical.iRadical - 1];
+            //kj.radical.hn = rec.hn;
+            Debug.WriteLine(string.Format("{0} Update decomposite {1}", this, kj.val));
+            List<string> arr = new List<string>();
+            foreach (char key in kj.decomposite)
+            {
+                if (!isKanji(key)) continue;
+                if (m_sRadDict.ContainsKey(key))
+                {
+                    //arr.Add(c);
+                    var rad = m_sRadDict[key];
+                    arr.Add(rad.hn);
+                }
+                else
+                {
+                    Debug.Write(key);
+                }
+            }
+            if (arr.Count > 0) { kj.decomposite = string.Format("{0}({1})", kj.decomposite, string.Join(";", arr)); }
+        }
+        protected override string[] parseLine(string line)
+        {
+            return base.parseLine(line, true);
         }
     }
 }
