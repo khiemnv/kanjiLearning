@@ -11,6 +11,7 @@ using Windows.UI.Popups;
 using Windows.Storage.Pickers;
 using Windows.Storage.AccessCache;
 using Windows.UI.Xaml.Input;
+using System.Collections.Generic;
 
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409

@@ -7,6 +7,7 @@
 
 #define dict_dist
 #define sepate_kanji
+#define enable_edit
 
 using System;
 using System.Collections.Generic;
@@ -49,9 +50,23 @@ namespace test_universalApp
         static public event EventHandler<string> GetKanji;
         List<wordItem> m_items = new List<wordItem>();
         List<wordItem> m_markedItems = new List<wordItem>();
-        BackgroundWorker m_worker = new BackgroundWorker();
+        //BackgroundWorker m_worker = new BackgroundWorker();
         BackgroundWorker m_srchWorker = new BackgroundWorker();
+        bool m_srchWorkerIsRunning;
         int m_iCursor;
+
+        class myBgTask
+        {
+            public enum taskType
+            {
+                speek,
+                search,
+                loadData
+            }
+            public taskType type;
+            public object data;
+        }
+        Queue<myBgTask> m_msgQueue = new Queue<myBgTask>();
 
         //singleton dict
         myDict dict = myDict.Load();
@@ -90,7 +105,9 @@ namespace test_universalApp
             synthDic = new Dictionary<string, SpeechSynthesizer>();
 
             m_grp1 = new List<UIElement>() {
-                //canvasEdit,
+#if enable_edit
+                canvasEdit,
+#endif
                 termTxt, detailTxt,
                 nextBtn, backBtn,
                 bntStack,
@@ -184,16 +201,15 @@ namespace test_universalApp
 
         void speakTxt()
         {
+#if false
             if (m_speakStat != speakStatus.end)
             {
                 Debug.WriteLine("{0} speakTxt m_speakStat {1}", this, m_speakStat.ToString());
                 return;
             }
             m_speakStat = speakStatus.begin;
-
+#endif
             //need disable all action
-            
-
             var items = getCurItems();
             var item = items[m_iCursor];
             string txt;
@@ -203,7 +219,29 @@ namespace test_universalApp
             txt = "hello world";
             lang = "en-US";
 #endif
+#if false
             speakTxt(txt, lang);
+#else
+            qryBgTask(new myBgTask
+            {
+                type = myBgTask.taskType.speek,
+                data = new mySpeechQry { txt = txt, lang = lang }
+            });
+#endif
+        }
+        void qryBgTask(myBgTask task)
+        {
+            m_msgQueue.Enqueue(task);
+            if (m_srchWorkerIsRunning == false)
+            {
+                m_srchWorkerIsRunning = true;
+                m_srchWorker.RunWorkerAsync();
+            }
+        }
+        class mySpeechQry
+        {
+            public string txt;
+            public string lang;
         }
 
 #if !once_synth
@@ -231,39 +269,34 @@ namespace test_universalApp
         }
 #endif
 
-        async void speakTxt(string txt, string lang)
+        async Task speakTxt(string txt, string lang)
         {
             Debug.WriteLine("{0} speakTxt call play", this);
             //txt = "hello world";
             //IEnumerable<VoiceInformation> frenchVoices = from voice in SpeechSynthesizer.AllVoices
             //                                             where voice.Language == "fr-FR"
             //                                             select voice;
-            VoiceInformation voice;
-            bool ret = getVoice(out voice, lang);
-            if (ret)
+            //VoiceInformation voice;
+            //bool ret = getVoice(out voice, lang);
+            var synth = getSpeechSynth(lang);
+            if (synth!=null)
             {
                 m_speakStat = speakStatus.called;
 #if !once_synth
                 lastTTSsynth = new SpeechSynthesizer();
 #endif
-                var synth = getSpeechSynth(lang);
                 lastTTSstream = await synth.SynthesizeTextToStreamAsync(txt);
-                // The media object for controlling and playing audio.
-                MediaElement mediaElement = media;
-                //MediaElement mediaElement = new MediaElement();
-                mediaElement.SetSource(lastTTSstream, lastTTSstream.ContentType);
-                Debug.WriteLine("  + call play()");
-                mediaElement.Play();
-                Debug.WriteLine("  + play() return");
             }
             else
             {
+#if false   //not show error msgbox in background
                 MessageDialog msgbox = new MessageDialog(
                     string.Format("Not found {0} voice infomation. " +
                     "Maybe {0} voice recognition was not installed!", lang));
                 msgbox.Title = "Speak word error!";
                 await msgbox.ShowAsync();
-                m_speakStat = speakStatus.end;
+#endif
+                //m_speakStat = speakStatus.end;
             }
         }
 
@@ -325,27 +358,71 @@ namespace test_universalApp
             m_srchWorker.RunWorkerCompleted += M_srchWorker_RunWorkerCompleted;
             m_srchWorker.WorkerReportsProgress = true;
             m_srchWorker.WorkerSupportsCancellation = true;
-
+            m_srchWorkerIsRunning = false;
+            //m_srchWorker.RunWorkerAsync();
+#if !enable_edit
             canvasEdit.Visibility = Visibility.Collapsed;
+#endif
         }
 
         private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            //throw new NotImplementedException();
+            Debug.WriteLine("M_srchWorker_RunWorkerCompleted");
+            m_srchWorkerIsRunning = false;
         }
 
         private void M_srchWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             //throw new NotImplementedException();
             Debug.WriteLine(string.Format("{0} M_srchWorker_ProgressChanged {1}", this, e.ProgressPercentage));
-            var qry = (myQryData)e.UserState;
-            qryProcess(qry.type, qry.data);
+            var qry = (myFgTask)e.UserState;
+            fg_processQry(qry.type, qry.data);
         }
 
+        void sleep(int timeout)
+        {
+            var t = Task.Run(() => Task.Delay(timeout));
+            t.Wait();
+        }
         private void M_srchWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             //throw new NotImplementedException();
-            bg_search();
+            uint i = 0;
+            for(;;) {
+                if (m_msgQueue.Count >0)
+                {
+                    var msg = m_msgQueue.Dequeue();
+                    switch (msg.type)
+                    {
+                        case myBgTask.taskType.loadData:
+                            bg_loadData(null, null);
+                            break;
+                        case myBgTask.taskType.search:
+                            bg_search((string)msg.data);
+                            break;
+                        case myBgTask.taskType.speek:
+                            {
+                                var sq = (mySpeechQry)msg.data;
+                                var tBegin = Environment.TickCount / 1000;
+                                Debug.WriteLine("M_srchWorker_DoWork speak {0} start", sq.txt);
+                                var t = Task.Run(()=>speakTxt(sq.txt, sq.lang));
+                                t.Wait();
+                                bg_qryFgTask(myFgTask.qryType.speech, null);
+                                while(m_speakStat != speakStatus.end) { sleep(100); }
+                                //t.Wait();
+                                tBegin = Environment.TickCount / 1000 - tBegin;
+                                Debug.WriteLine("M_srchWorker_DoWork speak end {0}", tBegin);
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("M_srchWorker_DoWork fall sleep, i = {0}", i++);
+                    //sleep(1000);
+                    break;
+                }
+            }
         }
 
         private void updateStatus(string v)
@@ -360,7 +437,7 @@ namespace test_universalApp
             search(txt);
         }
 
-        #region search_rgn
+#region search_rgn
         const int m_limitContentLen = 3;
         const int m_limitContentCnt = 7;
 
@@ -390,43 +467,69 @@ namespace test_universalApp
             }
 
             srchRtb.Blocks.Clear();
-            rtbScroll.ChangeView(0, 0, null);
+            //rtbScroll.ChangeView(0, 0, null);
             totalLine = 0;
 
-            while (m_srchWorker.IsBusy)
-            {
-                m_srchWorker.CancelAsync();
-            }
-            m_srchWorker.RunWorkerAsync();
+            qryBgTask(new myBgTask { type = myBgTask.taskType.search, data = txt });
+            //while (m_srchWorker.IsBusy)
+            //{
+            //    m_srchWorker.CancelAsync();
+            //}
+            //m_srchWorker.RunWorkerAsync();
         }
         Span curLine = new Span();
         int totalLine = 0;
-        //run in background
-        class myQryData {
-            public displayType type;
+
+        class myFgTask {
+            public enum qryType
+            {
+                hyperlink,
+                linebreak,
+                run,
+                define,
+                word,
+                scroll,
+                speech,
+                loadProgress,
+                updateGUI
+            }
+            public qryType type;
             public object data;
-            public myQryData(displayType type, object data)
+            public myFgTask(qryType type, object data)
             {
                 this.type = type;
                 this.data = data;
             }
         }
-        enum displayType
+
+        //call from background
+        void bg_qryFgTask(myFgTask.qryType type, object data)
         {
-            hyperlink,
-            linebreak,
-            run,
-            define,
-            word
+            m_srchWorker.ReportProgress(totalLine++, new myFgTask(type,data));
         }
-        void bg_qryDisplay(displayType type, object data)
-        {
-            m_srchWorker.ReportProgress(totalLine++, new myQryData(type,data));
-        }
-        void qryProcess(displayType type, object data) {
+        void fg_processQry(myFgTask.qryType type, object data) {
             switch (type)
             {
-                case displayType.linebreak:
+                case myFgTask.qryType.updateGUI:
+                    updateGUI(null, null);
+                    break;
+                case myFgTask.qryType.loadProgress:
+                    {
+                        Debug.WriteLine("load progress ");
+                    }
+                    break;
+                case myFgTask.qryType.speech:
+                    {
+                        // The media object for controlling and playing audio.
+                        MediaElement mediaElement = media;
+                        //MediaElement mediaElement = new MediaElement();
+                        mediaElement.SetSource(lastTTSstream, lastTTSstream.ContentType);
+                        Debug.WriteLine("  + call play()");
+                        mediaElement.Play();
+                        Debug.WriteLine("  + play() return");
+                    }
+                    break;
+                case myFgTask.qryType.linebreak:
                     {
                         Paragraph p = new Paragraph();
                         //curLine.Inlines.Add(new LineBreak());
@@ -439,88 +542,92 @@ namespace test_universalApp
                         curLine = new Span();
                     }
                     break;
-                case displayType.hyperlink:
+                case myFgTask.qryType.hyperlink:
                     {
                         var ch = (char)data;
                         Hyperlink hb = crtBlck(ch);
                         curLine.Inlines.Add(hb);
                     }
                     break;
-                case displayType.run:
+                case myFgTask.qryType.run:
                     {
                         var txt = (string)data;
                         curLine.Inlines.Add(new Run { Text = txt });
                     }
                     break;
-                case displayType.define:
+                case myFgTask.qryType.define:
                     {
                         var def = (myDefinition)data;
                         curLine.Inlines.Add(crtDefBlck(def));
                     }
                     break;
-                case displayType.word:
+                case myFgTask.qryType.word:
                     {
                         var wd = (myWord)data;
                         curLine.Inlines.Add(crtWdBlck(wd));
                     }
                     break;
+                case myFgTask.qryType.scroll:
+                    //rtbScroll.ScrollToVerticalOffset(0);
+                    rtbScroll.ChangeView(0, 0, 1);
+                    break;
             }
         }
         //run in background
-        void bg_search()
+        void bg_search(string txt)
         {
-            string txt = m_preTxt;
+             //= m_preTxt;
             var ret = dict.Search(txt);
             List<myWord> words = new List<myWord>();
             //Span s = new Span();
             foreach (var kanji in ret)
             {
-                bg_qryDisplay(displayType.hyperlink, kanji.val);
+                bg_qryFgTask(myFgTask.qryType.hyperlink, kanji.val);
                 if (kanji.decomposite != "") {
-                    bg_qryDisplay(displayType.run, kanji.decomposite);
-                    bg_qryDisplay(displayType.linebreak, null);
+                    bg_qryFgTask(myFgTask.qryType.run, kanji.decomposite);
+                    bg_qryFgTask(myFgTask.qryType.linebreak, null);
                 }
 
-                bg_qryDisplay(displayType.define, kanji.definitions[0]);
+                bg_qryFgTask(myFgTask.qryType.define, kanji.definitions[0]);
                 kanji.definitions.RemoveAt(0);
 
                 var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
                 if (foundKanji != null)
                 {
-                    bg_qryDisplay(displayType.define, (foundKanji.definitions[0]));
+                    bg_qryFgTask(myFgTask.qryType.define, (foundKanji.definitions[0]));
                 }
                 else
                 {
-                    bg_qryDisplay(displayType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
-                    bg_qryDisplay(displayType.hyperlink, kanji.radical.zRadical);
+                    bg_qryFgTask(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
+                    bg_qryFgTask(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
                     //bg_qryDisplay(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
                     var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
                     if (rdInfo.Count > 0)
                     {
                         var k = rdInfo[0];
-                        if (k.hn != "") bg_qryDisplay(displayType.run, string.Format("({0})", k.hn));
-                        if (k.simple != '\0') bg_qryDisplay(displayType.run, string.Format(" simple {0}", k.simple));
+                        if (k.hn != "") bg_qryFgTask(myFgTask.qryType.run, string.Format("({0})", k.hn));
+                        if (k.simple != '\0') bg_qryFgTask(myFgTask.qryType.run, string.Format(" simple {0}", k.simple));
                     }
-                    bg_qryDisplay(displayType.run, ", meaning: ");
+                    bg_qryFgTask(myFgTask.qryType.run, ", meaning: ");
                     foreach (var def in kanji.definitions)
                     {
-                        bg_qryDisplay(displayType.define, (def));
+                        bg_qryFgTask(myFgTask.qryType.define, (def));
                         break;
                     }
-                    bg_qryDisplay(displayType.linebreak, null);
+                    bg_qryFgTask(myFgTask.qryType.linebreak, null);
                 }
                 words.AddRange(kanji.relatedWords);
-                bg_qryDisplay(displayType.linebreak, null);
+                bg_qryFgTask(myFgTask.qryType.linebreak, null);
             }
-            bg_qryDisplay(displayType.linebreak, null);
+            bg_qryFgTask(myFgTask.qryType.linebreak, null);
             //found word
             myWord found = null;
             if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
             //var sFound = new Span();
             if (found != null)
             {
-                bg_qryDisplay(displayType.word, found);
-                bg_qryDisplay(displayType.linebreak, null);
+                bg_qryFgTask(myFgTask.qryType.word, found);
+                bg_qryFgTask(myFgTask.qryType.linebreak, null);
                 //remove from list
                 words.Remove(found);
             }
@@ -542,10 +649,10 @@ namespace test_universalApp
                 else
 #endif
                 {
-                    bg_qryDisplay(displayType.word, (rWd));
+                    bg_qryFgTask(myFgTask.qryType.word, (rWd));
                 }
                 //bg_qryDisplay(new LineBreak());
-                bg_qryDisplay(displayType.linebreak, null);
+                bg_qryFgTask(myFgTask.qryType.linebreak, null);
             }
 #if false
             //create paragraph
@@ -560,6 +667,7 @@ namespace test_universalApp
             rtbScroll.ChangeView(0, 0, null);
             //rtbScroll.ScrollToVerticalOffset(0);
 #endif
+            bg_qryFgTask(myFgTask.qryType.scroll, null);
         }
 
         Span crtDefBlck(myDefinition def)
@@ -970,17 +1078,20 @@ namespace test_universalApp
 #region loadData
         private void loadData()
         {
+#if false
             loadProgress.Visibility = Visibility.Visible;
             loadProgress.Maximum = 100;
 
-            m_worker.DoWork += M_worker_DoWork;
+            m_worker.DoWork += bg_loadData;
             m_worker.ProgressChanged += M_worker_ProgressChanged;
             m_worker.WorkerReportsProgress = true;
             m_worker.RunWorkerCompleted += M_worker_RunWorkerCompleted;
             m_worker.RunWorkerAsync();
+#endif
+            qryBgTask(new myBgTask {type = myBgTask.taskType.loadData });
         }
 
-        private void M_worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void updateGUI(object sender, RunWorkerCompletedEventArgs e)
         {
             //update option panel
             //+ show marked
@@ -1135,20 +1246,22 @@ namespace test_universalApp
             }
         }
 
-        private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            loadProgress.Value = e.ProgressPercentage;
-            Debug.WriteLine("{0} M_worker_ProgressChanged loadedChapter {1} ", this, e.ProgressPercentage);
-        }
+        //private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        //{
+        //    loadProgress.Value = e.ProgressPercentage;
+        //    Debug.WriteLine("{0} M_worker_ProgressChanged loadedChapter {1} ", this, e.ProgressPercentage);
+        //}
 
-        private void M_worker_DoWork(object sender, DoWorkEventArgs e)
+        private void bg_loadData(object sender, DoWorkEventArgs e)
         {
             //load option
-            m_worker.ReportProgress(20);
+            //m_worker.ReportProgress(20);
+            bg_qryFgTask(myFgTask.qryType.loadProgress, 20);
             Debug.WriteLine("{0} call load option {1}", this, Environment.TickCount);
             m_option = studyOption.getInstance();
             Debug.WriteLine("{0} load option return {1}", this, Environment.TickCount);
-            m_worker.ReportProgress(50);
+            //m_worker.ReportProgress(50);
+            bg_qryFgTask(myFgTask.qryType.loadProgress, 50);
 
             //load marked words
             m_markedItems.Clear();
@@ -1180,7 +1293,8 @@ namespace test_universalApp
                     }
                 }
                 loadedChapter++;
-                m_worker.ReportProgress(50 + (loadedChapter * 50 / totalChaptes));
+                //m_worker.ReportProgress(50 + (loadedChapter * 50 / totalChaptes));
+                bg_qryFgTask(myFgTask.qryType.loadProgress, 50 + (loadedChapter * 50 / totalChaptes));
                 Debug.WriteLine("{0} M_worker_DoWork loadedChapter {1} ", this, loadedChapter);
             }
 #else
@@ -1200,6 +1314,7 @@ namespace test_universalApp
                     c = ch, index = i++, marked = marked });
             }
 #endif
+            bg_qryFgTask(myFgTask.qryType.updateGUI, null);
         }
 
         private void updateTerm()
@@ -1443,7 +1558,7 @@ namespace test_universalApp
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects).
-                    m_worker.Dispose();
+                    m_srchWorker.Dispose();
                     foreach (var s in synthDic.Values)
                     {
                         s.Dispose();
