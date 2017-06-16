@@ -183,7 +183,8 @@
                 >
                 <Canvas Name="canvasEdit"
                     Height="80"
-                    Width="80">
+                    Width="80"
+                        Opacity="0.5">
                     <Ellipse Name="editEllipse"
                         Fill="LightGray"
                         Height="80"
@@ -234,7 +235,8 @@
                 </Canvas>
                 <Canvas Name="canvasSpeak"
                     Height="80"
-                    Width="80">
+                    Width="80"
+                        Opacity="0.5">
                     <Ellipse
                     Name="speakEllipse"
                     Fill="LightGray"
@@ -252,7 +254,8 @@
                 </Canvas>
                 <Canvas Name="canvasStar"
                     Height="80"
-                    Width="80">
+                    Width="80"
+                        Opacity="0.5">
                     <Ellipse
                     Name="starEllipse"
                     Fill="#FFFFFF00"  

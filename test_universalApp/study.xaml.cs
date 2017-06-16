@@ -1212,12 +1212,16 @@ namespace test_universalApp
                 //srchBtn.Visibility = Visibility.Visible;
                 //srchTxt.Visibility = Visibility.Visible;
                 searchPanel.Visibility = Visibility.Visible;
+                UIElement[] arr = {canvasStar, canvasEdit, canvasSpeak };
+                foreach (var c in arr){c.Opacity = 0.5;}
             } else
             {
                 //srchRtb.Visibility = Visibility.Collapsed;
                 //srchBtn.Visibility = Visibility.Collapsed;
                 //srchTxt.Visibility = Visibility.Collapsed;
                 searchPanel.Visibility = Visibility.Collapsed;
+                UIElement[] arr = { canvasStar, canvasEdit, canvasSpeak };
+                foreach (var c in arr) { c.Opacity = 1; }
             }
         }
 
@@ -1449,7 +1453,7 @@ namespace test_universalApp
         {
             if (starChk.IsChecked)
             {
-                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow };
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow};
                 //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
             }
@@ -1460,7 +1464,7 @@ namespace test_universalApp
                 // Describes the brush's color using RGB values. 
                 // Each value has a range of 0-255.
 
-                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver };
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver};
                 //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
             }
