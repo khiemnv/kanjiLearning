@@ -12,7 +12,6 @@
         Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="35"></RowDefinition>
-            <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="35"></RowDefinition>
@@ -35,7 +34,7 @@
         </Grid>
         <!--split view-->
         <Grid Grid.Row="1"
-            Grid.RowSpan="2"
+            Grid.RowSpan="1"
             Background="Silver">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
@@ -56,102 +55,207 @@
                 Height="auto"
                 Width="auto"
                 IsPaneOpen="False"
-                DisplayMode="Overlay"
-                OpenPaneLength="250">
+                DisplayMode="CompactOverlay"
+                OpenPaneLength="250"
+                CompactPaneLength="35"
+                >
                 <SplitView.Pane>
                     <Grid Name="optionsStack" Background="DarkGray">
-                        <StackPanel Margin="48, 0, 0, 0">
-                            <TextBlock>Options</TextBlock>
-                            <CheckBox Name="optWordDetailChk" Margin="10,0,0,0">Show detail</CheckBox>
-                            <CheckBox Name="optWordStarChk" Margin="10,0,0,0">Marked words</CheckBox>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Width="50">Term</TextBlock>
-                                <ComboBox Name="optWordTermCmb" Margin="10,0,0,0"></ComboBox>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="35"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*"></RowDefinition>
+                            <RowDefinition Height="1*"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <Button Name="optionBtn"
+                                Padding="0"
+                                VerticalAlignment="Top"
+                                Width="35"
+                                Height="35">
+                            <Image Source="Assets\option.png"></Image>
+                        </Button>
+                        <Grid Grid.Column="1"
+                            Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="35"></RowDefinition>
+                                <RowDefinition Height="*"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <TextBlock Margin="5,0,0,0"
+                                VerticalAlignment="Center">Options</TextBlock>
+
+                            <StackPanel
+                                Grid.Row="1">
+                                <CheckBox Name="optWordDetailChk" Margin="10,0,0,0">Show detail</CheckBox>
+                                <CheckBox Name="optWordStarChk" Margin="10,0,0,0">Marked words</CheckBox>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="50">Term</TextBlock>
+                                    <ComboBox Name="optWordTermCmb" Margin="10,0,0,0"></ComboBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="50">Define</TextBlock>
+                                    <ComboBox Name="optWordTermDefineCmb" Margin="10,0,0,0"></ComboBox>
+                                </StackPanel>
+                                <TextBlock>Speak</TextBlock>
+                                <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
+                                <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
+                                <!--<TextBlock>Search</TextBlock>-->
+                                <!--<CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>-->
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Width="50">Define</TextBlock>
-                                <ComboBox Name="optWordTermDefineCmb" Margin="10,0,0,0"></ComboBox>
-                            </StackPanel>
-                            <TextBlock>Speak</TextBlock>
-                            <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
-                            <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
-                            <TextBlock>Search</TextBlock>
-                            <CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>
+                        </Grid>
+                        <!--half below-->
+                        <Grid Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            VerticalAlignment="Top">
+                            <Button
+                                Padding="0"
+                                Grid.Row="1"
+                                VerticalAlignment="Top"
+                                Name="searchBnt2"
+                                Margin="0"
+                                Width="35"
+                                Height="35">
+                                M
+                            </Button>
+                            <TextBlock Margin="40,0,0,0"
+                                VerticalAlignment="Center">
+                                Show hide search panel</TextBlock>
+                        </Grid>
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            VerticalAlignment="Bottom">
+                            <Button Name="canvasCancel"
+                                Padding="0"
+                                Margin="0,2,0,2"
+                                Width="35"
+                                Height="35">
+                                <Image Source="Assets/cancel.png"/>
+                            </Button>
+                            <Button Name="canvasAccept"
+                                Padding="0"
+                                Margin="0,2,0,2"
+                                Width="35"
+                                Height="35">
+                                <Image
+                                    Source="Assets/accept.png"/>
+                            </Button>
+                            <Grid>
+                                <Button Name="canvasEdit"
+                                    Padding="0"
+                                    Margin="0,2,0,2"
+                                    Width="35"
+                                    Height="35">
+                                    <Image
+                                        Source="Assets/pencil.png"/>
+                                </Button>
+                                <TextBlock Margin="40,0,0,0"
+                                    VerticalAlignment="Center">Edit word</TextBlock>
+                            </Grid>
+                            <Grid>
+                                <Button Name="canvasSpeak"
+                                    Margin="0,2,0,2"
+                                    Padding="0"
+                                    Width="35"
+                                    Height="35">
+                                    <Image
+                                        Name="speakImage"
+                                        Source="Assets/speak.png"/>
+                                </Button>
+                                <TextBlock Margin="40,0,0,0"
+                                    VerticalAlignment="Center">Speak</TextBlock>
+                            </Grid>
                         </StackPanel>
+
                     </Grid>
                 </SplitView.Pane>
                 <SplitView.Content>
-                    <Grid Name="termGrid"
-                          Background="Silver">
+                    <Grid Name="contentPanel">
+                        <Grid.ColumnDefinitions>
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="3*"/>
                             <RowDefinition Height="1*"/>
-                            <RowDefinition Height="4*"/>
+                            <RowDefinition Height="1*"/>
                         </Grid.RowDefinitions>
-                        <!--search panel-->
+
                         <Grid Name="searchPanel"
-                              Grid.Row="2"
-                              >
+                            Grid.Row="1">
+                            <!--search panel-->
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="35"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                                <TextBox Name="srchTxt"
-                                 Grid.Row="0"
-                                 Margin="35,0,0,0"></TextBox>
-                                <Button Name="srchBtn"
-                                Grid.Row="0"
-                                Width="35"
-                                Height="35"
-                                Padding="0">
-                                <Image
-                                Margin="0"
-                                Width="30"
-                                Source="Assets\search.png"></Image>
+                            <Button Name="srchBtn"
+                                Padding="0"
+                                Width="35">
+                            <Image Source="Assets\search.png"></Image>
                             </Button>
+                            <TextBox Name="srchTxt"
+                                Margin="35,0,0,0"
+                                Grid.Row="0"></TextBox>
+                            <!--<Button Name="srchBtn"
+                            Grid.Row="0"
+                            Width="35"
+                            Height="35"
+                            Padding="0">
+                                <Image
+                            Margin="0"
+                            Width="30"
+                            Source="Assets\search.png"></Image>
+                            </Button>-->
                             <ScrollViewer Name="rtbScroll" Grid.Row="1">
-                                <RichTextBlock Name="srchRtb">
-                                    <Paragraph>
-                                        阿 (bảo 8) ⻖(phụ 2)
-                                        <LineBreak></LineBreak>
-                                        保 (an 9) ホ (moc 5)
-                                        <LineBreak></LineBreak>
-
-                                    </Paragraph>
-                                    <Paragraph>
-                                        para1
-                                        <Run>text run</Run>
-                                        list item
-                                        <LineBreak></LineBreak>
-                                        list item 2
-                                        <Span>span1</Span>
-                                        <Span>span with linebrk
-                                            line1
+                                    <RichTextBlock Name="srchRtb">
+                                        <Paragraph>
+                                            阿 (bảo 8) ⻖(phụ 2)
                                             <LineBreak></LineBreak>
-                                            line2
-                                        </Span>
-                                        <Span>
-                                            <Span>span in span
+                                            保 (an 9) ホ (moc 5)
+                                            <LineBreak></LineBreak>
+
+                                        </Paragraph>
+                                        <Paragraph>
+                                            para1
+                                            <Run>text run</Run>
+                                            list item
+                                            <LineBreak></LineBreak>
+                                            list item 2
+                                            <Span>span1</Span>
+                                            <Span>span with linebrk
+                                            line1
                                                 <LineBreak></LineBreak>
-                                                linebr
+                                                line2
                                             </Span>
-                                        </Span>
-                                    </Paragraph>
-                                    <Paragraph>para2
-                                    </Paragraph>
-                                </RichTextBlock>
-                            </ScrollViewer>
+                                            <Span>
+                                                <Span>span in span
+                                                    <LineBreak></LineBreak>
+                                                    linebr
+                                                </Span>
+                                            </Span>
+                                        </Paragraph>
+                                        <Paragraph>para2
+                                        </Paragraph>
+                                    </RichTextBlock>
+                                </ScrollViewer>
                         </Grid>
-                        <!--<Border Grid.Row="0" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
-                        <TextBlock 
+                        <Grid Name="termGrid"
+                            Grid.Row="0"
+                            Background="Silver">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="3*"/>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+                            <!--<Border Grid.Row="0" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
+                            <TextBlock 
                             Name="termTxt"
                             Text="term"
                             TextWrapping="Wrap"
                             FontSize="48"
                             Foreground="Green"
                             Grid.Row="0"/>
-                        <!--<Border Grid.Row="1" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
-                        <TextBlock
+                            <!--<Border Grid.Row="1" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
+                            <TextBlock
                             Name="detailTxt"
                             Text="detail"
                             TextWrapping="Wrap"
@@ -159,7 +263,7 @@
                             Foreground="Black"
                             Grid.Row="1"
                             Width="auto"/>
-                        <TextBox
+                            <TextBox
                             Name="editTxt"
                             Grid.Row="0"
                             Grid.RowSpan="2"
@@ -168,6 +272,7 @@
                             AcceptsReturn="True"
                             TextWrapping="Wrap"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                        </Grid>
                     </Grid>
                 </SplitView.Content>
             </SplitView>
@@ -181,7 +286,7 @@
                 HorizontalAlignment="Right"
                 Orientation="Vertical"
                 >
-                <Canvas Name="canvasEdit"
+                <!--<Canvas Name="canvasEdit"
                     Height="80"
                     Width="80">
                     <Ellipse Name="editEllipse"
@@ -249,7 +354,7 @@
                     Source="Assets/speak.png"
                     Height="50"
                     Width="50"/>
-                </Canvas>
+                </Canvas>-->
                 <Canvas Name="canvasStar"
                     Height="80"
                     Width="80">
@@ -274,11 +379,11 @@
         <StackPanel Name="bntStack"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
-                Grid.Row="3">
-            <Button Name="optionBtn" Content=". . ."
-                    Margin="1,1,1,1"/>
-            <Button x:Name="searchBnt2" Content="More"
-                    Margin="1,1,1,1"/>
+                Grid.Row="2">
+            <!--<Button Name="optionBtn" Content=". . ."
+                    Margin="1,1,1,1"/>-->
+            <!--<Button x:Name="searchBnt2" Content="More"
+                    Margin="1,1,1,1"/>-->
             <Button x:Name="sulfBnt" Content="Sulf"
                     Margin="1,1,1,1"/>
             <Button Name="prevBtn" Content="Prev"

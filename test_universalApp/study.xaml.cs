@@ -127,10 +127,10 @@ namespace test_universalApp
             m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
         }
 
-        private void OptSrchEnableChk_Click(object sender, RoutedEventArgs e)
-        {
-            m_option.srchEnable = (bool)optSrchEnableChk.IsChecked;
-        }
+        //private void OptSrchEnableChk_Click(object sender, RoutedEventArgs e)
+        //{
+        //    m_option.srchEnable = (bool)optSrchEnableChk.IsChecked;
+        //}
 
         BitmapImage speakBM = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
         BitmapImage speakBM2 = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
@@ -1109,7 +1109,7 @@ namespace test_universalApp
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
             //+ search
-            optSrchEnableChk.IsChecked = m_option.srchEnable;
+            //optSrchEnableChk.IsChecked = m_option.srchEnable;
 
             //setup EventHandler
             //+ register GetKanji event before updateTerm()?
@@ -1130,8 +1130,8 @@ namespace test_universalApp
         private void initEvents()
         {
             termGrid.Tapped += term_Tapped;
-            split.ManipulationMode = ManipulationModes.TranslateX;
-            split.ManipulationCompleted += term_swiped;
+            termGrid.ManipulationMode = ManipulationModes.TranslateX;
+            termGrid.ManipulationCompleted += term_swiped;
             //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
@@ -1158,7 +1158,7 @@ namespace test_universalApp
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
 
             //search option
-            optSrchEnableChk.Click += OptSrchEnableChk_Click;
+            //optSrchEnableChk.Click += OptSrchEnableChk_Click;
 
             split.PaneClosed += Split_PaneClosed;
 
@@ -1190,10 +1190,17 @@ namespace test_universalApp
         private void SearchBnt2_Click(object sender, RoutedEventArgs e)
         {
             m_option.srchEnable = !m_option.srchEnable;
-            optSrchEnableChk.IsChecked = m_option.srchEnable;
+            //optSrchEnableChk.IsChecked = m_option.srchEnable;
             turnSearchOnOff(m_option.srchEnable);
             if (m_option.srchEnable) {
                 search(termTxt.Text);
+                searchPanel.Visibility = Visibility.Visible;
+                termGrid.SetValue(Grid.RowSpanProperty, 1);
+            }
+            else
+            {
+                searchPanel.Visibility = Visibility.Collapsed;
+                termGrid.SetValue(Grid.RowSpanProperty, 2);
             }
         }
 
@@ -1449,8 +1456,8 @@ namespace test_universalApp
         {
             if (starChk.IsChecked)
             {
-                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow };
-                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow, Opacity = 0.5 };
+                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White, Opacity = 0.5 };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
             }
             else
@@ -1460,9 +1467,9 @@ namespace test_universalApp
                 // Describes the brush's color using RGB values. 
                 // Each value has a range of 0-255.
 
-                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver };
-                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
-                starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
+                starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver, Opacity = 0.5 };
+                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White, Opacity = 0.5 };
+                starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White, Opacity = 0.5 };
             }
         }
 
