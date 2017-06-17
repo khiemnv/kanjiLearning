@@ -2,6 +2,7 @@
 #define sepate_kanji
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -36,6 +37,67 @@ namespace test_guide
             Loaded += pgLoaded;
             srchBtn.Click += searchBtn_Click;
             myNode.OnHyberlinkClick += Hb_Click;
+
+            srchTxt.TextCompositionEnded += SrchTxt_TextCompositionEnded;
+            srchTxt.TextChanged += SrchTxt_TextChanged;
+            srchTxt.KeyDown += SrchTxt_KeyDown;
+
+            optionBtn.Click += Option_Click;
+            more.Click += More_Click;
+
+            contentPanel.Tapped += TermPanel_Tapped;
+            contentPanel.ManipulationMode = ManipulationModes.TranslateX;
+            contentPanel.ManipulationCompleted += TermPanel_ManipulationCompleted;
+        }
+
+        private void TermPanel_ManipulationCompleted(object sender, ManipulationCompletedRoutedEventArgs e)
+        {
+            Debug.WriteLine("swipe");
+        }
+
+        private void TermPanel_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            Debug.WriteLine("TermPanel_Tapped");
+        }
+
+        bool showSearchPanel = true;
+        private void More_Click(object sender, RoutedEventArgs e)
+        {
+            showSearchPanel = !showSearchPanel;
+            if(showSearchPanel)
+            {
+                searchPanel.Visibility = Visibility.Visible;
+                termPanel.SetValue(Grid.RowSpanProperty, 1);
+            }
+            else
+            {
+                searchPanel.Visibility = Visibility.Collapsed;
+                termPanel.SetValue(Grid.RowSpanProperty, 2);
+            }
+        }
+
+        private void Option_Click(object sender, RoutedEventArgs e)
+        {
+            //throw new NotImplementedException();
+            split.IsPaneOpen = !split.IsPaneOpen;
+        }
+
+        private void SrchTxt_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                Debug.WriteLine(string.Format("SrchTxt_KeyDown {0}", srchTxt.Text));
+            }
+        }
+
+        private void SrchTxt_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            Debug.WriteLine(string.Format("SrchTxt_TextChanged {0}", srchTxt.Text));
+        }
+
+        private void SrchTxt_TextCompositionEnded(TextBox sender, TextCompositionEndedEventArgs args)
+        {
+            Debug.WriteLine("SrchTxt_TextCompositionEnded " + srchTxt.Text);
         }
 
         private void searchBtn_Click(object sender, RoutedEventArgs e)
@@ -44,8 +106,10 @@ namespace test_guide
             search(txt);
         }
 
+        myDict dict;
         const int m_limitContentLen = 3;
         const int m_limitContentCnt = 7;
+
         void search(string txt)
         {
             var ret = dict.Search(txt);
@@ -101,13 +165,19 @@ namespace test_guide
             int count = 0;
             foreach (var rWd in words)
             {
-                if (++count > m_limitContentCnt)
+                if (txt.Contains(rWd.term)) continue;
+#if !show_brift
+                if ((count++) == m_limitContentCnt)
+                    break;
+#else
                 {
                     s.Inlines.Add(crtWdBlck(rWd, true));
                 }
                 else
-                s.Inlines.Add(crtWdBlck(rWd));
-                if (txt.Contains(rWd.term)) continue;
+#endif
+                {
+                    s.Inlines.Add(crtWdBlck(rWd));
+                }
                 //s.Inlines.Add(new LineBreak());
                 s.Inlines.Add(new LineBreak());
             }
@@ -213,7 +283,30 @@ namespace test_guide
             return p;
         }
 
-        myDict dict;
+        private Hyperlink crtBlck(char val)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.Inlines.Add(new Run() { Text = val.ToString() });
+            return hb;
+        }
+        private Hyperlink crtHb(string txt)
+        {
+            var hb = new Hyperlink();
+            hb.Click += Hb_Click;
+            hb.Inlines.Add(new Run() { Text = txt });
+            return hb;
+        }
+
+        private void Hb_Click(object sender, RoutedEventArgs e)
+        {
+            //
+            var hb = (Hyperlink)sender;
+            string text = ((Run)hb.Inlines[0]).Text;
+            //text = hb.AccessKey;
+            search(text);
+        }
+
         private void pgLoaded(object sender, RoutedEventArgs e)
         {
             string txt = "<div id='dataarea'><font size='6' color='darkblue'><a href='#'>阿</a><a href='#'>保</a> a bảo</font><hr><ol><li>Bảo hộ nuôi nấng. ◇Hán Thư <a href='#'>漢</a><a href='#'>書</a>: <i>Hữu a bảo chi công, giai thụ quan lộc điền trạch tài vật</i> <a href='#'>有</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>功</a>, <a href='#'>皆</a><a href='#'>受</a><a href='#'>官</a><a href='#'>祿</a><a href='#'>田</a><a href='#'>宅</a><a href='#'>財</a><a href='#'>物</a> (Tuyên đế kỉ <a href='#'>宣</a><a href='#'>帝</a><a href='#'>紀</a>) (Những người) có công bảo hộ phủ dưỡng, đều được nhận quan lộc ruộng đất nhà cửa tiền của.<li>Bảo mẫu (nữ sư dạy dỗ con cháu vương thất hay quý tộc).<li>Bề tôi thân cận, cận thần.  ◇Sử Kí <a href='#'>史</a><a href='#'>記</a>: <i>Cư thâm cung chi trung, bất li a bảo chi thủ</i> <a href='#'>居</a><a href='#'>深</a><a href='#'>宮</a><a href='#'>之</a><a href='#'>中</a>, <a href='#'>不</a><a href='#'>離</a><a href='#'>阿</a><a href='#'>保</a><a href='#'>之</a><a href='#'>手</a> (Phạm Thư Thái Trạch truyện <a href='#'>范</a><a href='#'>雎</a><a href='#'>蔡</a><a href='#'>澤</a><a href='#'>傳</a>) Ở trong thâm cung, không rời tay đám bề tôi thân cận.</li></li></li></ol><hr></div>";
@@ -266,22 +359,6 @@ namespace test_guide
             }
         }
 
-        private Hyperlink crtBlck(char val)
-        {
-            var hb = new Hyperlink();
-            hb.Click += Hb_Click;
-            hb.AccessKey = val.ToString();
-            hb.Inlines.Add(new Run() { Text = val.ToString() });
-            return hb;
-        }
-        private Hyperlink crtHb(string txt)
-        {
-            var hb = new Hyperlink();
-            hb.Click += Hb_Click;
-            hb.AccessKey = txt;
-            hb.Inlines.Add(new Run() { Text = txt });
-            return hb;
-        }
 
         private static string CleanText(string input)
         {
@@ -416,14 +493,6 @@ namespace test_guide
 #endif
         }
 
-        private void Hb_Click(object sender, RoutedEventArgs e)
-        {
-            //
-            var hb = (Hyperlink)sender;
-            string text = ((Run)hb.Inlines[0]).Text;
-            //text = hb.AccessKey;
-            search(text);
-        }
 
         private static Inline GenerateLI(XmlNode node)
         {

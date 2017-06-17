@@ -1,4 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Windows.UI;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
@@ -31,7 +34,39 @@ namespace test_guide
             txtTerm.Header = "Description";
             txtTerm.PlaceholderText = "place holder text";
             ScrollViewer.SetVerticalScrollBarVisibility(txtTerm, ScrollBarVisibility.Auto);
+
+#if false
+            m_worker = new BackgroundWorker();
+            m_worker.DoWork += M_worker_DoWork;
+            m_worker.WorkerReportsProgress = true;
+            m_worker.ProgressChanged += M_worker_ProgressChanged;
+            m_worker.RunWorkerAsync();
+#endif
         }
+
+        private void M_worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            //throw new System.NotImplementedException();
+            Debug.WriteLine(string.Format("M_worker_ProgressChanged {0}", e.ProgressPercentage));
+        }
+
+        private void M_worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            //infinit loop
+            int i = 0;
+            for (;;)
+            {
+#if false
+                var t = Task.Run(()=> Task.Delay(1000));
+                t.Wait();
+#endif
+                Debug.WriteLine(string.Format("M_worker_DoWork {0}", i++));
+                m_worker.ReportProgress(i);
+                if (i == 100) break;
+            }
+        }
+
+        BackgroundWorker m_worker;
 
         private void AcceptCanvas_Tapped(object sender, TappedRoutedEventArgs e)
         {

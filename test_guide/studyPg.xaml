@@ -8,56 +8,165 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
-        <Grid.ColumnDefinitions>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="4*"/>
-            <RowDefinition Height="3*"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
+            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="35"></RowDefinition>
         </Grid.RowDefinitions>
-        <TextBox Name="srchTxt"
-                 Grid.Row="1"
-                 Margin="70,0,0,0"></TextBox>
-        <Button Name="srchBtn"
-                Grid.Row="1">Search</Button>
-        <ScrollViewer Name="rtbScroll" Grid.Row="3">
-        <RichTextBlock Name="rtb">
-                <Paragraph>
-                    阿 (bảo 8) ⻖(phụ 2)
-                    <LineBreak></LineBreak>
-                    保 (an 9) ホ (moc 5)
-                    <LineBreak></LineBreak>
-                    
-                </Paragraph>
-            <Paragraph>
-                para1
-                <Run>text run</Run>
-                list item
-                <LineBreak></LineBreak>
-                list item 2
-                <Span>span1</Span>
-                <Span>span with linebrk
-                    line1
-                    <LineBreak></LineBreak>
-                    line2
-                </Span>
-                <Span>
-                    <Span>span in span
-                        <LineBreak></LineBreak>
-                        linebr
-                    </Span>
-                </Span>
-            </Paragraph>
-            <Paragraph>para2
-            </Paragraph>
-        </RichTextBlock>
-        </ScrollViewer>
-        <WebView Name="wv"
-            Grid.Row="4"></WebView>
+        <SplitView Name="split"
+            Grid.Row="1"
+            IsPaneOpen="False"
+            DisplayMode="CompactOverlay"
+            OpenPaneLength="250"
+            CompactPaneLength="35"
+            >
+            <SplitView.Pane>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="35"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Button Name="optionBtn"
+                            Background="Transparent"
+                            Margin="0,2,0,2"
+                        Grid.Column="0"
+                        VerticalAlignment="Top">
+                        O
+                    </Button>
+
+                    <Button
+                        Grid.Row="1"
+                        VerticalAlignment="Top"
+                        Name="more"
+                            Margin="0,2,0,2"
+                            Width="35"
+                            Height="35">
+                        M
+                    </Button>
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        VerticalAlignment="Bottom">
+
+                        <Button
+                            Margin="0"
+                        Width="35"
+                        Height="35">
+                            E
+                        </Button>
+                        <Button
+                            Margin="0,2,0,2"
+                        Width="35"
+                        Height="35">
+                            S
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </SplitView.Pane>
+            <SplitView.Content>
+                <Grid Name="contentPanel">
+
+                    <Grid.ColumnDefinitions>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Name="termPanel"
+                          Grid.Row="0"
+                          Grid.RowSpan="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            Grid.Row="0"
+                            FontSize="{ThemeResource TextStyleExtraLargeFontSize}"
+                            >TERM</TextBlock>
+                        <TextBlock
+                            Grid.Row="1"
+                            >detail</TextBlock>
+                    </Grid>
+                    <Grid Name="searchPanel"
+                          Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"></RowDefinition>
+                            <RowDefinition Height="*"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <TextBox Name="srchTxt"
+                         Grid.Row="0"
+                         Margin="70,0,0,0"></TextBox>
+                        <Button Name="srchBtn"
+                        Grid.Row="0">Search</Button>
+                        <ScrollViewer Name="rtbScroll"
+                                      Grid.Row="1">
+                            <RichTextBlock Name="rtb">
+                                <Paragraph>
+                                    阿 (bảo 8) ⻖(phụ 2)
+                                    <LineBreak></LineBreak>
+                                    保 (an 9) ホ (moc 5)
+                                    <LineBreak></LineBreak>
+
+                                </Paragraph>
+                                <Paragraph>
+                                    para1
+                                    <Run>text run</Run>
+                                    list item
+                                    <LineBreak></LineBreak>
+                                    list item 2
+                                    <Span>span1</Span>
+                                    <Span>span with linebrk
+                        line1
+                                        <LineBreak></LineBreak>
+                                        line2
+                                    </Span>
+                                    <Span>
+                                        <Span>span in span
+                                            <LineBreak></LineBreak>
+                                            linebr
+                                        </Span>
+                                    </Span>
+                                </Paragraph>
+                                <Paragraph>para2
+                                </Paragraph>
+                            </RichTextBlock>
+                        </ScrollViewer>
+                    </Grid></Grid>
+            </SplitView.Content>
+            
+        </SplitView>
+        
+        <StackPanel Name="bntStack"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Grid.Row="2">
+            <!--<Button Name="optionBtn" Content=". . ."
+                    Margin="1,1,1,1"/>
+            <Button x:Name="searchBnt2" Content="More"
+                    Margin="1,1,1,1"/>-->
+            <Button x:Name="sulfBnt" Content="Sulf"
+                    Margin="1,1,1,1"/>
+            <Button Name="prevBtn" Content="Prev"
+                    Margin="1,1,1,1"/>
+            <Border
+                Margin="1,1,1,1"
+                BorderBrush="Silver"
+                BorderThickness="2"
+                >
+                <TextBlock Name="numberTxt" Text="100/100"
+                    TextAlignment="Center"
+                    VerticalAlignment="Center"
+                    />
+            </Border>
+            <Button x:Name="nextBtn" Content="Next"
+                    Margin="1,1,1,1"/>
+            <!--<Button x:Name="flipBtn" Content="Flip"
+                    Margin="1,1,1,1"/>-->
+        </StackPanel>
     </Grid>
 </Page>

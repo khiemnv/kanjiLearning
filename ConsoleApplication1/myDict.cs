@@ -1145,7 +1145,7 @@ namespace ConsoleApplication1
                 char key = c[0];
                 if (m_sRadDict.ContainsKey(key))
                 {
-                    arr.Add(c);
+                    //arr.Add(c);
                     var rad = m_sRadDict[key];
                     arr.Add(rad.hn);
                 }
@@ -1154,7 +1154,7 @@ namespace ConsoleApplication1
                     Debug.Write(c);
                 }
             }
-            kj.decomposite = string.Join(" ", arr);
+            kj.decomposite =string.Format("{0}({1})",kj.decomposite, string.Join(";", arr));
         }
         protected override string[] parseLine(string line)
         {
