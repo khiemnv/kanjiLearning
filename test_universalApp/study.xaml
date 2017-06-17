@@ -72,8 +72,8 @@
                             <TextBlock Margin="5,0,0,0"
                                 VerticalAlignment="Center">Options</TextBlock>
 
-                            <StackPanel
-                                Grid.Row="1">
+                        <ScrollViewer Grid.Row="1">
+                            <StackPanel>
                                 <CheckBox Name="optWordDetailChk" Margin="10,0,0,0">Show detail</CheckBox>
                                 <CheckBox Name="optWordStarChk" Margin="10,0,0,0">Marked words</CheckBox>
                                 <StackPanel Orientation="Horizontal">
@@ -90,7 +90,8 @@
                                 <!--<TextBlock>Search</TextBlock>-->
                                 <!--<CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>-->
                             </StackPanel>
-                        </Grid>
+                        </ScrollViewer>
+                    </Grid>
                         <!--half below-->
                         <Grid Grid.Row="1"
                             Grid.Column="0"
@@ -110,10 +111,12 @@
                                 VerticalAlignment="Center">
                                 Show hide search panel</TextBlock>
                         </Grid>
-                        <StackPanel
+                    <ScrollViewer
+                        Margin="0,40,0,0"
                             Grid.Row="1"
                             Grid.Column="0"
-                            Grid.ColumnSpan="2"
+                            Grid.ColumnSpan="2">
+                        <StackPanel
                             VerticalAlignment="Bottom">
                             <Button Name="canvasCancel"
                                 Padding="0"
@@ -169,8 +172,8 @@
                                     VerticalAlignment="Center">Mark word</TextBlock>
                         </Grid>
                     </StackPanel>
-
-                    </Grid>
+                    </ScrollViewer>
+                </Grid>
                 </SplitView.Pane>
                 <SplitView.Content>
                     <Grid Name="contentPanel"
