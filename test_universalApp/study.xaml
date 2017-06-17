@@ -34,114 +34,51 @@
             <MediaElement Name="media"/>
         </Grid>
         <!--split view-->
-        <Grid Grid.Row="1"
+        <!--term & options-->
+        <SplitView
+            Name="split"
+            Grid.Row="1"
             Grid.RowSpan="2"
-            Background="Silver">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="80"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="80"/>
-            </Grid.RowDefinitions>
-
-            <!--term & options-->
-            <SplitView
-                Name="split"
-                Grid.Row="0"
-                Grid.Column="0"
-                Grid.ColumnSpan="2"
-                Grid.RowSpan="2"
-                Height="auto"
-                Width="auto"
-                IsPaneOpen="False"
-                DisplayMode="Overlay"
-                OpenPaneLength="250">
-                <SplitView.Pane>
-                    <Grid Name="optionsStack" Background="DarkGray">
-                        <StackPanel Margin="48, 0, 0, 0">
-                            <TextBlock>Options</TextBlock>
-                            <CheckBox Name="optWordDetailChk" Margin="10,0,0,0">Show detail</CheckBox>
-                            <CheckBox Name="optWordStarChk" Margin="10,0,0,0">Marked words</CheckBox>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Width="50">Term</TextBlock>
-                                <ComboBox Name="optWordTermCmb" Margin="10,0,0,0"></ComboBox>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Width="50">Define</TextBlock>
-                                <ComboBox Name="optWordTermDefineCmb" Margin="10,0,0,0"></ComboBox>
-                            </StackPanel>
-                            <TextBlock>Speak</TextBlock>
-                            <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
-                            <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
-                            <TextBlock>Search</TextBlock>
-                            <CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>
+            Height="auto"
+            Width="auto"
+            IsPaneOpen="False"
+            DisplayMode="Overlay"
+            OpenPaneLength="250">
+            <SplitView.Pane>
+                <Grid Name="optionsStack" Background="DarkGray">
+                    <StackPanel Margin="48, 0, 0, 0">
+                        <TextBlock>Options</TextBlock>
+                        <CheckBox Name="optWordDetailChk" Margin="10,0,0,0">Show detail</CheckBox>
+                        <CheckBox Name="optWordStarChk" Margin="10,0,0,0">Marked words</CheckBox>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Width="50">Term</TextBlock>
+                            <ComboBox Name="optWordTermCmb" Margin="10,0,0,0"></ComboBox>
                         </StackPanel>
-                    </Grid>
-                </SplitView.Pane>
-                <SplitView.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Width="50">Define</TextBlock>
+                            <ComboBox Name="optWordTermDefineCmb" Margin="10,0,0,0"></ComboBox>
+                        </StackPanel>
+                        <TextBlock>Speak</TextBlock>
+                        <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
+                        <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
+                        <TextBlock>Search</TextBlock>
+                        <CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>
+                        <CheckBox Name="optSrchTxtEnableChk" Margin="10,0,0,0">Text selection enable</CheckBox>
+                    </StackPanel>
+                </Grid>
+            </SplitView.Pane>
+            <SplitView.Content>
+                <Grid Name="gridContent" Background="Silver">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                    </Grid.RowDefinitions>
                     <Grid Name="termGrid"
-                          Background="Silver">
+                        Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="3*"/>
                             <RowDefinition Height="1*"/>
-                            <RowDefinition Height="4*"/>
                         </Grid.RowDefinitions>
-                        <!--search panel-->
-                        <Grid Name="searchPanel"
-                              Grid.Row="2"
-                              >
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="35"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                                <TextBox Name="srchTxt"
-                                 Grid.Row="0"
-                                 Margin="35,0,0,0"></TextBox>
-                                <Button Name="srchBtn"
-                                Grid.Row="0"
-                                Width="35"
-                                Height="35"
-                                Padding="0">
-                                <Image
-                                Margin="0"
-                                Width="30"
-                                Source="Assets\search.png"></Image>
-                            </Button>
-                            <ScrollViewer Name="rtbScroll" Grid.Row="1">
-                                <RichTextBlock Name="srchRtb">
-                                    <Paragraph>
-                                        阿 (bảo 8) ⻖(phụ 2)
-                                        <LineBreak></LineBreak>
-                                        保 (an 9) ホ (moc 5)
-                                        <LineBreak></LineBreak>
-
-                                    </Paragraph>
-                                    <Paragraph>
-                                        para1
-                                        <Run>text run</Run>
-                                        list item
-                                        <LineBreak></LineBreak>
-                                        list item 2
-                                        <Span>span1</Span>
-                                        <Span>span with linebrk
-                                            line1
-                                            <LineBreak></LineBreak>
-                                            line2
-                                        </Span>
-                                        <Span>
-                                            <Span>span in span
-                                                <LineBreak></LineBreak>
-                                                linebr
-                                            </Span>
-                                        </Span>
-                                    </Paragraph>
-                                    <Paragraph>para2
-                                    </Paragraph>
-                                </RichTextBlock>
-                            </ScrollViewer>
-                        </Grid>
                         <!--<Border Grid.Row="0" BorderThickness="2 2 2 2" BorderBrush="Black"/>-->
                         <TextBlock 
                             Name="termTxt"
@@ -169,111 +106,161 @@
                             TextWrapping="Wrap"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                     </Grid>
-                </SplitView.Content>
-            </SplitView>
+                    <!--search panel-->
+                    <Grid Name="searchPanel"
+                        Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBox Name="srchTxt"
+                                Grid.Row="0"
+                                Margin="35,0,0,0"></TextBox>
+                        <Button Name="srchBtn"
+                            Grid.Row="0"
+                            Width="35"
+                            Height="35"
+                            Padding="0">
+                            <Image
+                            Margin="0"
+                            Width="30"
+                            Source="Assets\search.png"></Image>
+                        </Button>
+                        <ScrollViewer Name="rtbScroll" Grid.Row="1">
+                            <RichTextBlock Name="srchRtb">
+                                <Paragraph>
+                                    阿 (bảo 8) ⻖(phụ 2)
+                                    <LineBreak></LineBreak>
+                                    保 (an 9) ホ (moc 5)
+                                    <LineBreak></LineBreak>
 
-            <!--canvas buttons-->
-            <StackPanel
-                Grid.Row="0"
-                Grid.Column="1"
-                Grid.RowSpan="2"
-                VerticalAlignment="Bottom"
-                HorizontalAlignment="Right"
-                Orientation="Vertical"
-                >
-                <Canvas Name="canvasEdit"
-                    Height="80"
-                    Width="80"
-                        Opacity="0.5">
-                    <Ellipse Name="editEllipse"
-                        Fill="LightGray"
-                        Height="80"
-                        Width="80"
-                        StrokeThickness="5"
-                        Stroke="White"/>
-                    <Image Canvas.Top="15"
-                        Canvas.Left="15"
-                        Source="Assets/pencil.png"
-                        Height="50"
-                        Width="50"/>
-                </Canvas>
-                <Canvas Name="canvasAccept"
-                    Height="80"
-                    Width="80"
-                    Visibility="Collapsed">
-                    <Ellipse
-                    Name="acceptEllipse"
+                                </Paragraph>
+                                <Paragraph>
+                                    para1
+                                    <Run>text run</Run>
+                                    list item
+                                    <LineBreak></LineBreak>
+                                    list item 2
+                                    <Span>span1</Span>
+                                    <Span>span with linebrk
+                                        line1
+                                        <LineBreak></LineBreak>
+                                        line2
+                                    </Span>
+                                    <Span>
+                                        <Span>span in span
+                                            <LineBreak></LineBreak>
+                                            linebr
+                                        </Span>
+                                    </Span>
+                                </Paragraph>
+                                <Paragraph>para2
+                                </Paragraph>
+                            </RichTextBlock>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </SplitView.Content>
+        </SplitView>
+        <!--canvas buttons-->
+        <StackPanel
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            VerticalAlignment="Bottom"
+            HorizontalAlignment="Right"
+            Orientation="Vertical"
+            >
+            <Canvas Name="canvasEdit"
+                Height="80"
+                Width="80"
+                    Opacity="0.5">
+                <Ellipse Name="editEllipse"
                     Fill="LightGray"
-                    Height="80"  
-                    Width="80"  
+                    Height="80"
+                    Width="80"
                     StrokeThickness="5"
                     Stroke="White"/>
-                    <Image
-                    Canvas.Top="15"
+                <Image Canvas.Top="15"
                     Canvas.Left="15"
-                    Source="Assets/accept.png"
+                    Source="Assets/pencil.png"
                     Height="50"
                     Width="50"/>
-                </Canvas>
-                <Canvas Name="canvasCancel"
-                    Height="80"
-                    Width="80"
-                    Visibility="Collapsed">
-                    <Ellipse
-                    Name="cancelEllipse"
-                    Fill="LightGray"
-                    Height="80"  
-                    Width="80"  
-                    StrokeThickness="5"
-                    Stroke="White"/>
-                    <Image
-                    Canvas.Top="15"
-                    Canvas.Left="15"
-                    Source="Assets/cancel.png"
-                    Height="50"
-                    Width="50"/>
-                </Canvas>
-                <Canvas Name="canvasSpeak"
-                    Height="80"
-                    Width="80"
-                        Opacity="0.5">
-                    <Ellipse
-                    Name="speakEllipse"
-                    Fill="LightGray"
-                    Height="80"  
-                    Width="80"  
-                    StrokeThickness="5"
-                    Stroke="White"/>
-                    <Image
-                    Name="speakImage"
-                    Canvas.Top="15"
-                    Canvas.Left="15"
-                    Source="Assets/speak.png"
-                    Height="50"
-                    Width="50"/>
-                </Canvas>
-                <Canvas Name="canvasStar"
-                    Height="80"
-                    Width="80"
-                        Opacity="0.5">
-                    <Ellipse
-                    Name="starEllipse"
-                    Fill="#FFFFFF00"  
-                    Height="80"  
-                    Width="80"  
-                    StrokeThickness="5"
-                    Stroke="#FFFFFFFF"/>
-                    <Path 
-                    Name="starPolyline"
-                    Canvas.Top="25"
-                    Canvas.Left="20"
-                    Stroke="DarkGoldenRod" 
-                    StrokeThickness="5"
-                    Data="M 0,16 C 14,34 22,34 40,4"/>
-                </Canvas>
-            </StackPanel>
-        </Grid>
-
+            </Canvas>
+            <Canvas Name="canvasAccept"
+                Height="80"
+                Width="80"
+                Visibility="Collapsed">
+                <Ellipse
+                Name="acceptEllipse"
+                Fill="LightGray"
+                Height="80"  
+                Width="80"  
+                StrokeThickness="5"
+                Stroke="White"/>
+                <Image
+                Canvas.Top="15"
+                Canvas.Left="15"
+                Source="Assets/accept.png"
+                Height="50"
+                Width="50"/>
+            </Canvas>
+            <Canvas Name="canvasCancel"
+                Height="80"
+                Width="80"
+                Visibility="Collapsed">
+                <Ellipse
+                Name="cancelEllipse"
+                Fill="LightGray"
+                Height="80"  
+                Width="80"  
+                StrokeThickness="5"
+                Stroke="White"/>
+                <Image
+                Canvas.Top="15"
+                Canvas.Left="15"
+                Source="Assets/cancel.png"
+                Height="50"
+                Width="50"/>
+            </Canvas>
+            <Canvas Name="canvasSpeak"
+                Height="80"
+                Width="80"
+                    Opacity="0.5">
+                <Ellipse
+                Name="speakEllipse"
+                Fill="LightGray"
+                Height="80"  
+                Width="80"  
+                StrokeThickness="5"
+                Stroke="White"/>
+                <Image
+                Name="speakImage"
+                Canvas.Top="15"
+                Canvas.Left="15"
+                Source="Assets/speak.png"
+                Height="50"
+                Width="50"/>
+            </Canvas>
+            <Canvas Name="canvasStar"
+                Height="80"
+                Width="80"
+                    Opacity="0.5">
+                <Ellipse
+                Name="starEllipse"
+                Fill="#FFFFFF00"  
+                Height="80"  
+                Width="80"  
+                StrokeThickness="5"
+                Stroke="#FFFFFFFF"/>
+                <Path 
+                Name="starPolyline"
+                Canvas.Top="25"
+                Canvas.Left="20"
+                Stroke="DarkGoldenRod" 
+                StrokeThickness="5"
+                Data="M 0,16 C 14,34 22,34 40,4"/>
+            </Canvas>
+        </StackPanel>
         <StackPanel Name="bntStack"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"

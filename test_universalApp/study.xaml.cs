@@ -51,8 +51,8 @@ namespace test_universalApp
         List<wordItem> m_items = new List<wordItem>();
         List<wordItem> m_markedItems = new List<wordItem>();
         //BackgroundWorker m_worker = new BackgroundWorker();
-        BackgroundWorker m_srchWorker = new BackgroundWorker();
-        bool m_srchWorkerIsRunning;
+        BackgroundWorker m_srchWorker;
+        bool m_srchWorkerIsRunning { get { return m_srchWorker.IsBusy; } }
         int m_iCursor;
 
         class myBgTask
@@ -61,7 +61,8 @@ namespace test_universalApp
             {
                 speek,
                 search,
-                loadData
+                loadData,
+                //loadDataComplete,
             }
             public taskType type;
             public object data;
@@ -85,6 +86,7 @@ namespace test_universalApp
 
             Loaded += Study_Loaded;
             Unloaded += Study_Unloaded;
+
         }
 
         private void Study_Unloaded(object sender, RoutedEventArgs e)
@@ -98,10 +100,22 @@ namespace test_universalApp
 
             m_grp1.Clear();
             m_grp2.Clear();
+
+            //m_srchWorker.CancelAsync();
+            //m_srchWorker.Dispose();
         }
 
         private void Study_Loaded(object sender, RoutedEventArgs e)
         {
+            m_srchWorker = new BackgroundWorker();
+
+            //init search worker
+            m_srchWorker.DoWork += M_srchWorker_DoWork;
+            m_srchWorker.ProgressChanged += M_srchWorker_ProgressChanged;
+            m_srchWorker.RunWorkerCompleted += M_srchWorker_RunWorkerCompleted;
+            m_srchWorker.WorkerReportsProgress = true;
+            m_srchWorker.WorkerSupportsCancellation = true;
+
             synthDic = new Dictionary<string, SpeechSynthesizer>();
 
             m_grp1 = new List<UIElement>() {
@@ -130,8 +144,12 @@ namespace test_universalApp
         private void OptSrchEnableChk_Click(object sender, RoutedEventArgs e)
         {
             m_option.srchEnable = (bool)optSrchEnableChk.IsChecked;
+            optSrchTxtEnableChk.IsEnabled = m_option.srchEnable;
         }
-
+        private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
+        }
         BitmapImage speakBM = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
         BitmapImage speakBM2 = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
         private void Media_MediaOpened(object sender, RoutedEventArgs e)
@@ -231,10 +249,11 @@ namespace test_universalApp
         }
         void qryBgTask(myBgTask task)
         {
+            Debug.WriteLine("{0} qryBgTask {1}", this, task.type);
             m_msgQueue.Enqueue(task);
             if (m_srchWorkerIsRunning == false)
             {
-                m_srchWorkerIsRunning = true;
+                //m_srchWorkerIsRunning = true;
                 m_srchWorker.RunWorkerAsync();
             }
         }
@@ -352,23 +371,20 @@ namespace test_universalApp
 
             rtbScroll.HorizontalScrollMode = ScrollMode.Disabled;
 
-            //init search worker
-            m_srchWorker.DoWork += M_srchWorker_DoWork;
-            m_srchWorker.ProgressChanged += M_srchWorker_ProgressChanged;
-            m_srchWorker.RunWorkerCompleted += M_srchWorker_RunWorkerCompleted;
-            m_srchWorker.WorkerReportsProgress = true;
-            m_srchWorker.WorkerSupportsCancellation = true;
-            m_srchWorkerIsRunning = false;
+            //m_srchWorkerIsRunning = false;
             //m_srchWorker.RunWorkerAsync();
 #if !enable_edit
             canvasEdit.Visibility = Visibility.Collapsed;
 #endif
+
+            //disable search txt select
+            srchRtb.IsTextSelectionEnabled = false;
         }
 
         private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             Debug.WriteLine("M_srchWorker_RunWorkerCompleted");
-            m_srchWorkerIsRunning = false;
+            //m_srchWorkerIsRunning = false;
         }
 
         private void M_srchWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -388,12 +404,15 @@ namespace test_universalApp
         {
             //throw new NotImplementedException();
             uint i = 0;
-            for(;;) {
+            for(;;i++) {
                 if (m_msgQueue.Count >0)
                 {
                     var msg = m_msgQueue.Dequeue();
                     switch (msg.type)
                     {
+                        //case myBgTask.taskType.loadDataComplete:
+                        //    bg_qryFgTask(myFgTask.qryType.updateGUI, null);
+                        //    break;
                         case myBgTask.taskType.loadData:
                             bg_loadData(null, null);
                             break;
@@ -418,7 +437,7 @@ namespace test_universalApp
                 }
                 else
                 {
-                    Debug.WriteLine("M_srchWorker_DoWork fall sleep, i = {0}", i++);
+                    Debug.WriteLine("M_srchWorker_DoWork fall sleep, i = {0}", i);
                     //sleep(1000);
                     break;
                 }
@@ -470,7 +489,8 @@ namespace test_universalApp
             //rtbScroll.ChangeView(0, 0, null);
             totalLine = 0;
 
-            qryBgTask(new myBgTask { type = myBgTask.taskType.search, data = txt });
+            //qryBgTask(new myBgTask { type = myBgTask.taskType.search, data = txt });
+            fg_search(txt);
             //while (m_srchWorker.IsBusy)
             //{
             //    m_srchWorker.CancelAsync();
@@ -574,60 +594,71 @@ namespace test_universalApp
             }
         }
         //run in background
+        //fg_search
+        delegate void srchCallback(myFgTask.qryType type, object data);
+        void fg_search(string txt)
+        {
+            srchCallback callback = fg_processQry;
+            search(callback, txt);
+        }
         void bg_search(string txt)
         {
-             //= m_preTxt;
+            srchCallback callback = bg_qryFgTask;
+            search(callback, txt);
+        }
+        void search(srchCallback callback, string txt) {
+            //= m_preTxt;
             var ret = dict.Search(txt);
             List<myWord> words = new List<myWord>();
             //Span s = new Span();
             foreach (var kanji in ret)
             {
-                bg_qryFgTask(myFgTask.qryType.hyperlink, kanji.val);
+                callback(myFgTask.qryType.hyperlink, kanji.val);
                 if (kanji.decomposite != "") {
-                    bg_qryFgTask(myFgTask.qryType.run, kanji.decomposite);
-                    bg_qryFgTask(myFgTask.qryType.linebreak, null);
+                    callback(myFgTask.qryType.run, kanji.decomposite);
+                    callback(myFgTask.qryType.linebreak, null);
                 }
 
-                bg_qryFgTask(myFgTask.qryType.define, kanji.definitions[0]);
+                callback(myFgTask.qryType.define, kanji.definitions[0]);
                 kanji.definitions.RemoveAt(0);
 
                 var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
                 if (foundKanji != null)
                 {
-                    bg_qryFgTask(myFgTask.qryType.define, (foundKanji.definitions[0]));
+                    callback(myFgTask.qryType.define, (foundKanji.definitions[0]));
                 }
                 else
                 {
-                    bg_qryFgTask(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
-                    bg_qryFgTask(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
+                    callback(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
+                    callback(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
                     //bg_qryDisplay(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
                     var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
                     if (rdInfo.Count > 0)
                     {
                         var k = rdInfo[0];
-                        if (k.hn != "") bg_qryFgTask(myFgTask.qryType.run, string.Format("({0})", k.hn));
-                        if (k.simple != '\0') bg_qryFgTask(myFgTask.qryType.run, string.Format(" simple {0}", k.simple));
+                        if (k.hn != "") callback(myFgTask.qryType.run, string.Format("({0})", k.hn));
+                        if (k.simple != '\0') callback(myFgTask.qryType.run, string.Format(" simple {0}", k.simple));
                     }
-                    bg_qryFgTask(myFgTask.qryType.run, ", meaning: ");
+                    callback(myFgTask.qryType.run, ", meaning: ");
                     foreach (var def in kanji.definitions)
                     {
-                        bg_qryFgTask(myFgTask.qryType.define, (def));
+                        callback(myFgTask.qryType.define, (def));
                         break;
                     }
-                    bg_qryFgTask(myFgTask.qryType.linebreak, null);
+                    callback(myFgTask.qryType.linebreak, null);
                 }
                 words.AddRange(kanji.relatedWords);
-                bg_qryFgTask(myFgTask.qryType.linebreak, null);
+                callback(myFgTask.qryType.linebreak, null);
             }
-            bg_qryFgTask(myFgTask.qryType.linebreak, null);
+            callback(myFgTask.qryType.linebreak, null);
             //found word
             myWord found = null;
             if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
             //var sFound = new Span();
             if (found != null)
             {
-                bg_qryFgTask(myFgTask.qryType.word, found);
-                bg_qryFgTask(myFgTask.qryType.linebreak, null);
+                callback(myFgTask.qryType.word, found);
+                callback(myFgTask.qryType.linebreak, null);
                 //remove from list
                 words.Remove(found);
             }
@@ -649,10 +680,10 @@ namespace test_universalApp
                 else
 #endif
                 {
-                    bg_qryFgTask(myFgTask.qryType.word, (rWd));
+                    callback(myFgTask.qryType.word, (rWd));
                 }
                 //bg_qryDisplay(new LineBreak());
-                bg_qryFgTask(myFgTask.qryType.linebreak, null);
+                callback(myFgTask.qryType.linebreak, null);
             }
 #if false
             //create paragraph
@@ -667,7 +698,7 @@ namespace test_universalApp
             rtbScroll.ChangeView(0, 0, null);
             //rtbScroll.ScrollToVerticalOffset(0);
 #endif
-            bg_qryFgTask(myFgTask.qryType.scroll, null);
+            callback(myFgTask.qryType.scroll, null);
         }
 
         Span crtDefBlck(myDefinition def)
@@ -711,7 +742,7 @@ namespace test_universalApp
 #if sepate_kanji
                     foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
 #else
-                s.Inlines.Add(crtHb(wd.term));
+                    s.Inlines.Add(crtHb(wd.term));
 #endif
                     //s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
                     s.Inlines.Add(new LineBreak());
@@ -920,6 +951,8 @@ namespace test_universalApp
             [DataMember]
             public bool srchEnable;
             [DataMember]
+            public bool srchTxtEnable;
+            [DataMember]
             public bool spkDefine;
 
             public studyOption() { }
@@ -1088,7 +1121,9 @@ namespace test_universalApp
             m_worker.RunWorkerCompleted += M_worker_RunWorkerCompleted;
             m_worker.RunWorkerAsync();
 #endif
+
             qryBgTask(new myBgTask {type = myBgTask.taskType.loadData });
+            //qryBgTask(new myBgTask { type = myBgTask.taskType.loadDataComplete });
         }
 
         private void updateGUI(object sender, RunWorkerCompletedEventArgs e)
@@ -1110,6 +1145,7 @@ namespace test_universalApp
             optSpkTermChk.IsChecked = m_option.spkTerm;
             //+ search
             optSrchEnableChk.IsChecked = m_option.srchEnable;
+            optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
 
             //setup EventHandler
             //+ register GetKanji event before updateTerm()?
@@ -1130,8 +1166,8 @@ namespace test_universalApp
         private void initEvents()
         {
             termGrid.Tapped += term_Tapped;
-            split.ManipulationMode = ManipulationModes.TranslateX;
-            split.ManipulationCompleted += term_swiped;
+            termGrid.ManipulationMode = ManipulationModes.TranslateX;
+            termGrid.ManipulationCompleted += term_swiped;
             //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
@@ -1159,6 +1195,7 @@ namespace test_universalApp
 
             //search option
             optSrchEnableChk.Click += OptSrchEnableChk_Click;
+            optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;
 
             split.PaneClosed += Split_PaneClosed;
 
@@ -1214,6 +1251,8 @@ namespace test_universalApp
                 searchPanel.Visibility = Visibility.Visible;
                 UIElement[] arr = {canvasStar, canvasEdit, canvasSpeak };
                 foreach (var c in arr){c.Opacity = 0.5;}
+                termGrid.SetValue(Grid.RowSpanProperty, 1);
+                srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
             } else
             {
                 //srchRtb.Visibility = Visibility.Collapsed;
@@ -1222,6 +1261,7 @@ namespace test_universalApp
                 searchPanel.Visibility = Visibility.Collapsed;
                 UIElement[] arr = { canvasStar, canvasEdit, canvasSpeak };
                 foreach (var c in arr) { c.Opacity = 1; }
+                termGrid.SetValue(Grid.RowSpanProperty, 2);
             }
         }
 
@@ -1343,7 +1383,8 @@ namespace test_universalApp
                 case itemStatus.term:
                     termTxt.Text = curItem.term;
                     termTxt.Foreground = new SolidColorBrush() { Color = Colors.Blue };
-                    detailTxt.Visibility = Visibility.Collapsed;
+                    //detailTxt.Visibility = Visibility.Collapsed;
+                    detailTxt.Text = "";
                     if (m_option.spkTerm) { speakTxt(); }
                     break;
                 case itemStatus.define:
@@ -1352,7 +1393,7 @@ namespace test_universalApp
                     if (m_option.showDetail)
                     {
                         detailTxt.Text = curItem.detail;
-                        detailTxt.Visibility = Visibility.Visible;
+                        //detailTxt.Visibility = Visibility.Visible;
                     }
                     if (m_option.spkDefine) { speakTxt(); }
                     break;
@@ -1562,6 +1603,7 @@ namespace test_universalApp
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects).
+                    Debug.WriteLine(string.Format("Dispose true {0}", m_srchWorker.IsBusy));
                     m_srchWorker.Dispose();
                     foreach (var s in synthDic.Values)
                     {
