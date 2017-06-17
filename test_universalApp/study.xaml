@@ -33,25 +33,12 @@
             <MediaElement Name="media"/>
         </Grid>
         <!--split view-->
-        <Grid Grid.Row="1"
-            Grid.RowSpan="1"
-            Background="Silver">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="80"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="80"/>
-            </Grid.RowDefinitions>
 
             <!--term & options-->
             <SplitView
                 Name="split"
-                Grid.Row="0"
+                Grid.Row="1"
                 Grid.Column="0"
-                Grid.ColumnSpan="2"
-                Grid.RowSpan="2"
                 Height="auto"
                 Width="auto"
                 IsPaneOpen="False"
@@ -132,10 +119,12 @@
                                 Padding="0"
                                 Margin="0,2,0,2"
                                 Width="35"
-                                Height="35">
+                                Height="35"
+                                Visibility="Collapsed">
                                 <Image Source="Assets/cancel.png"/>
                             </Button>
                             <Button Name="canvasAccept"
+                                Visibility="Collapsed"
                                 Padding="0"
                                 Margin="0,2,0,2"
                                 Width="35"
@@ -143,8 +132,8 @@
                                 <Image
                                     Source="Assets/accept.png"/>
                             </Button>
-                            <Grid>
-                                <Button Name="canvasEdit"
+                        <Grid Name="canvasEdit">
+                                <Button
                                     Padding="0"
                                     Margin="0,2,0,2"
                                     Width="35"
@@ -155,8 +144,8 @@
                                 <TextBlock Margin="40,0,0,0"
                                     VerticalAlignment="Center">Edit word</TextBlock>
                             </Grid>
-                            <Grid>
-                                <Button Name="canvasSpeak"
+                        <Grid Name="canvasSpeak">
+                                <Button
                                     Margin="0,2,0,2"
                                     Padding="0"
                                     Width="35"
@@ -168,12 +157,24 @@
                                 <TextBlock Margin="40,0,0,0"
                                     VerticalAlignment="Center">Speak</TextBlock>
                             </Grid>
-                        </StackPanel>
+                        <Grid Name="canvasStar2">
+                            <Button
+                                    Padding="0"
+                                    Margin="0,2,0,2"
+                                    Width="35"
+                                    Height="35">
+                                <Image Name="starImg" Source="Assets/star_m.png"></Image>
+                            </Button>
+                            <TextBlock Margin="40,0,0,0"
+                                    VerticalAlignment="Center">Mark word</TextBlock>
+                        </Grid>
+                    </StackPanel>
 
                     </Grid>
                 </SplitView.Pane>
                 <SplitView.Content>
-                    <Grid Name="contentPanel">
+                    <Grid Name="contentPanel"
+                          Background="Silver">
                         <Grid.ColumnDefinitions>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -240,8 +241,7 @@
                                 </ScrollViewer>
                         </Grid>
                         <Grid Name="termGrid"
-                            Grid.Row="0"
-                            Background="Silver">
+                            Grid.Row="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="3*"/>
                                 <RowDefinition Height="1*"/>
@@ -355,7 +355,7 @@
                     Height="50"
                     Width="50"/>
                 </Canvas>-->
-                <Canvas Name="canvasStar"
+                <!--<Canvas Name="canvasStar"
                     Height="80"
                     Width="80">
                     <Ellipse
@@ -372,9 +372,8 @@
                     Stroke="DarkGoldenRod" 
                     StrokeThickness="5"
                     Data="M 0,16 C 14,34 22,34 40,4"/>
-                </Canvas>
+                </Canvas>-->
             </StackPanel>
-        </Grid>
 
         <StackPanel Name="bntStack"
                 Orientation="Horizontal"

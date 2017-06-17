@@ -124,7 +124,7 @@ namespace test_universalApp
                 termTxt, detailTxt,
                 nextBtn, backBtn,
                 bntStack,
-                canvasSpeak, canvasStar};
+                canvasSpeak, canvasStar2};
             m_grp2 = new List<UIElement>() { canvasAccept, canvasCancel, editTxt };
 
             loadData();
@@ -138,14 +138,13 @@ namespace test_universalApp
         private void OptSpkTermChk_Click(object sender, RoutedEventArgs e)
         {
             m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
-            optSrchTxtEnableChk.IsEnabled = m_option.srchEnable;
         }
+        //private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
+        //{
+        //    m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
+        //    optSrchTxtEnableChk.IsEnabled = m_option.srchEnable;
+        //}
 
-
-        private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
-        {
-            m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
-        }
         BitmapImage speakBM = new BitmapImage(new Uri("ms-appx:///Assets/speak.png"));
         BitmapImage speakBM2 = new BitmapImage(new Uri("ms-appx:///Assets/speak2.png"));
         private void Media_MediaOpened(object sender, RoutedEventArgs e)
@@ -372,7 +371,7 @@ namespace test_universalApp
 #endif
 
             //disable search txt select
-            srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
+            //srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
         }
 
         private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -1137,8 +1136,8 @@ namespace test_universalApp
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
             //+ search
-            optSrchEnableChk.IsChecked = m_option.srchEnable;
-            optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
+            //optSrchEnableChk.IsChecked = m_option.srchEnable;
+            //optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
 
             //setup EventHandler
             //+ register GetKanji event before updateTerm()?
@@ -1172,7 +1171,7 @@ namespace test_universalApp
 #if start_use_checkbox
             starChk.Click += starChk_Checked;
 #else
-            canvasStar.Tapped += starChk_Checked;
+            canvasStar2.Tapped += starChk_Checked;
 #endif
 
             //option ctrls
@@ -1187,8 +1186,8 @@ namespace test_universalApp
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
 
             //search option
-            optSrchEnableChk.Click += OptSrchEnableChk_Click;
-            optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;
+            //optSrchEnableChk.Click += OptSrchEnableChk_Click;
+            //optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;
 
             split.PaneClosed += Split_PaneClosed;
 
@@ -1220,7 +1219,7 @@ namespace test_universalApp
         private void SearchBnt2_Click(object sender, RoutedEventArgs e)
         {
             m_option.srchEnable = !m_option.srchEnable;
-            optSrchEnableChk.IsChecked = m_option.srchEnable;
+            //optSrchEnableChk.IsChecked = m_option.srchEnable;
             turnSearchOnOff(m_option.srchEnable);
             if (m_option.srchEnable) {
                 search(termTxt.Text);
@@ -1249,18 +1248,22 @@ namespace test_universalApp
                 //srchBtn.Visibility = Visibility.Visible;
                 //srchTxt.Visibility = Visibility.Visible;
                 searchPanel.Visibility = Visibility.Visible;
-                UIElement[] arr = {canvasStar, canvasEdit, canvasSpeak };
-                foreach (var c in arr){c.Opacity = 0.5;}
-                termGrid.SetValue(Grid.RowSpanProperty, 1);
+#if transparent_canvas
+                UIElement[] arr = { canvasStar2, canvasEdit, canvasSpeak };
+                foreach (var c in arr) { c.Opacity = 0.5; }
                 srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
+#endif
+                termGrid.SetValue(Grid.RowSpanProperty, 1);
             } else
             {
                 //srchRtb.Visibility = Visibility.Collapsed;
                 //srchBtn.Visibility = Visibility.Collapsed;
                 //srchTxt.Visibility = Visibility.Collapsed;
                 searchPanel.Visibility = Visibility.Collapsed;
-                UIElement[] arr = { canvasStar, canvasEdit, canvasSpeak };
+#if transparent_canvas
+                UIElement[] arr = { canvasStar2, canvasEdit, canvasSpeak };
                 foreach (var c in arr) { c.Opacity = 1; }
+#endif
                 termGrid.SetValue(Grid.RowSpanProperty, 2);
             }
         }
@@ -1490,23 +1493,31 @@ namespace test_universalApp
         };
         static myChkBox starChk = new myChkBox();
 
+        BitmapImage starBM = new BitmapImage(new Uri("ms-appx:///Assets/star_m.png"));
+        BitmapImage starBM2 = new BitmapImage(new Uri("ms-appx:///Assets/star_u.png"));
         public void updateStarCanvas()
         {
             if (starChk.IsChecked)
             {
+#if transparent_canvas
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow};
                 //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
+#endif
+                starImg.Source = starBM;
             }
             else
             {
+#if transparent_canvas
                 //SolidColorBrush mySolidColorBrush = new SolidColorBrush();
                 //mySolidColorBrush.Color = Color.FromArgb(255, 0, 255, 0);
                 // Describes the brush's color using RGB values. 
                 // Each value has a range of 0-255.
-
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver};
+                //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
+#endif
+                starImg.Source = starBM2;
             }
         }
 
