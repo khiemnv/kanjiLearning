@@ -1160,6 +1160,9 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
+            gridSwipe.Tapped += term_Tapped;
+            gridSwipe.ManipulationMode = ManipulationModes.TranslateX;
+            gridSwipe.ManipulationCompleted += term_swiped;
             //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;

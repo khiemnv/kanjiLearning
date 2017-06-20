@@ -377,11 +377,14 @@
                     Data="M 0,16 C 14,34 22,34 40,4"/>
                 </Canvas>-->
             </StackPanel>
-
-        <StackPanel Name="bntStack"
+        <Grid
+            Grid.Row="2"
+            Grid.RowSpan="2">
+            <TextBlock Name="gridSwipe"></TextBlock>
+            <StackPanel Name="bntStack"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
-                Grid.Row="2">
+                        VerticalAlignment="Top">
             <!--<Button Name="optionBtn" Content=". . ."
                     Margin="1,1,1,1"/>-->
             <!--<Button x:Name="searchBnt2" Content="More"
@@ -404,7 +407,8 @@
                     Margin="1,1,1,1"/>
             <!--<Button x:Name="flipBtn" Content="Flip"
                     Margin="1,1,1,1"/>-->
-        </StackPanel>
+            </StackPanel>
+        </Grid>
         <!--back to page-->
         <Button Name="backBtn"
                 Margin="1,1,1,1"
