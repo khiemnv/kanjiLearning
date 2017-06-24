@@ -546,7 +546,7 @@ namespace test_universalApp
         }
 
 
-        public static bool isKanji(char c) { return (c >= 0x2f00); }
+        public static bool isKanji(char c) { return (c >= 0x2e85); }
         public void add(string line)
         {
             //add(line, false);
@@ -1172,19 +1172,23 @@ namespace test_universalApp
             public char ch;
             public string hn;
         }
+
+        char[] splitor = new char[] { ' ', '/' };
         protected override IRecord crtRec(string[] arr)
         {
             var rec = new compoRec { ch = arr[0][0] };
             int radId = int.Parse(arr[1]);
+            string hn;
             if (radId != 0)
             {
                 RadRec tmp = m_sRadicals[radId - 1];
-                rec.hn = tmp.hn;
+                hn = tmp.hn;
             }
             else
             {
-                rec.hn = arr[2];
+                hn = arr[2];
             }
+            rec.hn = hn.Split(splitor)[0];
             m_dict.Add(rec.ch, rec);
             return null;
         }
@@ -1202,7 +1206,7 @@ namespace test_universalApp
                 {
                     //arr.Add(c);
                     var tmp = m_dict[key];
-                    arr.Add(tmp.hn.ToUpper());
+                    arr.Add(tmp.hn);
                 }
                 else
                 {

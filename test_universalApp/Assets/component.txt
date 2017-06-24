@@ -12,27 +12,27 @@ ch	rad	hn	mean
 ⻏	163	0	0
 ⻖	170	0	0
 一	1	NHẤT	số một
-世	0	thế	Thời đại, đời, thời
+世	0	THẾ	Thời đại, đời, thời
 丶	3	CHỦ	điểm, chấm
-乃	0	nãi	là, nên
-久	0	cửu	Lâu
+乃	0	NÃI	là, nên
+久	0	CỬU	Lâu
 乙	5	ẤT	vị trí thứ 2 trong thiên can
-九	0	cửu	0
-也	0	dã	cũng
+九	0	CỬU	0
+也	0	DÃ	cũng
 亀	213	0	0
 亅	6	QUYẾT	nét sổ có móc
 二	7	NHỊ	số hai
-五	0	ngũ	0
-井	0	tỉnh	Giếng
+五	0	NGŨ	0
+井	0	TỈNH	Giếng
 亠	8	ĐẦU	(Không có nghĩa)
-亡	23	vô/vong	0
+亡	23	VÔ/ VONG	0
 人	9	NHÂN (NHÂN ĐỨNG)	người
 儿	10	NHI	Trẻ con
-元	0	nguyên	0
-免	0	miễn	0
+元	0	NGUYÊN	0
+免	0	MIỄN	0
 入	11	NHẬP	vào
 冂	13	QUYNH	vùng biên giới xa; hoang địa
-冊	0	sách	0
+冊	0	SÁCH	0
 冖	14	MỊCH	trùm khăn lên
 冫	15	BĂNG	nước đá
 几	16	KỶ	ghế dựa
@@ -41,7 +41,7 @@ ch	rad	hn	mean
 刂	18	ĐAO	0
 力	19	LỰC	sức mạnh
 勹	20	BAO	bao bọc
-勿	0	vật	không, không nên
+勿	0	VẬT	không, không nên
 匕	21	CHỦY	cái thìa (cái muỗng)
 匚	22	PHƯƠNG	tủ đựng
 十	24	THẬP	số mười
@@ -50,16 +50,16 @@ ch	rad	hn	mean
 厂	27	HÁN	sườn núi, vách đá
 厶	28	KHƯ/ TƯ	riêng tư
 又	29	HỰU	lại nữa, một lần nữa
-及	0	cập	Đến, tới
+及	0	CẬP	Đến, tới
 口	30	KHẨU	cái miệng
-品	0	phẩm	0
+品	0	PHẨM	0
 囗	31	VI	vây quanh
 土	32	THỔ	đất
 士	33	SĨ	kẻ sĩ
 夂	34	TRĨ	đến ở phía sau
 夕	36	TỊCH	đêm tối
 大	37	ĐẠI	to lớn
-奄	0	yểm/yêm (bao trùm, Gấp rút, Thình lình)	0
+奄	0	YỂM/ YÊM	bao trùm, Gấp rút, Thình lình
 女	38	NỮ	nữ giới, con gái, đàn bà
 子	39	TỬ	con
 宀	40	MIÊN	mái nhà, mái che
@@ -71,16 +71,16 @@ ch	rad	hn	mean
 屮	45	TRIỆT	mầm non, cỏ non mới mọc
 屯	45	0	0
 山	46	SƠN	núi non
-岡	0	cương	Sườn núi
+岡	0	CƯƠNG	Sườn núi
 巛	47	XUYÊN	sông ngòi
 川	47	0	0
 工	48	CÔNG	người thợ, công việc
-巨	0	cự	To, lớn, đồ sộ, khổng lồ
+巨	0	CỰ	To, lớn, đồ sộ, khổng lồ
 已	49	KỶ	bản thân mình
-巴	0	ba	0
+巴	0	BA	0
 巾	50	CÂN	cái khăn
 干	51	CAN	thiên can, can dự
-并	0	tinh	Hợp, gồm
+并	0	TINH	Hợp, gồm
 幺	52	YÊU	nhỏ nhắn
 广	53	NGHIỄM	mái nhà
 廴	54	DẪN	bước dài
@@ -121,7 +121,7 @@ ch	rad	hn	mean
 气	84	KHÍ	hơi nước
 水	85	THỦY	nước
 氵	85	0	0
-滴	0	tích/trích	Giọt nước
+滴	0	TÍCH/ TRÍCH	Giọt nước
 火	86	HỎA	lửa
 灬	86	0	0
 無	71	0	0
