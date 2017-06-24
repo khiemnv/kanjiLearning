@@ -629,19 +629,28 @@ namespace test_universalApp
                 }
                 else
                 {
-                    callback(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
-                    callback(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
+                    //if (kanji.hn != null) {
+                        //callback(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
+                    //} else {
+                        //callback(myFgTask.qryType.run, string.Format("stroke {0}, radical ", kanji.totalStrokes));
+                    //}
+                    //callback(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
                     //bg_qryDisplay(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
                     var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
+                    string zRad = string.Format("Bộ {0} {1} {2} [{3}, {4}] {5}",
+                        kanji.radical.iRadical, kanji.radical.zRadical, kanji.radical.hn, kanji.radical.nStrokes,
+                        kanji.totalStrokes, kanji.val);
                     if (rdInfo.Count > 0)
                     {
                         var k = rdInfo[0];
-                        if (k.hn != "") callback(myFgTask.qryType.run, string.Format("({0})", k.hn));
-                        if (k.simple != '\0') callback(myFgTask.qryType.run, string.Format(" simple {0}", k.simple));
+
+                        if (k.hn != "") zRad += string.Format(" ({0})", k.hn);
+                        if (k.simple != '\0') zRad += string.Format(" simple {0}", k.simple);
                     }
-                    callback(myFgTask.qryType.run, ", meaning: ");
+                    callback(myFgTask.qryType.run, zRad);
                     foreach (var def in kanji.definitions)
                     {
+                        callback(myFgTask.qryType.run, ", meaning: ");
                         callback(myFgTask.qryType.define, (def));
                         break;
                     }
@@ -1168,7 +1177,15 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
-            //searchPanel.ManipulationCompleted += term_swiped;
+
+#if swipe_rtb
+            srchRtb.Tapped += term_Tapped;
+            srchRtb.ManipulationMode = ManipulationModes.TranslateX|ManipulationModes.TranslateY;
+            srchRtb.ManipulationCompleted += term_swiped;
+
+            srchRtb.ManipulationMode = ManipulationModes.TranslateX | ManipulationModes.TranslateY;
+            srchRtb.ManipulationDelta += SrchRtb_ManipulationDelta;
+#endif
 
             sulfBnt.Click += sulfBnt_Click;
             prevBtn.Click += prevBtn_Click;
@@ -1222,6 +1239,29 @@ namespace test_universalApp
 
             //set search event
             turnSearchOnOff(m_option.srchEnable);
+        }
+
+        private void SrchRtb_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
+        {
+            double x = e.Delta.Translation.X;
+            double y = e.Delta.Translation.Y;
+            double scale = Math.Abs(e.Velocities.Linear.Y)*10;
+            double delta = 15;
+            Debug.WriteLine(string.Format("Y {0} scale {1}",y, scale));
+            if (Math.Abs(y) > Math.Abs(x))
+            {
+                rtbScroll.ChangeView(null, rtbScroll.VerticalOffset - y*scale, null);
+            }
+            else if (x < -delta)
+            {
+                //move right
+                nextBtn_Click(sender, e);
+            }
+            else if (e.Cumulative.Translation.X > delta)
+            {
+                //move left
+                prevBtn_Click(sender, e);
+            }
         }
 
         private void SearchBnt2_Click(object sender, RoutedEventArgs e)
@@ -1571,12 +1611,21 @@ namespace test_universalApp
             //not in editing state
             if (m_editingItem == null)
             {
-                //if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
-                //{
-                //    term_Tapped(sender, null);
-                //}
-                //else 
-                if (e.Cumulative.Translation.X < -delta)
+                if (sender.GetType() == typeof(RichTextBlock) && m_option.srchTxtEnable)
+                {
+                    if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
+                    {
+                        var offset = -e.Cumulative.Translation.Y + rtbScroll.VerticalOffset;
+                        rtbScroll.ChangeView(null, offset, null);
+                    }
+                    return;
+                }
+                if (Math.Abs(e.Cumulative.Translation.Y) > Math.Abs(e.Cumulative.Translation.X))
+                {
+                    var offset = -e.Cumulative.Translation.Y + rtbScroll.VerticalOffset;
+                    rtbScroll.ChangeView(null, offset, null);
+                }
+                else if (e.Cumulative.Translation.X < -delta)
                 {
                     //move right
                     nextBtn_Click(sender, e);
