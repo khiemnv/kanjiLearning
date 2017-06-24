@@ -467,6 +467,7 @@ namespace test_universalApp
                 word.radical.definitions.Add(
                     new myDefinition { text = string.Format("{0} {1}", name, reading) }
                     );
+                word.radical.nStrokes = stroke_count;
                 //bt214
                 word.radical.hn = hn;
             }
@@ -761,6 +762,7 @@ namespace test_universalApp
         public int iRadical;
         public char zRadical;
         public string alt;
+        public int nStrokes;
     }
     public class myKanji : myWord
     {
