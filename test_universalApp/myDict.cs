@@ -87,13 +87,14 @@ namespace test_universalApp
                 @"C:\Users\Khiem\Desktop\character.csv",
                 @"C:\Users\Khiem\Desktop\character_jdict.csv",
                 @"C:\Users\Khiem\Desktop\bothu214.csv",
+                @"C:\Users\Khiem\Desktop\component.txt",
             };
-            string path = arr.First((s)=> { return s.Contains(name); });
+            string path = arr.First((s) => { return s.Contains(name); });
 
             TextReader rd = File.OpenText(path);
             var line = await rd.ReadLineAsync();
             lines = new List<string>();
-            for (;line != null; )
+            for (; line != null;)
             {
                 lines.Add(line);
                 line = await rd.ReadLineAsync();
@@ -169,7 +170,8 @@ namespace test_universalApp
         myDictHannom hnDict;    //hannom_index.csv
         myDictCharacter chDict; //character.csv
         myDictJDC jdcDict;      //character_jdict.csv
-        myDict214 bt214;           //
+        myDict214 bt214;        //
+        myCompo kjCompo;        //kanji component
         void load_hv_word()
         {
             string path = @"Assets/hv_word.csv";
@@ -369,6 +371,16 @@ namespace test_universalApp
             load_dict(dict, rd, path);
             bt214 = dict;
         }
+        //load kanji component
+        void load_kjCompo()
+        {
+            var dict = new myCompo(0);
+            string path = @"Assets/component.txt";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            kjCompo = dict;
+        }
+
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
@@ -388,6 +400,7 @@ namespace test_universalApp
 
                 m_instance.load_character_jdict();
                 m_instance.load_bt214();
+                m_instance.load_kjCompo();
             }
             return m_instance;
         }
@@ -412,7 +425,7 @@ namespace test_universalApp
                         //rd.format(kanji);
                         rd = kxDict[kanji.radical.iRadical];
                         rd.format(kanji);
-                        bt214.Update(kanji);
+                        kjCompo.Update(kanji);
                     }
                     kanjis.Add(kanji);
                 }
@@ -540,6 +553,8 @@ namespace test_universalApp
             //throw new NotImplementedException();
             string[] arr = parseLine(line);
             IRecord rec = crtRec(arr);
+            if (rec == null) return;
+
             string zKey = rec.getKey();
             if (!m_data.ContainsKey(zKey))
             {
@@ -1139,6 +1154,40 @@ namespace test_universalApp
             rec.initBt214(arr);
             return rec;
         }
+        protected override string[] parseLine(string line)
+        {
+            return base.parseLine(line, true);
+        }
+    }
+
+    //req: radical data loaded
+    public class myCompo : myRadicalMng
+    {
+        Dictionary<char, compoRec> m_dict = new Dictionary<char, compoRec>();
+        public myCompo(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        class compoRec
+        {
+            public char ch;
+            public string hn;
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new compoRec { ch = arr[0][0] };
+            int radId = int.Parse(arr[1]);
+            if (radId != 0)
+            {
+                RadRec tmp = m_sRadicals[radId - 1];
+                rec.hn = tmp.hn;
+            }
+            else
+            {
+                rec.hn = arr[2];
+            }
+            m_dict.Add(rec.ch, rec);
+            return null;
+        }
         public void Update(myKanji kj)
         {
             //update radical.hn & decomposite
@@ -1149,11 +1198,11 @@ namespace test_universalApp
             foreach (char key in kj.decomposite)
             {
                 if (!isKanji(key)) continue;
-                if (m_sRadDict.ContainsKey(key))
+                if (m_dict.ContainsKey(key))
                 {
                     //arr.Add(c);
-                    var rad = m_sRadDict[key];
-                    arr.Add(rad.hn);
+                    var tmp = m_dict[key];
+                    arr.Add(tmp.hn.ToUpper());
                 }
                 else
                 {
@@ -1164,7 +1213,7 @@ namespace test_universalApp
         }
         protected override string[] parseLine(string line)
         {
-            return base.parseLine(line, true);
+            return line.Split('\t');
         }
     }
 }
