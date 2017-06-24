@@ -143,6 +143,8 @@ namespace test_universalApp
         {
             return convert2(htmltxt, -1);
         }
+        //lineCount
+        //  (-1) no limit
         public static Span convert2(string htmltxt, int lineCount)
         {
             List<HtmlNode> trace = new List<HtmlNode>();

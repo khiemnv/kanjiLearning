@@ -139,6 +139,12 @@ namespace test_universalApp
         {
             m_option.spkTerm = (bool)optSpkTermChk.IsChecked;
         }
+
+        private void OptFullDefChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.fullDef = (bool)optFullDefChk.IsChecked;
+        }
+
         //private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
         //{
         //    m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
@@ -450,8 +456,8 @@ namespace test_universalApp
         }
 
 #region search_rgn
-        const int m_limitContentLen = 3;
-        const int m_limitContentCnt = 7;
+        int m_limitContentLen { get { return m_option.fullDef ? -1 : 3; } }
+        int m_limitContentCnt { get { return m_option.fullDef ? -1 : 7; } }
 
         private void srchBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -606,33 +612,38 @@ namespace test_universalApp
             //Span s = new Span();
             foreach (var kanji in ret)
             {
+                //display kanji with link
                 callback(myFgTask.qryType.hyperlink, kanji.val);
                 if (kanji.decomposite != "") {
                     callback(myFgTask.qryType.run, kanji.decomposite);
                     callback(myFgTask.qryType.linebreak, null);
                 }
 
+                //display japanese define
                 callback(myFgTask.qryType.define, kanji.definitions[0]);
                 kanji.definitions.RemoveAt(0);
 
+                //find kanji define - formated txt
                 var foundKanji = kanji.relatedWords.Find((w) => { return w.term == kanji.val.ToString(); });
                 if (foundKanji != null)
                 {
+                    //display kanji define (in formated txt)
                     callback(myFgTask.qryType.define, (foundKanji.definitions[0]));
                 }
                 else
                 {
-                    callback(myFgTask.qryType.run, string.Format("({0}) stroke {1}, radical ", kanji.hn, kanji.totalStrokes));
-                    callback(myFgTask.qryType.hyperlink, kanji.radical.zRadical);
-                    //bg_qryDisplay(new Run { Text = string.Format("({0}) ", kanji.radical.iRadical) });
+                    //display radical info
                     var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
-                    if (rdInfo.Count > 0)
+                    string zRad = string.Format("Bộ {0} {1} {2} [{3}, {4}] {5}",
+                        kanji.radical.iRadical, kanji.radical.zRadical, kanji.radical.hn, kanji.radical.nStrokes,
+                        kanji.totalStrokes, kanji.val);
                     {
-                        var k = rdInfo[0];
-                        if (k.hn != "") callback(myFgTask.qryType.run, string.Format("({0})", k.hn));
-                        if (k.simple != '\0') callback(myFgTask.qryType.run, string.Format(" simple {0}", k.simple));
+                        if (kanji.hn != null) zRad += string.Format(" ({0})", kanji.hn);
+                        if (kanji.simple != '\0') zRad += string.Format(" simple {0}", kanji.simple);
                     }
-                    callback(myFgTask.qryType.run, ", meaning: ");
+                    callback(myFgTask.qryType.run, zRad);
+
+                    //display other kanji define
                     foreach (var def in kanji.definitions)
                     {
                         callback(myFgTask.qryType.define, (def));
@@ -664,6 +675,8 @@ namespace test_universalApp
             {
                 if (txt.Contains(rWd.term)) continue;
 #if !show_brift
+                //m_limitContentCnt
+                //  (-1) no limit
                 if ((count++) == m_limitContentCnt)
                     break;
 #else
@@ -947,6 +960,8 @@ namespace test_universalApp
             public bool srchTxtEnable;
             [DataMember]
             public bool spkDefine;
+            [DataMember]
+            public bool fullDef;
 
             public studyOption() { }
 
@@ -1135,6 +1150,7 @@ namespace test_universalApp
             //+ speak
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
+            optFullDefChk.IsChecked = m_option.fullDef;
             //+ search
             //optSrchEnableChk.IsChecked = m_option.srchEnable;
             //optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
@@ -1187,7 +1203,7 @@ namespace test_universalApp
 
             optSpkTermChk.Click += OptSpkTermChk_Click;
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
-
+            optFullDefChk.Click += OptFullDefChk_Click;
             //search option
             //optSrchEnableChk.Click += OptSrchEnableChk_Click;
             //optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;

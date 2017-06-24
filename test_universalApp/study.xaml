@@ -92,87 +92,94 @@
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>
-                        <!--half below-->
-                        <Grid Grid.Row="1"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="2"
-                            VerticalAlignment="Top">
-                            <Button
-                                Padding="0"
-                                Grid.Row="1"
-                                VerticalAlignment="Top"
-                                Name="searchBnt2"
-                                Margin="0"
-                                Width="35"
-                                Height="35">
-                                M
-                            </Button>
-                            <TextBlock Margin="40,0,0,0"
-                                VerticalAlignment="Center">
-                                Show hide search panel</TextBlock>
-                        </Grid>
-                    <ScrollViewer
-                        Margin="0,40,0,0"
+                    <!--half below-->
+                    <Grid Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"></RowDefinition>
+                            <RowDefinition Height="35"></RowDefinition>
+                            <RowDefinition Height="*"></RowDefinition>
+                        </Grid.RowDefinitions>
+                        <Button
+                            Padding="0"
+                            Grid.Row="0"
+                            VerticalAlignment="Top"
+                            Name="searchBnt2"
+                            Margin="0"
+                            Width="35"
+                            Height="35">
+                            M
+                        </Button>
+                        <TextBlock Margin="40,0,0,0"
+                            VerticalAlignment="Center"
+                            Grid.Row="0">
+                            Show hide search panel</TextBlock>
+                        <CheckBox
                             Grid.Row="1"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="2">
-                        <StackPanel
+                            Name="optFullDefChk"
+                            Margin="50,0,0,0">Full define</CheckBox>
+                        <ScrollViewer
+                            Grid.Row="2"
                             VerticalAlignment="Bottom">
-                            <Button Name="canvasCancel"
+                            <StackPanel
+                                VerticalAlignment="Bottom">
+                                <Button Name="canvasCancel"
                                 Padding="0"
                                 Margin="0,2,0,2"
                                 Width="35"
                                 Height="35"
                                 Visibility="Collapsed">
-                                <Image Source="Assets/cancel.png"/>
-                            </Button>
-                            <Button Name="canvasAccept"
+                                    <Image Source="Assets/cancel.png"/>
+                                </Button>
+                                <Button Name="canvasAccept"
                                 Visibility="Collapsed"
                                 Padding="0"
                                 Margin="0,2,0,2"
                                 Width="35"
                                 Height="35">
-                                <Image
+                                    <Image
                                     Source="Assets/accept.png"/>
-                            </Button>
-                        <Grid Name="canvasEdit">
-                                <Button
-                                    Padding="0"
-                                    Margin="0,2,0,2"
-                                    Width="35"
-                                    Height="35">
-                                    <Image
-                                        Source="Assets/pencil.png"/>
                                 </Button>
-                                <TextBlock Margin="40,0,0,0"
+                                <Grid Name="canvasEdit">
+                                    <Button
+                                    Padding="0"
+                                    Margin="0,2,0,2"
+                                    Width="35"
+                                    Height="35">
+                                        <Image
+                                        Source="Assets/pencil.png"/>
+                                    </Button>
+                                    <TextBlock Margin="40,0,0,0"
                                     VerticalAlignment="Center">Edit word</TextBlock>
-                            </Grid>
-                        <Grid Name="canvasSpeak">
-                                <Button
+                                </Grid>
+                                <Grid Name="canvasSpeak">
+                                    <Button
                                     Margin="0,2,0,2"
                                     Padding="0"
                                     Width="35"
                                     Height="35">
-                                    <Image
+                                        <Image
                                         Name="speakImage"
                                         Source="Assets/speak.png"/>
-                                </Button>
-                                <TextBlock Margin="40,0,0,0"
+                                    </Button>
+                                    <TextBlock Margin="40,0,0,0"
                                     VerticalAlignment="Center">Speak</TextBlock>
-                            </Grid>
-                        <Grid Name="canvasStar2">
-                            <Button
+                                </Grid>
+                                <Grid Name="canvasStar2">
+                                    <Button
                                     Padding="0"
                                     Margin="0,2,0,2"
                                     Width="35"
                                     Height="35">
-                                <Image Name="starImg" Source="Assets/star_m.png"></Image>
-                            </Button>
-                            <TextBlock Margin="40,0,0,0"
+                                        <Image Name="starImg" Source="Assets/star_m.png"></Image>
+                                    </Button>
+                                    <TextBlock Margin="40,0,0,0"
                                     VerticalAlignment="Center">Mark word</TextBlock>
-                        </Grid>
-                    </StackPanel>
-                    </ScrollViewer>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
                 </SplitView.Pane>
                 <SplitView.Content>
