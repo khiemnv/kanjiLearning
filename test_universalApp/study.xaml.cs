@@ -4,6 +4,7 @@
 //#define start_use_checkbox
 #define once_synth
 #define reduce_disk_opp
+#define transparent_canvas
 
 #define dict_dist
 #define sepate_kanji
@@ -122,9 +123,11 @@ namespace test_universalApp
                 canvasEdit,
 #endif
                 termTxt, detailTxt,
-                nextBtn, backBtn,
-                bntStack,
-                canvasSpeak, canvasStar2};
+                nextBtn, prevBtn,
+                backBtn,
+                //bntStack,
+                canvasSpeak,
+                canvasStar };
             m_grp2 = new List<UIElement>() { canvasAccept, canvasCancel, editTxt };
 
             loadData();
@@ -459,10 +462,38 @@ namespace test_universalApp
         int m_limitContentLen { get { return m_option.fullDef ? -1 : 3; } }
         int m_limitContentCnt { get { return m_option.fullDef ? -1 : 7; } }
 
-        private void srchBtn_Click(object sender, RoutedEventArgs e)
+        bool singleTap;
+        private void SrchBtn_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            string txt = srchTxt.Text;
-            search(txt);
+            Debug.WriteLine("SrchBtn_DoubleTapped enter");
+            this.singleTap = false;
+
+            //show or hide search panel
+            SearchBnt2_Click(sender, e);
+        }
+
+        private async void srchBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("srchBtn_Click enter");
+
+            this.singleTap = true;
+            await Task.Delay(200);
+            if (this.singleTap)
+            {
+                //show search panel
+                if (!m_option.srchEnable)
+                {
+                    SearchBnt2_Click(sender, e);
+                }
+                else
+                {
+                    //search
+                    string txt = srchTxt.Text;
+                    search(txt);
+                }
+            }
+
+            Debug.WriteLine("srchBtn_Click leave {0}", singleTap);
         }
 
         private void Hb_Click(object sender, RoutedEventArgs e)
@@ -1176,21 +1207,21 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
-            gridSwipe.Tapped += term_Tapped;
-            gridSwipe.ManipulationMode = ManipulationModes.TranslateX;
-            gridSwipe.ManipulationCompleted += term_swiped;
+            numberTxt.Tapped += term_Tapped;
+            numberTxt.ManipulationMode = ManipulationModes.TranslateX;
+            numberTxt.ManipulationCompleted += term_swiped;
             //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
-            prevBtn.Click += prevBtn_Click;
-            nextBtn.Click += nextBtn_Click;
+            prevBtn.Tapped += prevBtn_Click;
+            nextBtn.Tapped += nextBtn_Click;
             backBtn.Click += back_Click;
 
             //canvas buttons
 #if start_use_checkbox
             starChk.Click += starChk_Checked;
 #else
-            canvasStar2.Tapped += starChk_Checked;
+            canvasStar.Tapped += starChk_Checked;
 #endif
 
             //option ctrls
@@ -1225,11 +1256,12 @@ namespace test_universalApp
             //flipBtn.Click += term_Tapped;
 
             //search & dict
-            srchBtn.Click += srchBtn_Click;
+            searchBnt2.Tapped += srchBtn_Click;                //search or show search panel
+            searchBnt2.DoubleTapped += SrchBtn_DoubleTapped;   //hide search panel
             myNode.OnHyberlinkClick += Hb_Click;
-            searchBnt2.Click += SearchBnt2_Click;
+            //searchBnt2.Click += SearchBnt2_Click;
 
-            srchTxt.KeyDown += SrchTxt_KeyDown;
+            srchTxt.KeyUp += SrchTxt_KeyUp;
 
             //set search event
             turnSearchOnOff(m_option.srchEnable);
@@ -1263,33 +1295,30 @@ namespace test_universalApp
             }
             if (enable) {
                 GetKanji += Study_GetKanji;
-                //srchRtb.Visibility = Visibility.Visible;
-                //srchBtn.Visibility = Visibility.Visible;
-                //srchTxt.Visibility = Visibility.Visible;
                 searchPanel.Visibility = Visibility.Visible;
 #if transparent_canvas
-                UIElement[] arr = { canvasStar2, canvasEdit, canvasSpeak };
+                UIElement[] arr = { canvasStar, canvasSpeak };
                 foreach (var c in arr) { c.Opacity = 0.5; }
                 srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
 #endif
                 termGrid.SetValue(Grid.RowSpanProperty, 1);
             } else
             {
-                //srchRtb.Visibility = Visibility.Collapsed;
-                //srchBtn.Visibility = Visibility.Collapsed;
-                //srchTxt.Visibility = Visibility.Collapsed;
                 searchPanel.Visibility = Visibility.Collapsed;
 #if transparent_canvas
-                UIElement[] arr = { canvasStar2, canvasEdit, canvasSpeak };
+                UIElement[] arr = { canvasStar, canvasSpeak };
                 foreach (var c in arr) { c.Opacity = 1; }
 #endif
                 termGrid.SetValue(Grid.RowSpanProperty, 2);
             }
         }
 
-        private void SrchTxt_KeyDown(object sender, KeyRoutedEventArgs e)
+        private void SrchTxt_KeyUp(object sender, KeyRoutedEventArgs e)
         {
-            if(e.Key == VirtualKey.Enter) { srchBtn_Click(this, e); }
+            if(e.Key == VirtualKey.Enter) {
+                this.Focus(FocusState.Programmatic);
+                srchBtn_Click(this, e);
+            }
         }
 
         void onKeyDown(object sender, KeyRoutedEventArgs e)
@@ -1512,8 +1541,10 @@ namespace test_universalApp
         };
         static myChkBox starChk = new myChkBox();
 
+#if !transparent_canvas
         BitmapImage starBM = new BitmapImage(new Uri("ms-appx:///Assets/star_m.png"));
         BitmapImage starBM2 = new BitmapImage(new Uri("ms-appx:///Assets/star_u.png"));
+#endif
         public void updateStarCanvas()
         {
             if (starChk.IsChecked)
@@ -1522,8 +1553,9 @@ namespace test_universalApp
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Yellow};
                 //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.Black };
-#endif
+#else
                 starImg.Source = starBM;
+#endif
             }
             else
             {
@@ -1535,8 +1567,9 @@ namespace test_universalApp
                 starEllipse.Fill = new SolidColorBrush() { Color = Colors.Silver};
                 //starEllipse.Stroke = new SolidColorBrush() { Color = Colors.White };
                 starPolyline.Stroke = new SolidColorBrush() { Color = Colors.White };
-#endif
+#else
                 starImg.Source = starBM2;
+#endif
             }
         }
 
