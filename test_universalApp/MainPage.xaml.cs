@@ -27,6 +27,7 @@ namespace test_universalApp
         BackgroundWorker m_worker;
         myConfig m_config { get { return s_content.m_config; } }
         bool isLoadingData = false;
+        myWorker m_bgwork;
 
         public MainPage()
         {
@@ -52,6 +53,116 @@ namespace test_universalApp
             addBtn.Click += btnAdd_Click;
             nextBtn.Click += btnNext_Click;
             clean.Click += btnClean_Click;
+
+            //background work
+            m_bgwork = new myWorker();
+            m_bgwork.BgProcess += bg_process;
+            m_bgwork.FgProcess += fg_process;
+        }
+
+        enum bgTaskType
+        {
+            saveFolder,
+            loadData,
+            loadDict
+        }
+        enum fgTaskType
+        {
+            prepareProgress,
+            updateProgress,
+            hideProgress,
+        }
+
+        //pick folder
+        async void getFolder()
+        {
+            FolderPicker picker;
+            StorageFolder folder;
+
+            picker = new FolderPicker();
+            picker.ViewMode = PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add("*");
+            folder = await picker.PickSingleFolderAsync();
+
+            if (folder != null)
+            {
+                Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
+                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder});
+                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+            }
+        }
+
+        private void fg_process(object sender, FgTask e)
+        {
+            switch((fgTaskType)e.type)
+            {
+                case fgTaskType.prepareProgress:
+                    browserProg.Visibility = Visibility.Visible;
+                    browserProg.Value = 0;
+                    break;
+                case fgTaskType.updateProgress:
+                    browserProg.Value = (double)e.data;
+                    break;
+                case fgTaskType.hideProgress:
+                    browserProg.Visibility = Visibility.Collapsed;
+                    break;
+            }
+        }
+
+        int getTickCount() { return Environment.TickCount / 1000; }
+
+        private void bg_process(object sender, BgTask e)
+        {
+            Debug.WriteLine(string.Format("bg_process {0}", (bgTaskType)e.type));
+            switch((bgTaskType)e.type)
+            {
+                case bgTaskType.saveFolder:
+                    {
+                        StorageFolder folder = (StorageFolder)e.data;
+                        //save last selected folder
+                        if (folder.Path != m_config.lastPath)
+                        {
+                            m_config.m_lastFolder = folder;
+                            m_config.lastPath = folder.Path;
+                            //clear prev data
+                            m_config.selectedChapters.Clear();
+                            s_content.m_chapters.Clear();
+                        }
+                        var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+                        mru.Clear();
+                        string mruToken = mru.Add(folder, folder.Path);
+                    }
+                    break;
+                case bgTaskType.loadData:
+                    {
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.prepareProgress});
+
+                        StorageFolder folder = (StorageFolder)e.data;
+                        IReadOnlyList<StorageFile> fileList = null;
+                        var t = Task.Run(async () => {
+                            fileList = await folder.GetFilesAsync();
+                        });
+                        t.Wait();
+                        int n = fileList.Count;
+                        int ret = 0;
+                        for (int i = 0; i < n; i++)
+                        {
+                            t = Task.Run(async () => { 
+                                ret = await s_content.loadSingleChapter(fileList[i]);
+                            });
+                            t.Wait();
+
+                            m_bgwork.qryFgTask(new FgTask {type = (int)fgTaskType.updateProgress, data = (double)i*100/n });
+                        }
+
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.hideProgress });
+                    }
+                    break;
+                case bgTaskType.loadDict:
+                    myDict.Load();
+                    break;
+            }
         }
 
         private void btnClean_Click(object sender, RoutedEventArgs e)
@@ -104,6 +215,7 @@ namespace test_universalApp
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
+#if !enable_loaddata
             Debug.WriteLine("loaded");
             if (m_config.m_lastFolder != null) {
                 browserPath.Text = m_config.m_lastFolder.Path;
@@ -125,8 +237,8 @@ namespace test_universalApp
             //load db
             s_content.loadDb();
 
-            //load dict
-            myDict.Load();
+            m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadDict });
+#endif
         }
 
         private async void loadLastPath()
@@ -138,19 +250,22 @@ namespace test_universalApp
                 if (entry.Metadata == m_config.lastPath) {
                     string mruToken = entry.Token;
                     string mruMetadata = entry.Metadata;
-                    IStorageItem item = await mru.GetItemAsync(mruToken);
-                    m_config.m_lastFolder = (StorageFolder)item;
+                    try
+                    {
+                        IStorageItem item = await mru.GetItemAsync(mruToken);
+                        m_config.m_lastFolder = (StorageFolder)item;
+                    }
+                    catch
+                    {
+                        //case last path is removed
+                        mru.Clear();
+                    }
                     break;
                 }
             }
             if (m_config.m_lastFolder != null)
             {
-                //show progress bar
-                browserProg.Visibility = Visibility.Visible;
-                browserProg.Value = 0;
-                browserProg.Maximum = 100;
-                //start work
-                m_worker.RunWorkerAsync();
+                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = m_config.m_lastFolder});
             }
         }
 
@@ -224,38 +339,11 @@ namespace test_universalApp
             int ret = await s_content.saveChapter(txt);
         }
 
-        private async void browserBtn_Click(object sender, RoutedEventArgs e)
+        private void browserBtn_Click(object sender, RoutedEventArgs e)
         {
-#if use_worker
-            //pick folder
-            var picker = new FolderPicker();
-            picker.ViewMode = PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            picker.FileTypeFilter.Add("*");
-            var folder = await picker.PickSingleFolderAsync();
-            if (folder == null) return;
-
-            //save last selected folder
-            if (folder.Path != m_config.lastPath)
-            {
-                m_config.m_lastFolder = folder;
-                m_config.lastPath = folder.Path;
-                //clear prev data
-                m_config.selectedChapters.Clear();
-                s_content.m_chapters.Clear();
-            }
-            var mru = StorageApplicationPermissions.MostRecentlyUsedList;
-            string mruToken = mru.Add(folder, folder.Path);
-
-            //show progress bar
-            browserProg.Visibility = Visibility.Visible;
-            browserProg.Value = 0;
-            browserProg.Maximum = 100;
-            //start work
-            m_worker.RunWorkerAsync();
-#else
-            int ret = await s_content.loadMultipleChapter();
-#endif
+            //m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.selectFolder });
+            getFolder();
+            Debug.WriteLine("browserBtn_Click end");
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -301,7 +389,7 @@ namespace test_universalApp
 #endif
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         void Dispose(bool disposing)
@@ -334,7 +422,7 @@ namespace test_universalApp
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
 #endif
 
     }
