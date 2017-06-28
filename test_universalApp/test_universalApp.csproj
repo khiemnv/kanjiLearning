@@ -129,6 +129,7 @@
     <Compile Include="myDb.cs" />
     <Compile Include="myDict.cs" />
     <Compile Include="myNode.cs" />
+    <Compile Include="myWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="study.xaml.cs">
       <DependentUpon>study.xaml</DependentUpon>

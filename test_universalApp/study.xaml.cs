@@ -4,7 +4,7 @@
 //#define start_use_checkbox
 #define once_synth
 #define reduce_disk_opp
-#define transparent_canvas
+//#define transparent_canvas
 
 #define dict_dist
 #define sepate_kanji
@@ -96,7 +96,8 @@ namespace test_universalApp
                 s.Dispose();
             }
             synthDic.Clear();
-            if (lastTTSstream!= null) lastTTSstream.Dispose();
+            //already free src when speech end
+            //if (lastTTSstream!= null) lastTTSstream.Dispose();
 
             m_grp1.Clear();
             m_grp2.Clear();
@@ -282,6 +283,8 @@ namespace test_universalApp
                 return synthDic[lang];
             }
 
+            //if not exist in cache
+            //  + crt new instance
             VoiceInformation voice;
             ret = getVoice(out voice, lang);
             if (!ret) return null;
@@ -569,6 +572,7 @@ namespace test_universalApp
                     }
                     break;
                 case myFgTask.qryType.speech:
+                    if (lastTTSstream != null)
                     {
                         // The media object for controlling and playing audio.
                         MediaElement mediaElement = media;
@@ -1207,10 +1211,12 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
+            swipeTxt.Tapped += term_Tapped;
+            swipeTxt.ManipulationMode = ManipulationModes.TranslateX;
+            swipeTxt.ManipulationCompleted += term_swiped;
             numberTxt.Tapped += term_Tapped;
             numberTxt.ManipulationMode = ManipulationModes.TranslateX;
             numberTxt.ManipulationCompleted += term_swiped;
-            //searchPanel.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
             prevBtn.Tapped += prevBtn_Click;
@@ -1629,7 +1635,7 @@ namespace test_universalApp
 
         private void term_swiped(object sender, ManipulationCompletedRoutedEventArgs e)
         {
-            const int delta = 15;
+            const int delta = 5;
             //not in editing state
             if (m_editingItem == null)
             {

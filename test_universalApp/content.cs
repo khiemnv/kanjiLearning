@@ -134,6 +134,24 @@ namespace test_universalApp
             return -1;
         }
 
+        public async Task<int> loadSingleChapter(StorageFile file)
+        {
+            if (file !=null)
+            {
+                {
+                    Debug.WriteLine(file.Name);
+                    string txt = await FileIO.ReadTextAsync(file);
+                    var words = parse(txt);
+                    if (words.Count > 0)
+                    {
+                        updateDict(file, words);
+                    }
+                }
+                return 0;
+            }
+            return -1;
+        }
+
         //for test
         public List<word> parse(string text)
         {
@@ -399,9 +417,9 @@ namespace test_universalApp
             string key = path;
             if (m_chapters.ContainsKey(key))
             {
-                var oldWords = m_chapters[key].words;
+                //var oldWords = m_chapters[key].words;
                 m_chapters[key].words = words;
-                oldWords.Clear();
+                //oldWords.Clear();
             }
             else
             {
@@ -726,6 +744,9 @@ namespace test_universalApp
         public StorageFolder m_lastFolder;
 
         public myConfig() {
+            m_lastFolder = null;
+            mruToken = "";
+            lastPath = "";
             selectedChapters = new List<string>();
         }
         static myConfig m_config;
