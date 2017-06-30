@@ -384,23 +384,33 @@ namespace test_universalApp
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
+        public static int loadProgress = 0;
         public static myDict Load()
         {
             if (m_instance == null)
             {
                 m_instance = new myDict();
                 m_instance.load_character();
+                loadProgress = 10;
 
                 m_instance.load_hv_org();
+                loadProgress = 20;
                 m_instance.load_hanvietdict();
+                loadProgress = 30;
                 //m_instance.load_hvchubothu();
                 m_instance.load_hv_word();
+                loadProgress = 40;
                 m_instance.load_kangxi();
+                loadProgress = 50;
                 //m_instance.load_hannom_index();
 
                 m_instance.load_character_jdict();
+                loadProgress = 60;
                 m_instance.load_bt214();
+                loadProgress = 70;
                 m_instance.load_kjCompo();
+
+                loadProgress = 100;
             }
             return m_instance;
         }

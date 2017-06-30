@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using System.ComponentModel;
 using System.Xml;
 using Windows.Storage.Streams;
+using Windows.Storage.AccessCache;
 #if use_sqlite
 using Microsoft.Data.Sqlite;
 using Microsoft.Data.Sqlite.Internal;
@@ -741,10 +742,7 @@ namespace test_universalApp
         [DataMember]
         public List<string> selectedChapters;
 
-        public StorageFolder m_lastFolder;
-
         public myConfig() {
-            m_lastFolder = null;
             mruToken = "";
             lastPath = "";
             selectedChapters = new List<string>();

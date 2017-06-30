@@ -21,12 +21,10 @@ namespace test_universalApp
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page, IDisposable
+    public sealed partial class MainPage : Page
     {
         static contentProvider s_content = contentProvider.getInstance();
-        BackgroundWorker m_worker;
         myConfig m_config { get { return s_content.m_config; } }
-        bool isLoadingData = false;
         myWorker m_bgwork;
 
         public MainPage()
@@ -71,6 +69,7 @@ namespace test_universalApp
             prepareProgress,
             updateProgress,
             hideProgress,
+            updateStatus
         }
 
         //pick folder
@@ -90,6 +89,7 @@ namespace test_universalApp
                 Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
                 m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder});
                 m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                browserPath.Text = folder.Path;
             }
         }
 
@@ -107,6 +107,9 @@ namespace test_universalApp
                 case fgTaskType.hideProgress:
                     browserProg.Visibility = Visibility.Collapsed;
                     break;
+                case fgTaskType.updateStatus:
+                    statusBar.Text = (string)e.data;
+                    break;
             }
         }
 
@@ -123,7 +126,6 @@ namespace test_universalApp
                         //save last selected folder
                         if (folder.Path != m_config.lastPath)
                         {
-                            m_config.m_lastFolder = folder;
                             m_config.lastPath = folder.Path;
                             //clear prev data
                             m_config.selectedChapters.Clear();
@@ -160,7 +162,18 @@ namespace test_universalApp
                     }
                     break;
                 case bgTaskType.loadDict:
-                    myDict.Load();
+                    {
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateStatus, data = "Loading dict ..." });
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.prepareProgress });
+                        Task t = Task.Run(() => { myDict.Load(); });
+                        while(myDict.loadProgress < 100)
+                        {
+                            m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateProgress, data = (double)myDict.loadProgress });
+                            myWorker.sleep(100);
+                        }
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.hideProgress });
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateStatus, data = "Loading completed!" });
+                    }
                     break;
             }
         }
@@ -180,17 +193,6 @@ namespace test_universalApp
             //txtBox.Header = "Word list";
             //ScrollViewer.SetVerticalScrollBarVisibility(txtBox, ScrollBarVisibility.Auto);
 
-#if use_worker
-            m_worker = new BackgroundWorker();
-            m_worker.DoWork += Worker_DoWork;
-#if true
-            m_worker.ProgressChanged += Worker_ProgressChanged;
-#else
-            worker.ProgressChanged += (s, e) => { browserProg.Value = e.ProgressPercentage; };
-#endif
-            m_worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            m_worker.WorkerReportsProgress = true;
-#endif
             //swipe next
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += swipedLeft;
@@ -213,16 +215,18 @@ namespace test_universalApp
             Debug.WriteLine("unloaded");
         }
 
+        static bool s_lastFolderLoaded = false;
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
 #if !enable_loaddata
             Debug.WriteLine("loaded");
-            if (m_config.m_lastFolder != null) {
-                browserPath.Text = m_config.m_lastFolder.Path;
+            if (s_lastFolderLoaded) {
+                browserPath.Text = m_config.lastPath;
                 updateStatus(string.Format("Total chapters: {0}", s_content.m_chapters.Count));
             }
             else
             {
+                s_lastFolderLoaded = true;
                 loadLastPath();
             }
 
@@ -241,31 +245,34 @@ namespace test_universalApp
 #endif
         }
 
-        private async void loadLastPath()
+        private void loadLastPath()
         {
             //load last selected folder
+            IStorageItem item = null;
             var mru = StorageApplicationPermissions.MostRecentlyUsedList;
             foreach (AccessListEntry entry in mru.Entries)
             {
-                if (entry.Metadata == m_config.lastPath) {
+                if (entry.Metadata == m_config.lastPath)
+                {
                     string mruToken = entry.Token;
                     string mruMetadata = entry.Metadata;
                     try
                     {
-                        IStorageItem item = await mru.GetItemAsync(mruToken);
-                        m_config.m_lastFolder = (StorageFolder)item;
+                        var t = Task.Run(async () => { item = await mru.GetItemAsync(mruToken); });
+                        t.Wait();
                     }
                     catch
                     {
-                        //case last path is removed
-                        mru.Clear();
+                        //case last folder is removed
                     }
                     break;
                 }
             }
-            if (m_config.m_lastFolder != null)
+            var lastFolder = (StorageFolder)item;
+            if (lastFolder != null)
             {
-                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = m_config.m_lastFolder});
+                browserPath.Text = m_config.lastPath;
+                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = lastFolder});
             }
         }
 
@@ -300,7 +307,7 @@ namespace test_universalApp
         }
         private void btnNext_Click(object sender, RoutedEventArgs e)
         {
-            if (isLoadingData)
+            if (myDict.loadProgress < 100)
             {
                 showErrMsg();
             }
@@ -345,85 +352,5 @@ namespace test_universalApp
             getFolder();
             Debug.WriteLine("browserBtn_Click end");
         }
-
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            Debug.WriteLine("Worker_RunWorkerCompleted {0}", e.Result);
-            isLoadingData = false;
-            browserPath.Text = m_config.m_lastFolder.Path;
-            browserProg.Visibility = Visibility.Collapsed;
-
-            //update status bar
-            updateStatus(string.Format("Load {0} chapters completed!", s_content.m_chapters.Count));
-        }
-
-#if track_progress
-        int m_progress;
-#endif
-        private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-#if track_progress
-            m_progress = e.ProgressPercentage;
-#endif
-            browserProg.Value = e.ProgressPercentage;
-            Debug.WriteLine("Worker_ProgressChanged {0}", e.ProgressPercentage);
-        }
-#if use_worker
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            Debug.WriteLine("Worker_DoWork start");
-            isLoadingData = true;
-#if !track_progress
-            Task t = Task.Run(() => s_content.loadMultipleChapter(m_worker, m_config.m_lastFolder));
-            t.Wait();
-            Debug.WriteLine("Worker_DoWork end");
-#else
-            m_progress = 0;
-            s_content.loadMultipleChapter(worker, folder);
-            int i = 0;
-            while (m_progress != 100)
-            {
-                Debug.WriteLine("Worker_DoWork wait {0} {1}", i++, m_progress);
-                Task.Delay(1000);
-            }
-#endif
-        }
-
-#region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
-                }
-
-                m_worker.Dispose();
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        ~MainPage()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(false);
-        }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
-#endregion
-#endif
-
     }
 }

@@ -1,6 +1,6 @@
 ﻿//#define test_study_page
 //#define init_status
-#define item_editable
+//#define item_editable - case file/folder is renamed or deleted
 //#define start_use_checkbox
 #define once_synth
 #define reduce_disk_opp
@@ -8,7 +8,6 @@
 
 #define dict_dist
 #define sepate_kanji
-#define enable_edit
 
 using System;
 using System.Collections.Generic;
@@ -120,7 +119,7 @@ namespace test_universalApp
             synthDic = new Dictionary<string, SpeechSynthesizer>();
 
             m_grp1 = new List<UIElement>() {
-#if enable_edit
+#if item_editable
                 canvasEdit,
 #endif
                 termTxt, detailTxt,
@@ -378,7 +377,7 @@ namespace test_universalApp
 
             rtbScroll.HorizontalScrollMode = ScrollMode.Disabled;
 
-#if !enable_edit
+#if !item_editable
             canvasEdit.Visibility = Visibility.Collapsed;
 #endif
 
