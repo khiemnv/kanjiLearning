@@ -87,15 +87,16 @@ namespace ConsoleApplication1
                 @"C:\Users\Khiem\Desktop\character.csv",
                 @"C:\Users\Khiem\Desktop\character_jdict.csv",
                 @"C:\Users\Khiem\Desktop\bothu214.csv",
+                @"C:\Users\Khiem\Desktop\component.txt",
                 @"C:\Users\Khiem\Desktop\search.csv",
                 @"C:\Users\Khiem\Desktop\conjugation.csv",
             };
-            string path = arr.First((s)=> { return s.Contains(name); });
+            string path = arr.First((s) => { return s.Contains(name); });
 
             TextReader rd = File.OpenText(path);
             var line = await rd.ReadLineAsync();
             lines = new List<string>();
-            for (;line != null; )
+            for (; line != null;)
             {
                 lines.Add(line);
                 line = await rd.ReadLineAsync();
@@ -126,7 +127,7 @@ namespace ConsoleApplication1
             return ret;
         }
 
-#region IDisposable Support
+        #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -159,7 +160,7 @@ namespace ConsoleApplication1
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-#endregion
+        #endregion
     }
     public class myDict
     {
@@ -172,6 +173,7 @@ namespace ConsoleApplication1
         myDictCharacter chDict; //character.csv
         myDictJDC jdcDict;      //character_jdict.csv
         myDict214 bt214;        //
+        myCompo kjCompo;        //kanji component
         myDictSearch dictSearch;//verd info
         myDictConj dictConj;
         void load_hv_word()
@@ -230,7 +232,7 @@ namespace ConsoleApplication1
             //ms-appx-web:///
             return new Uri(string.Format("{0}{1}", "ms-appx:///", path), UriKind.Absolute);
         }
-#region load_dict
+        #region load_dict
         //working state
         enum wrkState
         {
@@ -303,7 +305,7 @@ namespace ConsoleApplication1
             rd.Close();
             rd.Dispose();
         }
-#endregion
+        #endregion
         void load_hvchubothu()
         {
             string path = @"Assets/hvchubothu.js";
@@ -373,6 +375,15 @@ namespace ConsoleApplication1
             load_dict(dict, rd, path);
             bt214 = dict;
         }
+        //load kanji component
+        void load_kjCompo()
+        {
+            var dict = new myCompo(0);
+            string path = @"Assets/component.txt";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            kjCompo = dict;
+        }
         void load_conj()
         {
             var dict = new myDictConj(0);
@@ -392,23 +403,39 @@ namespace ConsoleApplication1
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
+        public static int loadProgress = 0;
         public static myDict Load()
         {
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                //m_instance.load_hv_org();
-                //m_instance.load_hanvietdict();
-                //m_instance.load_hvchubothu();
-                //m_instance.load_hv_word();
-                m_instance.load_kangxi();
-                //m_instance.load_hannom_index();
                 m_instance.load_character();
+                loadProgress = 10;
+
+                m_instance.load_hv_org();
+                loadProgress = 20;
+                m_instance.load_hanvietdict();
+                loadProgress = 30;
+                //m_instance.load_hvchubothu();
+                m_instance.load_hv_word();
+                loadProgress = 40;
+                m_instance.load_kangxi();
+                loadProgress = 50;
+                //m_instance.load_hannom_index();
+
                 m_instance.load_character_jdict();
+                loadProgress = 60;
+
                 m_instance.load_bt214();
+                loadProgress = 70;
+                m_instance.load_kjCompo();
+
                 //verd info
                 m_instance.load_conj();
                 m_instance.load_search();
+
+                loadProgress = 100;
+
             }
             return m_instance;
         }
@@ -433,7 +460,7 @@ namespace ConsoleApplication1
                         //rd.format(kanji);
                         rd = kxDict[kanji.radical.iRadical];
                         rd.format(kanji);
-                        bt214.Update(kanji);
+                        kjCompo.Update(kanji);
                     }
                     kanjis.Add(kanji);
                 }
@@ -441,7 +468,7 @@ namespace ConsoleApplication1
             return kanjis;
         }
     }
-    public class myRadicalMng:myDictBase
+    public class myRadicalMng : myDictBase
     {
         static protected List<RadRec> m_sRadicals = new List<RadRec>();
         static protected Dictionary<char, RadRec> m_sRadDict = new Dictionary<char, RadRec>();
@@ -463,7 +490,7 @@ namespace ConsoleApplication1
                 reading = arr[6];
                 int.TryParse(arr[7], out stroke_count);
                 add(literal);
-                foreach (char c in alt){add(c);}
+                foreach (char c in alt) { add(c); }
             }
             void add(char c)
             {
@@ -477,7 +504,7 @@ namespace ConsoleApplication1
                 var term = arr[1];
                 hn = arr[2];
                 mean = arr[3];
-                foreach(char c in term){add(c);}
+                foreach (char c in term) { add(c); }
             }
 
             public void format(myKanji word)
@@ -488,6 +515,7 @@ namespace ConsoleApplication1
                 word.radical.definitions.Add(
                     new myDefinition { text = string.Format("{0} {1}", name, reading) }
                     );
+                word.radical.nStrokes = stroke_count;
                 //bt214
                 word.radical.hn = hn;
             }
@@ -497,7 +525,7 @@ namespace ConsoleApplication1
                 return literal.ToString();
             }
         }
-        
+
         public myRadicalMng(int maxWordCount) : base(maxWordCount)
         {
         }
@@ -515,7 +543,7 @@ namespace ConsoleApplication1
             }
         }
         //public IRecord this[char rad]{get {return m_data[rad];}}
-        public IRecord this[int id]{get {return m_sRadicals[id-1];}}
+        public IRecord this[int id] { get { return m_sRadicals[id - 1]; } }
         protected virtual IRecord Search(char rad)
         {
             throw new NotImplementedException();
@@ -555,10 +583,10 @@ namespace ConsoleApplication1
 
         public static bool isKanji(char c)
         {
-            if (c < 0x2f00) return false;
+            if (c < 0x2e85) return false;
             //3040-30ff
             if ((c & 0xFF00) == 0x3000) return false;
-            return (c >= 0x2f00);
+            return true;
         }
         public void add(string line)
         {
@@ -566,6 +594,8 @@ namespace ConsoleApplication1
             //throw new NotImplementedException();
             string[] arr = parseLine(line);
             IRecord rec = crtRec(arr);
+            if (rec == null) return;
+
             string zKey = rec.getKey();
             if (!m_data.ContainsKey(zKey))
             {
@@ -604,7 +634,7 @@ namespace ConsoleApplication1
         //        m_data.Add(rec.getKey(), rec);
         //}
 
-#region csv parser
+        #region csv parser
         enum myTkType
         {
             t_comma = 0,
@@ -770,7 +800,7 @@ namespace ConsoleApplication1
             //case eol
             return res;
         }
-#endregion
+        #endregion
     }
     public class myDefinition
     {
@@ -783,18 +813,19 @@ namespace ConsoleApplication1
         public string hn;   //hn
         public List<myDefinition> definitions = new List<myDefinition>();
     }
-    public class myRadical:myWord
+    public class myRadical : myWord
     {
         public int iRadical;
         public char zRadical;
         public string alt;
+        public int nStrokes;
     }
-    public class myKanji:myWord
+    public class myKanji : myWord
     {
         public char val;
         public char simple;
         public int extraStrokes, totalStrokes;
-        public string decomposite;
+        public string decomposite = "";
         public myRadical radical = new myRadical();
         public List<myWord> relatedWords = new List<myWord>();
         public myWord relateWord(string key)
@@ -802,7 +833,7 @@ namespace ConsoleApplication1
             myWord word = relatedWords.Find((w) => { return w.term == key; });
             if (word == null)
             {
-                word = new myWord { term = key};
+                word = new myWord { term = key };
                 relatedWords.Add(word);
             }
             return word;
@@ -883,8 +914,10 @@ namespace ConsoleApplication1
             {
                 word.radical.zRadical = radical[0];
                 word.radical.definitions.Add(
-                    new myDefinition {
-                        text = meaning, bFormated = true
+                    new myDefinition
+                    {
+                        text = meaning,
+                        bFormated = true
                     });
             }
 
@@ -1195,10 +1228,10 @@ namespace ConsoleApplication1
             }
             public override string ToString()
             {
-                return string.Format("sample {0} perfective {1} negative{2} " +
-                    "i {3} te {4} potential {5} " +
-                    "passive {6} causative {7} eba {8} " +
-                    "imperative {9} volitional {10}",
+                return string.Format(" sample {0}\n perfective {1}\n negative{2}\n " +
+                    "i {3}\n te {4}\n potential {5}\n " +
+                    "passive {6}\n causative {7}\n eba {8}\n " +
+                    "imperative {9}\n volitional {10}\n",
                     sample, perfective, negative,
                     i, te, potential,
                     passive, causative, eba,
@@ -1239,23 +1272,36 @@ namespace ConsoleApplication1
             string getDef()
             {
                 string ret = "";
-                var arr = pos.Split(new char[] {',' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach( string i in arr)
+                var arr = pos.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string i in arr)
                 {
                     var l = myDictConj.m_list.FindAll((rec) => { return rec.pos == i; });
-                    foreach(myDictConj.recordConj conj in l)
+                    foreach (myDictConj.recordConj conj in l)
                     {
-                        ret += conj.ToString() + "\n";
+                        ret = hira + "\n" + conj.ToString();
+                        break;
                     }
                 }
                 return ret;
             }
             public void format(myKanji kanji)
             {
-                string def = getDef();
-                if (def != "") {
-                    var word = kanji.relateWord(term);
-                    word.definitions.Add(new myDefinition {text = def });
+                bool found = false;
+                foreach(var ch in term)
+                {
+                    if (isKanji(ch))
+                    {
+                        if (ch == kanji.val) { found = true; }
+                        else { found = false; break; }
+                    }
+                }
+                if (found)
+                {
+                    string def = getDef();
+                    if (def != "") {
+                        var word = kanji.relateWord(term);
+                        word.definitions.Add(new myDefinition { text = def });
+                    }
                 }
             }
             public string getKey()
@@ -1286,6 +1332,44 @@ namespace ConsoleApplication1
             rec.initBt214(arr);
             return rec;
         }
+        protected override string[] parseLine(string line)
+        {
+            return base.parseLine(line, true);
+        }
+    }
+
+    //req: radical data loaded
+    public class myCompo : myRadicalMng
+    {
+        Dictionary<char, compoRec> m_dict = new Dictionary<char, compoRec>();
+        public myCompo(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        class compoRec
+        {
+            public char ch;
+            public string hn;
+        }
+
+        char[] splitor = new char[] { ' ', '/' };
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new compoRec { ch = arr[0][0] };
+            int radId = int.Parse(arr[1]);
+            string hn;
+            if (radId != 0)
+            {
+                RadRec tmp = m_sRadicals[radId - 1];
+                hn = tmp.hn;
+            }
+            else
+            {
+                hn = arr[2];
+            }
+            rec.hn = hn.Split(splitor)[0];
+            m_dict.Add(rec.ch, rec);
+            return null;
+        }
         public void Update(myKanji kj)
         {
             //update radical.hn & decomposite
@@ -1293,25 +1377,25 @@ namespace ConsoleApplication1
             //kj.radical.hn = rec.hn;
             Debug.WriteLine(string.Format("{0} Update decomposite {1}", this, kj.val));
             List<string> arr = new List<string>();
-            foreach(var c in kj.decomposite.Split(';'))
+            foreach (char key in kj.decomposite)
             {
-                char key = c[0];
-                if (m_sRadDict.ContainsKey(key))
+                if (!isKanji(key)) continue;
+                if (m_dict.ContainsKey(key))
                 {
                     //arr.Add(c);
-                    var rad = m_sRadDict[key];
-                    arr.Add(rad.hn);
+                    var tmp = m_dict[key];
+                    arr.Add(tmp.hn);
                 }
                 else
                 {
-                    Debug.Write(c);
+                    Debug.Write(key);
                 }
             }
-            kj.decomposite =string.Format("{0}({1})",kj.decomposite, string.Join(";", arr));
+            if (arr.Count > 0) { kj.decomposite = string.Format("{0}({1})", kj.decomposite, string.Join(";", arr)); }
         }
         protected override string[] parseLine(string line)
         {
-            return base.parseLine(line, true);
+            return line.Split('\t');
         }
     }
 }
