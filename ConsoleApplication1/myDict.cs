@@ -14,11 +14,11 @@ namespace ConsoleApplication1
     {
         public static void WriteLine(object txt)
         {
-            //Console.WriteLine(txt);
+            Console.WriteLine(txt);
         }
         public static void Write(object txt)
         {
-            //Console.Write(txt);
+            Console.Write(txt);
         }
 
         internal static void Assert(bool v)
@@ -284,35 +284,54 @@ namespace ConsoleApplication1
             int startTC = Environment.TickCount;
             wrkState s = wrkState.init;
             string[] arr;
-            for (int i = 0; s != wrkState.end;)
+            byte[] block;
+            int nRead;
+            int iRec = 0;
+            for (int iBlock = 0; s != wrkState.end;)
             {
-                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, i, s));
+                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, iBlock, s));
                 switch (s)
                 {
                     case wrkState.init:
-                        if (csv.recCount > 0) s = wrkState.begin;
+                        if (csv.blockCount > 0) s = wrkState.begin;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         break;
                     case wrkState.begin:
+                        block = csv.getBlock(out nRead);
+                        iBlock++;
+
+                        csv.parseBlock(nRead, block);
                         arr = csv.getRec();   //ignore first line
-                        i++;
-                        if (i < csv.recCount) s = wrkState.parsing;
+                        iRec++;
+                        for (; iRec < csv.recCount; iRec++)
+                        {
+                            arr = csv.getRec();
+                            dict.add(arr);
+                        }
+
+                        if (iBlock < csv.blockCount) s = wrkState.parsing;
                         else s = wrkState.wait4read;
                         break;
                     case wrkState.wait4read:
-                        if (i < csv.recCount) s = wrkState.parsing;
+                        if (iBlock < csv.blockCount) s = wrkState.parsing;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         Task.Delay(1);
                         break;
                     case wrkState.parsing:
-                        var c = csv.recCount;
-                        for (; i < c;)
+                        var c = csv.blockCount;
+                        for (; iBlock < c;)
                         {
-                            arr = csv.getRec();
-                            dict.add(arr);
-                            i++;
+                            block = csv.getBlock(out nRead);
+                            iBlock++;
+
+                            csv.parseBlock(nRead, block);
+                            for (; iRec < csv.recCount; iRec++)
+                            {
+                                arr = csv.getRec();
+                                dict.add(arr);
+                            }
                         }
-                        if (i == csv.recCount) s = wrkState.wait4read;
+                        if (iBlock == csv.blockCount) s = wrkState.wait4read;
                         break;
                 }
             }

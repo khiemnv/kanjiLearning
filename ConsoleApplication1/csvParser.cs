@@ -13,15 +13,10 @@ namespace ConsoleApplication1
         int m_recCur = 0;
         public int recCount { get { return m_recCount; } }
         public string[] getRec() {
-            if (m_recCur < m_recCount) {
-                m_recCur++;
-                var res = m_res.Dequeue();
-                return res.arr.ToArray();
-            }
-            else
-            {
-                return null;
-            }
+            Debug.Assert(m_recCur < m_recCount);
+            var res = m_res[m_recCur];
+            m_recCur++;
+            return res.ToArray();
         }
         public Uri uri;
         public Int64 total_size = 1;
@@ -116,16 +111,38 @@ namespace ConsoleApplication1
         {
             public myPaserResult(string txt)
             {
-                line = txt;
+                //line = txt;
             }
-            public string line;
+            //public string line;
             public List<string> arr = new List<string>();
             //public List<myField> fields = new List<myField>();
             public int count = 0;
             public myField curObj = new myField();
             public string gerCurObj()
             {
-                return line.Substring(curObj.iStart, curObj.iCur - curObj.iStart);
+                //return line.Substring(curObj.iStart, curObj.iCur - curObj.iStart);
+                return new string(buff, curObj.iStart, curObj.iCur - curObj.iStart);
+            }
+            public void add(char c)
+            {
+                if (iCur == buff.Length)
+                {
+                    int newSize = buff.Length + 512;
+                    Array.Resize(ref buff, newSize);
+                }
+                buff[iCur] = c;
+                iCur++;
+            }
+            int iCur = 0;
+            char[] buff = new char[512];
+            public void reset()
+            {
+                arr = new List<string>();
+                count = 0;
+                curObj.iCur = 0;
+                curObj.iStart = 0;
+                curObj.dblQt = false;
+                iCur = 0;
             }
         }
         delegate void myRule(myPaserResult res, myToken tk);
@@ -200,12 +217,12 @@ namespace ConsoleApplication1
             {f_es, f_01, f_en, f_aa },
             {f_ss, f_sa, f_zz, f_se },
         };
-        myPaserResult res;
-        Queue<myPaserResult> m_res = new Queue<myPaserResult>();
+        myPaserResult res = new myPaserResult("");
+        List<List<string>> m_res = new List<List<string>>();
 
         void tokenParse()
         {
-            res.line += (char)wchr;
+            res.add((char)wchr);
             switch (wchr)
             {
                 case '"':
@@ -233,8 +250,8 @@ namespace ConsoleApplication1
             if (wchr >= 0x10000)
             {
                 wchr -= 0x10000;
-                res.line += (char)(0xD800 | (wchr >> 10));
-                res.line += (char)(0xDC00 | (wchr & 0x3FF));
+                res.add( (char)(0xD800 | (wchr >> 10)));
+                res.add( (char)(0xDC00 | (wchr & 0x3FF)));
 
                 //char 1
                 cur = nState;
@@ -249,7 +266,7 @@ namespace ConsoleApplication1
             }
             else
             {
-                res.line += (char)(wchr);
+                res.add((char)(wchr));
                 //char 1
                 cur = nState;
                 nState = tbl[(int)cur, (int)type];
@@ -306,6 +323,7 @@ namespace ConsoleApplication1
                 }
             }
         }
+        List<myBlock> m_block = new List<myBlock>();
         myCode m_code = new myCode();
         public void start()
         {
@@ -316,9 +334,46 @@ namespace ConsoleApplication1
             const int block_size = 512;
             byte[] block = new byte[block_size];
             int nRead;
-            res = new myPaserResult("");
             nRead = fs.Read(block, 0, block_size);
             for (; nRead > 0; nRead = fs.Read(block, 0, block_size))
+            {
+                m_block.Add(new myBlock(nRead, block));
+                m_nBlock++;
+                block = new byte[block_size];
+            }
+        }
+        int m_nBlock = 0;
+        int m_curBlock = 0;
+        public int blockCount { get { return m_nBlock; } }
+        class myBlock {
+            public byte[] m_data;
+            public int m_count;
+            public myBlock(int nRead, byte[] block)
+            {
+                m_count = nRead;
+                m_data = block;
+            }
+        }
+        public byte[] getBlock(out int nRead)
+        {
+            Debug.Assert(m_curBlock < m_nBlock);
+            var b = m_block[m_curBlock];
+            m_curBlock++;
+            nRead = b.m_count;
+            return b.m_data;
+        }
+        public void parseBlock(int nRead, byte[] block)
+        {
+            //var name = Path.GetFileName(uri.ToString());
+            //string path = arr.First((s) => { return s.Contains(name); });
+            //var fs = File.OpenRead(path);
+            //fs.Seek(0, SeekOrigin.Begin);
+            //const int block_size = 512;
+            //byte[] block = new byte[block_size];
+            //int nRead
+            //res = new myPaserResult("");
+            //nRead = fs.Read(block, 0, block_size);
+            //for (; nRead > 0; nRead = fs.Read(block, 0, block_size))
             {
                 processed += nRead;
 
@@ -382,14 +437,14 @@ namespace ConsoleApplication1
                     //crt record
                     if (cb == f_en)
                     {
-                        m_res.Enqueue(res);
+                        m_res.Add(res.arr);
                         m_recCount++;
-                        res = new myPaserResult("");
+                        res.reset();
                     }
                 }
             }
-            fs.Close();
-            fs.Dispose();
+            //fs.Close();
+            //fs.Dispose();
         }
 
         #region IDisposable Support
