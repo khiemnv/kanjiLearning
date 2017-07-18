@@ -14,11 +14,16 @@ namespace ConsoleApplication1
     {
         public static void WriteLine(object txt)
         {
-            Console.WriteLine(txt);
+            //Console.WriteLine(txt);
         }
         public static void Write(object txt)
         {
-            Console.Write(txt);
+            //Console.Write(txt);
+        }
+
+        internal static void Assert(bool v)
+        {
+            if (!v) throw new NotImplementedException();
         }
     }
 #endif
@@ -217,6 +222,13 @@ namespace ConsoleApplication1
             hv_org = dict1;
             rd.Dispose();
         }
+        void load_hv_org_2()
+        {
+            var dict = new myDictHVORG(0);
+            string path = @"Assets/hv_org.csv";
+            load_dict_2(dict, path);
+            hv_org = dict;
+        }
 #if console_mode
 #else
         string getAbsolutePath(string path)
@@ -260,6 +272,51 @@ namespace ConsoleApplication1
             myTextReader rd = new myTextReaderJs();
             load_dict(dict, rd, path);
             hvdict = dict;
+        }
+        void load_dict_2(myDictBase dict, string path)
+        {
+            //var fs = await StorageFile.GetFileFromPathAsync(path);
+            //var lines = await FileIO.ReadLinesAsync(fs);
+            csvParser csv = new csvParser();
+            csv.uri = getUri(path);
+            Task t = Task.Run(() => csv.start());
+
+            int startTC = Environment.TickCount;
+            wrkState s = wrkState.init;
+            string[] arr;
+            for (int i = 0; s != wrkState.end;)
+            {
+                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, i, s));
+                switch (s)
+                {
+                    case wrkState.init:
+                        if (csv.recCount > 0) s = wrkState.begin;
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+                        break;
+                    case wrkState.begin:
+                        arr = csv.getRec();   //ignore first line
+                        i++;
+                        if (i < csv.recCount) s = wrkState.parsing;
+                        else s = wrkState.wait4read;
+                        break;
+                    case wrkState.wait4read:
+                        if (i < csv.recCount) s = wrkState.parsing;
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+                        Task.Delay(1);
+                        break;
+                    case wrkState.parsing:
+                        var c = csv.recCount;
+                        for (; i < c;)
+                        {
+                            arr = csv.getRec();
+                            dict.add(arr);
+                            i++;
+                        }
+                        if (i == csv.recCount) s = wrkState.wait4read;
+                        break;
+                }
+            }
+            csv.Dispose();
         }
         void load_dict(myDictBase dict, myTextReader rd, string path)
         {
@@ -412,8 +469,9 @@ namespace ConsoleApplication1
                 m_instance.load_character();
                 loadProgress = 10;
 
-                m_instance.load_hv_org();
+                m_instance.load_hv_org_2();
                 loadProgress = 20;
+#if false
                 m_instance.load_hanvietdict();
                 loadProgress = 30;
                 //m_instance.load_hvchubothu();
@@ -433,7 +491,7 @@ namespace ConsoleApplication1
                 //verd info
                 m_instance.load_conj();
                 m_instance.load_search();
-
+#endif
                 loadProgress = 100;
 
             }
@@ -588,11 +646,16 @@ namespace ConsoleApplication1
             if ((c & 0xFF00) == 0x3000) return false;
             return true;
         }
+
         public void add(string line)
         {
             //add(line, false);
             //throw new NotImplementedException();
             string[] arr = parseLine(line);
+            add(arr);
+        }
+        public void add(string[] arr)
+        {
             IRecord rec = crtRec(arr);
             if (rec == null) return;
 
@@ -634,7 +697,7 @@ namespace ConsoleApplication1
         //        m_data.Add(rec.getKey(), rec);
         //}
 
-        #region csv parser
+#region csv parser
         enum myTkType
         {
             t_comma = 0,
@@ -800,7 +863,7 @@ namespace ConsoleApplication1
             //case eol
             return res;
         }
-        #endregion
+#endregion
     }
     public class myDefinition
     {

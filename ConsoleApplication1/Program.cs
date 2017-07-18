@@ -14,7 +14,23 @@ namespace ConsoleApplication1
     {
         static void Main(string[] args)
         {
+            //byte[] sample = new byte[4] { 0xF0, 0xA9, 0xA0, 0x8C };
+            //string str = UTF8Encoding.UTF8.GetString(sample);
+            //return;
+            //test 
+            //test parser
+            //csvParser csv = new csvParser();
+            //csv.uri = new Uri(@"ms-appx://Assets/hv_org.csv", UriKind.Absolute);
+            //csv.start();
+            //return;
+            //test dict
+            Console.WriteLine("load dict start");
+            int tickcount = Environment.TickCount;
             myDict dict = myDict.Load();
+            tickcount = (Environment.TickCount - tickcount);
+            Console.WriteLine("load dict completed {0}", tickcount);
+            return;
+
             string w = "言葉";
             for (;;) {
                 w= "突っ込む";
