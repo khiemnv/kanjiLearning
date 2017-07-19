@@ -284,54 +284,35 @@ namespace ConsoleApplication1
             int startTC = Environment.TickCount;
             wrkState s = wrkState.init;
             string[] arr;
-            byte[] block;
-            int nRead;
-            int iRec = 0;
-            for (int iBlock = 0; s != wrkState.end;)
+            for (int iRec = 0; s != wrkState.end;)
             {
-                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, iBlock, s));
+                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, iRec, s));
                 switch (s)
                 {
                     case wrkState.init:
-                        if (csv.blockCount > 0) s = wrkState.begin;
+                        if (csv.recCount > 0) s = wrkState.begin;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         break;
                     case wrkState.begin:
-                        block = csv.getBlock(out nRead);
-                        iBlock++;
-
-                        csv.parseBlock(nRead, block);
                         arr = csv.getRec();   //ignore first line
                         iRec++;
-                        for (; iRec < csv.recCount; iRec++)
-                        {
-                            arr = csv.getRec();
-                            dict.add(arr);
-                        }
-
-                        if (iBlock < csv.blockCount) s = wrkState.parsing;
+                        if (iRec < csv.recCount) s = wrkState.parsing;
                         else s = wrkState.wait4read;
                         break;
                     case wrkState.wait4read:
-                        if (iBlock < csv.blockCount) s = wrkState.parsing;
+                        if (iRec < csv.recCount) s = wrkState.parsing;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         Task.Delay(1);
                         break;
                     case wrkState.parsing:
-                        var c = csv.blockCount;
-                        for (; iBlock < c;)
+                        var c = csv.recCount;
+                        for (; iRec < c;)
                         {
-                            block = csv.getBlock(out nRead);
-                            iBlock++;
-
-                            csv.parseBlock(nRead, block);
-                            for (; iRec < csv.recCount; iRec++)
-                            {
-                                arr = csv.getRec();
-                                dict.add(arr);
-                            }
+                            arr = csv.getRec();
+                            dict.add(arr);
+                            iRec++;
                         }
-                        if (iBlock == csv.blockCount) s = wrkState.wait4read;
+                        if (iRec == csv.recCount) s = wrkState.wait4read;
                         break;
                 }
             }
@@ -381,7 +362,7 @@ namespace ConsoleApplication1
             rd.Close();
             rd.Dispose();
         }
-        #endregion
+#endregion
         void load_hvchubothu()
         {
             string path = @"Assets/hvchubothu.js";

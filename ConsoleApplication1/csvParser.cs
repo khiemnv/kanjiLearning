@@ -323,25 +323,37 @@ namespace ConsoleApplication1
                 }
             }
         }
+#if bg_parse
         List<myBlock> m_block = new List<myBlock>();
+#endif
         myCode m_code = new myCode();
         public void start()
         {
             var name = Path.GetFileName(uri.ToString());
             string path = arr.First((s) => { return s.Contains(name); });
+
             var fs = File.OpenRead(path);
             fs.Seek(0, SeekOrigin.Begin);
+
             const int block_size = 512;
             byte[] block = new byte[block_size];
             int nRead;
             nRead = fs.Read(block, 0, block_size);
             for (; nRead > 0; nRead = fs.Read(block, 0, block_size))
             {
+#if bg_parse
                 m_block.Add(new myBlock(nRead, block));
                 m_nBlock++;
                 block = new byte[block_size];
+#else
+                parseBlock(nRead, block);
+#endif
             }
+
+            fs.Close();
+            fs.Dispose();
         }
+#if bg_parse
         int m_nBlock = 0;
         int m_curBlock = 0;
         public int blockCount { get { return m_nBlock; } }
@@ -362,6 +374,7 @@ namespace ConsoleApplication1
             nRead = b.m_count;
             return b.m_data;
         }
+#endif
         public void parseBlock(int nRead, byte[] block)
         {
             //var name = Path.GetFileName(uri.ToString());
@@ -447,7 +460,7 @@ namespace ConsoleApplication1
             //fs.Dispose();
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -480,6 +493,6 @@ namespace ConsoleApplication1
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
 }
