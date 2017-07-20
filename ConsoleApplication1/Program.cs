@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,8 +14,10 @@ namespace ConsoleApplication1
 
     class Program
     {
+
         static void Main(string[] args)
         {
+
             //byte[] sample = new byte[4] { 0xF0, 0xA9, 0xA0, 0x8C };
             //string str = UTF8Encoding.UTF8.GetString(sample);
             //return;
@@ -36,6 +40,19 @@ namespace ConsoleApplication1
                 w= "突っ込む";
                 var ret = dict.Search(w);
             }
+        }
+        void test_queue()
+        {
+
+            //test queue
+            myQueue<int> q = new myQueue<int>();
+            q.push(1);
+            int tmp = q.pop();
+            q.push(2);
+            q.push(3);
+            tmp = q.pop();
+            tmp = q.pop();
+            return;
         }
 #if false
         void test_dict()

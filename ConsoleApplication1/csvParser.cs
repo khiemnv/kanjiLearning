@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define use_res_queue
+#define bg_parse
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +10,35 @@ using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
+    class myQueue<T>
+    {
+        class queueItem
+        {
+            public object data;
+            public queueItem next;
+        }
+        queueItem iFirst = null;
+        queueItem iLast = null;
+        public myQueue()
+        {
+            iLast = new queueItem();
+            iFirst = iLast;
+        }
+        public void push(object obj)
+        {
+            var newItem = new queueItem() { data = obj };
+            iLast.next = newItem;
+            iLast = newItem;
+        }
+        public T pop()
+        {
+            Debug.Assert(iLast != iFirst);
+            iFirst = iFirst.next;
+            var obj = iFirst.data;
+            return (T)obj;
+        }
+    }
+
     class csvParser : IDisposable
     {
         int m_recCount = 0;
@@ -14,7 +46,11 @@ namespace ConsoleApplication1
         public int recCount { get { return m_recCount; } }
         public string[] getRec() {
             Debug.Assert(m_recCur < m_recCount);
+#if use_res_queue
+            var res = m_resQueue.pop();
+#else
             var res = m_res[m_recCur];
+#endif
             m_recCur++;
             return res.ToArray();
         }
@@ -238,7 +274,11 @@ namespace ConsoleApplication1
             {f_ss, f_sa, f_zz, f_se },
         };
         myPaserResult res = new myPaserResult("");
+#if use_res_queue
+        myQueue<List<string>> m_resQueue = new myQueue<List<string>>();
+#else
         List<List<string>> m_res = new List<List<string>>();
+#endif
 
         void tokenParse()
         {
@@ -320,7 +360,11 @@ namespace ConsoleApplication1
                 case cbid.en:
                     res.arr.Add(res.gerCurObj());
                     //save rec & reset
+#if use_res_queue
+                    m_resQueue.push(res.arr);
+#else
                     m_res.Add(res.arr);
+#endif
                     m_recCount++;
                     res.reset();
                     break;
@@ -391,7 +435,7 @@ namespace ConsoleApplication1
             }
         }
 #if bg_parse
-        List<myBlock> m_block = new List<myBlock>();
+        myQueue<myBlock> m_block = new myQueue<myBlock>();
 #endif
         myCode m_code = new myCode();
         const int block_prefix = 4;
@@ -411,9 +455,9 @@ namespace ConsoleApplication1
             for (; nRead > 0; nRead = fs.Read(block, block_prefix, page_size))
             {
 #if bg_parse
-                m_block.Add(new myBlock(nRead, block));
+                m_block.push(new myBlock(nRead, block));
                 m_nBlock++;
-                block = new byte[block_size];
+                block = new byte[page_size + block_prefix];
 #else
                 parseBlock(nRead, block);
 #endif
@@ -438,11 +482,14 @@ namespace ConsoleApplication1
         public byte[] getBlock(out int nRead)
         {
             Debug.Assert(m_curBlock < m_nBlock);
-            var b = m_block[m_curBlock];
+            var b = m_block.pop();
             m_curBlock++;
             nRead = b.m_count;
             return b.m_data;
         }
+#endif
+#if bg_parse
+        byte[] preRemain = new byte[block_prefix];
 #endif
         public void parseBlock(int nRead, byte[] block)
         {
@@ -457,6 +504,13 @@ namespace ConsoleApplication1
             //nRead = fs.Read(block, 0, block_size);
             //for (; nRead > 0; nRead = fs.Read(block, 0, block_size))
             {
+#if bg_parse
+                //restore remain
+                for(int k = 0; k < block_prefix; k++)
+                {
+                    block[k] = preRemain[k];
+                }
+#endif
                 processed += nRead;
                 //start point
                 //  |remain|block read  |
@@ -502,7 +556,7 @@ namespace ConsoleApplication1
                 //start parse
                 for (; i < j;)
                 {
-                    //bin parser
+                    //decode
                     byte nByte = m_code.table[block[i]];
                     Debug.Assert(nByte <= 4);
                     Debug.Assert((i + nByte) <= j);
@@ -515,15 +569,15 @@ namespace ConsoleApplication1
                             tokenParse();
                             break;
                         case myCode.nByte.n2:
-                            wchr = block[i] | ((block[i + 1] & 0x1F) << 6);
+                            wchr = ((block[i] & 0x1F) << 6) | (block[i + 1] & 0x3F);
                             tokenParse23();
                             break;
                         case myCode.nByte.n3:
-                            wchr = block[i] | ((block[i + 1] & 0x1F) << 6) | ((block[i + 2] & 0x0F) << 12);
+                            wchr = ((block[i] & 0x0F) << 12) | ((block[i + 1] & 0x3F) << 6) | (block[i + 2] & 0x3F);
                             tokenParse23();
                             break;
                         case myCode.nByte.n4:
-                            wchr = block[i] | ((block[i + 1] & 0x1F) << 6) | ((block[i + 2] & 0x0F) << 12) | ((block[i + 3] & 0x07) << 18);
+                            wchr = ((block[i] & 0x07) << 18) | ((block[i + 1] & 0x3F) << 12) | ((block[i + 2] & 0x3F) << 6) | (block[i + 3] & 0x3F);
                             tokenParse4();
                             break;
                         default:
@@ -544,6 +598,12 @@ namespace ConsoleApplication1
                 }
 
                 //save remain
+#if bg_parse
+                for (int k = 0; k < block_remain; k++)
+                {
+                    preRemain[block_prefix - block_remain + k] = block[i + k];
+                }
+#else
                 if (block_remain > 0)
                 {
                     //         |<block size>      |
@@ -551,6 +611,7 @@ namespace ConsoleApplication1
                     //  |remain|            ^--i
                     Buffer.BlockCopy(block, i, block, block_prefix - block_remain, block_remain);
                 }
+#endif
             }
             //fs.Close();
             //fs.Dispose();

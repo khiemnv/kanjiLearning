@@ -1,4 +1,5 @@
 ﻿#define console_mode
+#define bg_parse
 
 using System;
 using System.Collections.Generic;
@@ -284,35 +285,80 @@ namespace ConsoleApplication1
             int startTC = Environment.TickCount;
             wrkState s = wrkState.init;
             string[] arr;
-            for (int iRec = 0; s != wrkState.end;)
+#if bg_parse
+            int nBlock;
+            int iBlock = 0;
+            int nRead;
+            byte[] block;
+            int count;
+#endif
+            int nRec;
+            int iRec = 0;
+            bool bFetch;
+            for (; s != wrkState.end;)
             {
                 Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, iRec, s));
                 switch (s)
                 {
                     case wrkState.init:
-                        if (csv.recCount > 0) s = wrkState.begin;
+#if bg_parse
+                        nBlock = csv.blockCount;
+                        if (iBlock < nBlock) {
+                            block = csv.getBlock(out nRead);
+                            iBlock++;
+                            csv.parseBlock(nRead, block);
+                        }
+#endif
+                        nRec = csv.recCount;
+                        if (nRec > 0) s = wrkState.begin;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         break;
                     case wrkState.begin:
                         arr = csv.getRec();   //ignore first line
                         iRec++;
-                        if (iRec < csv.recCount) s = wrkState.parsing;
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < csv.recCount);
+#endif
+                        if (bFetch) s = wrkState.parsing;
                         else s = wrkState.wait4read;
                         break;
                     case wrkState.wait4read:
-                        if (iRec < csv.recCount) s = wrkState.parsing;
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < csv.recCount);
+#endif
+                        if (bFetch) s = wrkState.parsing;
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
                         Task.Delay(1);
                         break;
                     case wrkState.parsing:
-                        var c = csv.recCount;
-                        for (; iRec < c;)
+#if bg_parse
+                        nBlock = csv.blockCount;
+                        for (; iBlock < nBlock;)
+#endif
                         {
-                            arr = csv.getRec();
-                            dict.add(arr);
-                            iRec++;
+#if bg_parse
+                            block = csv.getBlock(out nRead);
+                            iBlock++;
+                            csv.parseBlock(nRead, block);
+#endif
+                            nRec = csv.recCount;
+                            for (; iRec < nRec;)
+                            {
+                                arr = csv.getRec();
+                                dict.add(arr);
+                                iRec++;
+                            }
                         }
-                        if (iRec == csv.recCount) s = wrkState.wait4read;
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < csv.recCount);
+#endif
+                        if (!bFetch) s = wrkState.wait4read;
                         break;
                 }
             }
@@ -466,7 +512,7 @@ namespace ConsoleApplication1
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                m_instance.load_character();
+                //m_instance.load_character();
                 loadProgress = 10;
 
                 m_instance.load_hv_org_2();
