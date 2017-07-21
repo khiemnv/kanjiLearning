@@ -36,8 +36,8 @@ namespace test_universalApp
             //ApplicationView.PreferredLaunchViewSize = new Size(480, 800);
             //ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
-            s_content.LoadChapterCompleted += C_LoadCompleted;
-            s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
+            //s_content.LoadChapterCompleted += C_LoadCompleted;
+            //s_content.LoadMultiChapterCompleted += S_content_LoadMultiChapterCompleted;
 
             //this page events
             Loaded += MainPage_Loaded;
@@ -256,15 +256,19 @@ namespace test_universalApp
                 {
                     string mruToken = entry.Token;
                     string mruMetadata = entry.Metadata;
-                    try
+                    var t = Task.Run(async () =>
                     {
-                        var t = Task.Run(async () => { item = await mru.GetItemAsync(mruToken); });
-                        t.Wait();
-                    }
-                    catch
-                    {
-                        //case last folder is removed
-                    }
+                        try
+                        {
+                            item = await mru.GetFolderAsync(mruToken);
+                        }
+                        catch
+                        {
+                            //case last folder is removed
+                            Debug.WriteLine("loadLastPath last path not exists");
+                        }
+                    });
+                    t.Wait();
                     break;
                 }
             }
@@ -276,10 +280,10 @@ namespace test_universalApp
             }
         }
 
-        private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
-        {
-            browserPath.Text = e.path;
-        }
+        //private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
+        //{
+        //    browserPath.Text = e.path;
+        //}
 
         private async void testWriteData()
         {

@@ -621,7 +621,14 @@ namespace test_universalApp
 
         public List<word> words;
 
-        public StorageFile file;
+        public StorageFile file { get {
+                throw new Exception();
+            }
+            set
+            {
+                Debug.WriteLine(value.Path);
+            }
+        }
     }
 
     public class content
