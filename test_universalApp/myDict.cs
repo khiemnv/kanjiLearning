@@ -88,6 +88,8 @@ namespace test_universalApp
                 @"C:\Users\Khiem\Desktop\character_jdict.csv",
                 @"C:\Users\Khiem\Desktop\bothu214.csv",
                 @"C:\Users\Khiem\Desktop\component.txt",
+                @"C:\Users\Khiem\Desktop\search.csv",
+                @"C:\Users\Khiem\Desktop\conjugation.csv",
             };
             string path = arr.First((s) => { return s.Contains(name); });
 
@@ -172,6 +174,8 @@ namespace test_universalApp
         myDictJDC jdcDict;      //character_jdict.csv
         myDict214 bt214;        //
         myCompo kjCompo;        //kanji component
+        myDictSearch dictSearch;//verd info
+        myDictConj dictConj;
         void load_hv_word()
         {
             string path = @"Assets/hv_word.csv";
@@ -380,7 +384,22 @@ namespace test_universalApp
             load_dict(dict, rd, path);
             kjCompo = dict;
         }
-
+        void load_conj()
+        {
+            var dict = new myDictConj(0);
+            string path = @"Assets/conjugation.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            dictConj = dict;
+        }
+        void load_search()
+        {
+            var dict = new myDictSearch(0);
+            string path = @"Assets/search.csv";
+            myTextReader rd = new myTextReader();
+            load_dict(dict, rd, path);
+            dictSearch = dict;
+        }
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
@@ -406,11 +425,19 @@ namespace test_universalApp
 
                 m_instance.load_character_jdict();
                 loadProgress = 60;
+
                 m_instance.load_bt214();
                 loadProgress = 70;
                 m_instance.load_kjCompo();
+                loadProgress = 80;
+                //verd info
+                m_instance.load_conj();
+                loadProgress = 90;
+
+                m_instance.load_search();
 
                 loadProgress = 100;
+
             }
             return m_instance;
         }
@@ -556,7 +583,13 @@ namespace test_universalApp
         }
 
 
-        public static bool isKanji(char c) { return (c >= 0x2e85); }
+        public static bool isKanji(char c)
+        {
+            if (c < 0x2e85) return false;
+            //3040-30ff
+            if ((c & 0xFF00) == 0x3000) return false;
+            return true;
+        }
         public void add(string line)
         {
             //add(line, false);
@@ -797,6 +830,16 @@ namespace test_universalApp
         public string decomposite = "";
         public myRadical radical = new myRadical();
         public List<myWord> relatedWords = new List<myWord>();
+        public myWord relateWord(string key)
+        {
+            myWord word = relatedWords.Find((w) => { return w.term == key; });
+            if (word == null)
+            {
+                word = new myWord { term = key };
+                relatedWords.Add(word);
+            }
+            return word;
+        }
     }
     public interface IRecord
     {
@@ -1151,6 +1194,134 @@ namespace test_universalApp
         }
     }
 
+    //conj
+    public class myDictConj : myDictBase
+    {
+        public static List<recordConj> m_list = new List<recordConj>();
+        public myDictConj(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        public class recordConj : IRecord
+        {
+            public string pos, sample, perfective, negative, i, te, potential, passive, causative, eba, imperative, volitional;
+
+            public recordConj() { }
+            public recordConj(string[] arr)
+            {
+                pos = arr[1];
+                sample = arr[2];
+                perfective = arr[3];
+                negative = arr[4];
+                i = arr[5];
+                te = arr[6];
+                potential = arr[7];
+                passive = arr[8];
+                causative = arr[9];
+                eba = arr[10];
+                imperative = arr[11];
+                volitional = arr[12];
+            }
+            public void format(myKanji word)
+            {
+            }
+            public string getKey()
+            {
+                return pos;
+            }
+            public override string ToString()
+            {
+                return string.Format(" sample {0}\n perfective {1}\n negative{2}\n " +
+                    "i {3}\n te {4}\n potential {5}\n " +
+                    "passive {6}\n causative {7}\n eba {8}\n " +
+                    "imperative {9}\n volitional {10}\n",
+                    sample, perfective, negative,
+                    i, te, potential,
+                    passive, causative, eba,
+                    imperative, volitional);
+            }
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new recordConj(arr);
+            m_list.Add(rec);
+            return null;
+        }
+        protected override string[] parseLine(string line)
+        {
+            return parseLine(line, true);
+        }
+    }
+    public class myDictSearch : myDictBase
+    {
+        public myDictSearch(int maxWordCount) : base(maxWordCount)
+        {
+        }
+        class recordSrch : IRecord
+        {
+            public string hira;
+            public string term;
+            public string meaning;
+            public string pos;
+            public int iConj;
+            public recordSrch() { }
+            public recordSrch(string[] arr)
+            {
+                hira = arr[3];
+                term = arr[4];
+                meaning = arr[5];
+                pos = arr[6];
+            }
+            string getDef()
+            {
+                string ret = "";
+                var arr = pos.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string i in arr)
+                {
+                    var l = myDictConj.m_list.FindAll((rec) => { return rec.pos == i; });
+                    foreach (myDictConj.recordConj conj in l)
+                    {
+                        ret = hira + "\n" + conj.ToString();
+                        break;
+                    }
+                }
+                return ret;
+            }
+            public void format(myKanji kanji)
+            {
+                bool found = false;
+                foreach (var ch in term)
+                {
+                    if (isKanji(ch))
+                    {
+                        if (ch == kanji.val) { found = true; }
+                        else { found = false; break; }
+                    }
+                }
+                if (found)
+                {
+                    string def = getDef();
+                    if (def != "")
+                    {
+                        var word = kanji.relateWord(term);
+                        word.definitions.Add(new myDefinition { text = def });
+                    }
+                }
+            }
+            public string getKey()
+            {
+                return term.ToString();
+            }
+        }
+        protected override IRecord crtRec(string[] arr)
+        {
+            var rec = new recordSrch(arr);
+            return rec;
+        }
+        protected override string[] parseLine(string line)
+        {
+            return parseLine(line, true);
+        }
+    }
 
     public class myDict214 : myRadicalMng
     {
