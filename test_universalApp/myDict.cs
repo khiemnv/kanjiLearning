@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.Storage.FileProperties;
 
 namespace test_universalApp
 {
@@ -900,20 +901,9 @@ namespace test_universalApp
         void load_hv_word()
         {
             string path = @"Assets/hv_word.csv";
-            myTextReader rd = new myTextReader();
-            rd.Reading += Rd_OnReading;
-            rd.Open(getUri(path));
-            int startTC = Environment.TickCount;
-            var dict1 = new myDictHvWord(0);
-            var line = rd.ReadLine();   //read header
-            for (line = rd.ReadLine(); line != null; line = rd.ReadLine())
-            {
-                dict1.add(line);
-            }
-            //Console.WriteLine("hv_org.csv {0} {1}", dict1.count, Environment.TickCount - startTC);
-            rd.Close();
-            rd.Dispose();
-            hv_word = dict1;
+            var dict = new myDictHvWord(0);
+            load_dict_2(dict, path);
+            hv_word = dict;
         }
 
         private void Rd_OnReading(object sender, int e)
@@ -985,8 +975,7 @@ namespace test_universalApp
         {
             var dict = new myDictHV(0);
             string path = @"Assets/hanvietdict.js";
-            myTextReader rd = new myTextReaderJs();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             hvdict = dict;
         }
         void load_dict_2(myDictBase dict, string path)
@@ -1010,9 +999,11 @@ namespace test_universalApp
             int nRec;
             int iRec = 0;
             bool bFetch;
+            int baseProgress = loadProgress;
             for (; s != wrkState.end;)
             {
                 double percent = 100 * csv.progress_processed / csv.progress_total;
+                loadProgress = baseProgress + (int)(percent/10);
                 Debug.WriteLine(string.Format("{0} load_dict % {1} s {2}", this, percent.ToString("F2"), s));
                 switch (s)
                 {
@@ -1173,8 +1164,7 @@ namespace test_universalApp
         {
             var dict = new myDictCharacter(0);
             string path = @"Assets/character.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             chDict = dict;
         }
         //character_jdict.csv
@@ -1215,8 +1205,7 @@ namespace test_universalApp
         {
             var dict = new myDictSearch(0);
             string path = @"Assets/search.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             dictSearch = dict;
         }
         myDict() { }
@@ -1431,7 +1420,7 @@ namespace test_universalApp
                 {
                     if (!isKanji(c))
                     {
-                        Debug.Write(c);
+                        //Debug.Write(c);
                         continue;
                     }
                     if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
@@ -2109,6 +2098,10 @@ namespace test_universalApp
                 }
                 return ret;
             }
+            public bool isVerd()
+            {
+                return getDef() != "";
+            }
             public void format(myKanji kanji)
             {
                 bool found = false;
@@ -2138,7 +2131,10 @@ namespace test_universalApp
         protected override IRecord crtRec(string[] arr)
         {
             var rec = new recordSrch(arr);
-            return rec;
+            if (rec.isVerd())
+                return rec;
+            else
+                return null;
         }
         protected override string[] parseLine(string line)
         {
