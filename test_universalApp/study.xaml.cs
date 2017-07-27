@@ -148,6 +148,11 @@ namespace test_universalApp
             m_option.fullDef = (bool)optFullDefChk.IsChecked;
         }
 
+        private void OptVerbChk_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.showVerd = (bool)optVerbChk.IsChecked;
+        }
+
         //private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
         //{
         //    m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
@@ -643,6 +648,7 @@ namespace test_universalApp
              //= m_preTxt;
             var ret = dict.Search(txt);
             List<myWord> words = new List<myWord>();
+            List<myWord> verbs = new List<myWord>();
             //Span s = new Span();
             foreach (var kanji in ret)
             {
@@ -686,6 +692,7 @@ namespace test_universalApp
                     callback(myFgTask.qryType.linebreak, null);
                 }
                 words.AddRange(kanji.relatedWords);
+                verbs.AddRange(kanji.relateVerbs);
                 callback(myFgTask.qryType.linebreak, null);
             }
             callback(myFgTask.qryType.linebreak, null);
@@ -724,6 +731,30 @@ namespace test_universalApp
                 }
                 //bg_qryDisplay(new LineBreak());
                 callback(myFgTask.qryType.linebreak, null);
+            }
+
+            //verb
+            if (m_option.showVerd)
+            {
+                foreach(var v in verbs)
+                {
+#if !show_brift
+                    //m_limitContentCnt
+                    //  (-1) no limit
+                    if ((count++) == m_limitContentCnt)
+                        break;
+#else
+                {
+                    bg_qryDisplay(crtWdBlck(rWd, true));
+                }
+                else
+#endif
+                    {
+                        callback(myFgTask.qryType.word, (v));
+                    }
+                    //bg_qryDisplay(new LineBreak());
+                    callback(myFgTask.qryType.linebreak, null);
+                }
             }
 #if false
             //create paragraph
@@ -995,6 +1026,8 @@ namespace test_universalApp
             [DataMember]
             public bool spkDefine;
             [DataMember]
+            public bool showVerd;
+            [DataMember]
             public bool fullDef;
 
             public studyOption() { }
@@ -1185,6 +1218,7 @@ namespace test_universalApp
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
             optFullDefChk.IsChecked = m_option.fullDef;
+            optVerbChk.IsChecked = m_option.showVerd;
             //+ search
             //optSrchEnableChk.IsChecked = m_option.srchEnable;
             //optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
@@ -1240,6 +1274,7 @@ namespace test_universalApp
             optSpkTermChk.Click += OptSpkTermChk_Click;
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
             optFullDefChk.Click += OptFullDefChk_Click;
+            optVerbChk.Click += OptVerbChk_Click;
             //search option
             //optSrchEnableChk.Click += OptSrchEnableChk_Click;
             //optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;

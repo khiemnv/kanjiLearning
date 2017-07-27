@@ -88,6 +88,7 @@
                                 <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
                                 <TextBlock>Search result</TextBlock>
                                 <CheckBox Name="optFullDefChk" Margin="10,0,0,0">Full define</CheckBox>
+                                <CheckBox Name="optVerbChk" Margin="10,0,0,0">Show verb</CheckBox>
                                 <!--<TextBlock>Search</TextBlock>-->
                                 <!--<CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>-->
                             </StackPanel>

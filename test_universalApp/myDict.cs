@@ -1652,6 +1652,7 @@ namespace test_universalApp
             }
             return word;
         }
+        public List<myWord> relateVerbs = new List<myWord>();
     }
     public interface IRecord
     {
@@ -2092,7 +2093,7 @@ namespace test_universalApp
                     var l = myDictConj.m_list.FindAll((rec) => { return rec.pos == i; });
                     foreach (myDictConj.recordConj conj in l)
                     {
-                        ret = hira + "\n" + conj.ToString();
+                        ret = hira + "\n" + meaning + "\n" + conj.ToString();
                         break;
                     }
                 }
@@ -2118,8 +2119,14 @@ namespace test_universalApp
                     string def = getDef();
                     if (def != "")
                     {
+#if false
                         var word = kanji.relateWord(term);
                         word.definitions.Add(new myDefinition { text = def });
+#else
+                        var w = new myWord() { term = hira };
+                        w.definitions.Add(new myDefinition { text = def });
+                        kanji.relateVerbs.Add(w);
+#endif
                     }
                 }
             }
