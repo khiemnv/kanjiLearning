@@ -1,4 +1,6 @@
 ﻿//#define bg_parse
+#define use_res_queue
+#define parse_use_thread
 
 using System;
 using System.Collections.Generic;
@@ -89,7 +91,8 @@ namespace test_universalApp
         StorageFile sf;
         public void Open(Uri uri)
         {
-            var t = Task.Run(async () => {
+            var t = Task.Run(async () =>
+            {
                 sf = await StorageFile.GetFileFromApplicationUriAsync(uri);
                 if (sf != null)
                 {
@@ -113,7 +116,6 @@ namespace test_universalApp
             fs.Dispose();
         }
     }
-
     class myQueue<T>
     {
         class queueItem
@@ -142,7 +144,6 @@ namespace test_universalApp
             return (T)obj;
         }
     }
-
     class csvParser : IDisposable
     {
         int m_recCount = 0;
@@ -449,10 +450,11 @@ namespace test_universalApp
                     res.curObj.iCur += 2;
                     res.curObj.dblQt = true;
                     break;
+                case cbid.sz:
+                    res.curObj.iStart = res.curObj.iCur;
+                    goto case cbid.en;
                 case cbid.en:
                     res.arr.Add(res.gerCurObj());
-                    goto case cbid.sz;
-                case cbid.sz:
                     //save rec & reset
 #if use_res_queue
                     m_resQueue.push(res.arr);
@@ -554,6 +556,13 @@ namespace test_universalApp
 #else
                 parseBlock(nRead, block);
 #endif
+            }
+
+            //save last record
+            if (type != myTkType.t_eol)
+            {
+                type = myTkType.t_eol;
+                executeRule();
             }
 
             fs.Close();
@@ -710,11 +719,9 @@ namespace test_universalApp
                 }
 #endif
             }
-            //fs.Close();
-            //fs.Dispose();
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -747,7 +754,7 @@ namespace test_universalApp
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
 
     public class myTextReaderJs : myTextReader
@@ -855,7 +862,7 @@ namespace test_universalApp
             return ret;
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -888,7 +895,7 @@ namespace test_universalApp
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-        #endregion
+#endregion
     }
     public class myDict
     {
@@ -942,7 +949,7 @@ namespace test_universalApp
             //ms-appx-web:///
             return new Uri(string.Format("{0}{1}", "ms-appx:///", path), UriKind.Absolute);
         }
-        #region load_dict
+#region load_dict
         //working state
         enum wrkState
         {
@@ -963,8 +970,7 @@ namespace test_universalApp
         //parsing->(has new line) parsing
         //parsing->(wait 4 get line) wait4read
 
-        const int isJsFile = 0;
-        void load_dict_2(myDictBase dict, string path)
+        void load_dict_2(myDictBase dict, string path, int isJsFile = 0)
         {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
             //var lines = await FileIO.ReadLinesAsync(fs);
@@ -989,10 +995,12 @@ namespace test_universalApp
             int nRec;
             int iRec = 0;
             bool bFetch;
+            Int64 preSize = m_processedSize;
             for (; s != wrkState.end;)
             {
-                double percent = 100 * csv.progress_processed / csv.progress_total;
-                loadProgress = baseProgress + (int)(percent/10);
+                m_processedSize = preSize + csv.progress_processed;
+                double percent = 100.0 * m_processedSize / m_totalSize;
+                loadProgress = percent;
                 Debug.WriteLine(string.Format("{0} load_dict % {1} s {2}", this, percent.ToString("F2"), s));
                 switch (s)
                 {
@@ -1116,7 +1124,7 @@ namespace test_universalApp
             rd.Close();
             rd.Dispose();
         }
-        #endregion
+#endregion
         void load_hvchubothu()
         {
             string path = @"Assets/hvchubothu.js";
@@ -1158,25 +1166,26 @@ namespace test_universalApp
         {
             public myDictBase bDict;
             public string path;
+            public int isJsFile;
         };
         Int64 m_totalSize;
         Int64 m_processedSize;
         void load_dicts()
         {
             loadRec[] arr = new loadRec[] {
-                //new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv" },
-                //new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv" },
-                //new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js" },
-                //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv" },
-                new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv" },
+                new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
+                new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
+                new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
+                new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
+                new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
                 //character_jdict.csv
-                //new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv" },
-                new loadRec{ bDict = bt214 = new myDict214(0), path = @"Assets/bothu214.csv" },
+                new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv", isJsFile = 0 },
+                new loadRec{ bDict = bt214 = new myDict214(0), path = @"Assets/bothu214.csv", isJsFile = 0 },
                 //load kanji component
-                //  req: kangxi.csv loaded
-                new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt" },
-                //new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv" },
-                //new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv" },
+                //  req: kangxi.csv, bothu214.csv loaded
+                new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt", isJsFile = 0 },
+                new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
+                new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
             };
             //cacl total size
             m_totalSize = 0;
@@ -1186,15 +1195,17 @@ namespace test_universalApp
                 m_totalSize += getFileSize(rec.path);
             }
             //load
-            foreach (loadRec rec in arr) {
-                load_dict_2(rec.bDict, rec.path);
+            foreach (loadRec rec in arr)
+            {
+                load_dict_2(rec.bDict, rec.path, rec.isJsFile);
             }
-            loadProgress = 100;
+            Debug.Assert(loadProgress == 100);
         }
         Int64 getFileSize(string path)
         {
             Int64 size = 0;
-            var t = Task.Run(async () => {
+            var t = Task.Run(async () =>
+            {
                 var sf = await StorageFile.GetFileFromApplicationUriAsync(getUri(path));
                 if (sf != null)
                 {
@@ -1417,7 +1428,7 @@ namespace test_universalApp
         //        m_data.Add(rec.getKey(), rec);
         //}
 
-        #region csv parser
+#region csv parser
         enum myTkType
         {
             t_comma = 0,
@@ -1583,7 +1594,7 @@ namespace test_universalApp
             //case eol
             return res;
         }
-        #endregion
+#endregion
     }
     public class myDefinition
     {
@@ -2193,7 +2204,8 @@ namespace test_universalApp
         }
         protected override string[] parseLine(string line)
         {
-            return line.Split('\t');
+            //return line.Split('\t');
+            return base.parseLine(line, true);
         }
     }
 }
