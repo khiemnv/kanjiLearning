@@ -1,5 +1,5 @@
 ﻿#define console_mode
-#define bg_parse
+//#define bg_parse
 
 using System;
 using System.Collections.Generic;
@@ -270,17 +270,21 @@ namespace ConsoleApplication1
         {
             var dict = new myDictHV(0);
             string path = @"Assets/hanvietdict.js";
-            myTextReader rd = new myTextReaderJs();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path, 1);
             hvdict = dict;
         }
-        void load_dict_2(myDictBase dict, string path)
+
+        void load_dict_2(myDictBase dict, string path, int isJsFile = 0)
         {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
             //var lines = await FileIO.ReadLinesAsync(fs);
             csvParser csv = new csvParser();
             csv.uri = getUri(path);
+#if parse_use_thread
             Task t = Task.Run(() => csv.start());
+#else
+            csv.start();
+#endif
 
             int startTC = Environment.TickCount;
             wrkState s = wrkState.init;
@@ -297,7 +301,8 @@ namespace ConsoleApplication1
             bool bFetch;
             for (; s != wrkState.end;)
             {
-                Debug.WriteLine(string.Format("{0} load_dict i {1} s {2}", this, iRec, s));
+                double percent = 100 * csv.progress_processed / csv.progress_total;
+                Debug.WriteLine(string.Format("{0} load_dict % {1} s {2}", this, percent.ToString("F2"), s));
                 switch (s)
                 {
                     case wrkState.init:
@@ -311,7 +316,11 @@ namespace ConsoleApplication1
 #endif
                         nRec = csv.recCount;
                         if (nRec > 0) s = wrkState.begin;
+#if parse_use_thread
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
                         break;
                     case wrkState.begin:
                         arr = csv.getRec();   //ignore first line
@@ -319,7 +328,7 @@ namespace ConsoleApplication1
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (bFetch) s = wrkState.parsing;
                         else s = wrkState.wait4read;
@@ -328,10 +337,14 @@ namespace ConsoleApplication1
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (bFetch) s = wrkState.parsing;
+#if parse_use_thread
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
                         Task.Delay(1);
                         break;
                     case wrkState.parsing:
@@ -345,7 +358,7 @@ namespace ConsoleApplication1
                             iBlock++;
                             csv.parseBlock(nRead, block);
 #endif
-                            nRec = csv.recCount;
+                            nRec = (csv.recCount - isJsFile);
                             for (; iRec < nRec;)
                             {
                                 arr = csv.getRec();
@@ -356,11 +369,15 @@ namespace ConsoleApplication1
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (!bFetch) s = wrkState.wait4read;
                         break;
                 }
+            }
+            for (int i = 0; i<isJsFile; i++)
+            {
+                arr = csv.getRec();
             }
             csv.Dispose();
         }
@@ -441,8 +458,9 @@ namespace ConsoleApplication1
         {
             var dict = new myDictKangxi(0);
             string path = @"Assets/kangxi.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            //myTextReader rd = new myTextReader();
+            //load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             kxDict = dict;
         }
         void load_hannom_index()
@@ -457,8 +475,7 @@ namespace ConsoleApplication1
         {
             var dict = new myDictCharacter(0);
             string path = @"Assets/character.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             chDict = dict;
         }
         //character_jdict.csv
@@ -474,8 +491,9 @@ namespace ConsoleApplication1
         {
             var dict = new myDict214(0);
             string path = @"Assets/bothu214.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            //myTextReader rd = new myTextReader();
+            //load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             bt214 = dict;
         }
         //load kanji component
@@ -483,16 +501,18 @@ namespace ConsoleApplication1
         {
             var dict = new myCompo(0);
             string path = @"Assets/component.txt";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            load_dict_2(dict, path);
+            //myTextReader rd = new myTextReader();
+            //load_dict(dict, rd, path);
             kjCompo = dict;
         }
         void load_conj()
         {
             var dict = new myDictConj(0);
             string path = @"Assets/conjugation.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
+            //myTextReader rd = new myTextReader();
+            //load_dict(dict, rd, path);
+            load_dict_2(dict, path);
             dictConj = dict;
         }
         void load_search()
@@ -512,32 +532,34 @@ namespace ConsoleApplication1
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                //m_instance.load_character();
+#if false
+                m_instance.load_character();
                 loadProgress = 10;
 
                 m_instance.load_hv_org_2();
                 loadProgress = 20;
-#if false
-                m_instance.load_hanvietdict();
-                loadProgress = 30;
-                //m_instance.load_hvchubothu();
-                m_instance.load_hv_word();
-                loadProgress = 40;
+#endif
+                //m_instance.load_hanvietdict();
+                //loadProgress = 30;
+
+                ////m_instance.load_hvchubothu();
+                //m_instance.load_hv_word();
+                //loadProgress = 40;
                 m_instance.load_kangxi();
                 loadProgress = 50;
                 //m_instance.load_hannom_index();
 
-                m_instance.load_character_jdict();
-                loadProgress = 60;
+                //m_instance.load_character_jdict();
+                //loadProgress = 60;
 
                 m_instance.load_bt214();
-                loadProgress = 70;
+                //loadProgress = 70;
                 m_instance.load_kjCompo();
 
                 //verd info
                 m_instance.load_conj();
-                m_instance.load_search();
-#endif
+                //m_instance.load_search();
+
                 loadProgress = 100;
 
             }
@@ -1504,7 +1526,8 @@ namespace ConsoleApplication1
         }
         protected override string[] parseLine(string line)
         {
-            return line.Split('\t');
+            //return line.Split('\t');
+            return base.parseLine(line, true);
         }
     }
 }
