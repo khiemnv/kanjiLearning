@@ -28,6 +28,7 @@ namespace ConsoleApplication1
         }
     }
 #endif
+
     public class myTextReaderJs : myTextReader
     {
         public override int lineCount
@@ -182,24 +183,6 @@ namespace ConsoleApplication1
         myCompo kjCompo;        //kanji component
         myDictSearch dictSearch;//verd info
         myDictConj dictConj;
-        void load_hv_word()
-        {
-            string path = @"Assets/hv_word.csv";
-            myTextReader rd = new myTextReader();
-            rd.Reading += Rd_OnReading;
-            rd.Open(getUri(path));
-            int startTC = Environment.TickCount;
-            var dict1 = new myDictHvWord(0);
-            var line = rd.ReadLine();   //read header
-            for (line = rd.ReadLine(); line != null; line = rd.ReadLine())
-            {
-                dict1.add(line);
-            }
-            //Console.WriteLine("hv_org.csv {0} {1}", dict1.count, Environment.TickCount - startTC);
-            rd.Close();
-            rd.Dispose();
-            hv_word = dict1;
-        }
 
         private void Rd_OnReading(object sender, int e)
         {
@@ -222,13 +205,6 @@ namespace ConsoleApplication1
             rd.Close();
             hv_org = dict1;
             rd.Dispose();
-        }
-        void load_hv_org_2()
-        {
-            var dict = new myDictHVORG(0);
-            string path = @"Assets/hv_org.csv";
-            load_dict_2(dict, path);
-            hv_org = dict;
         }
 #if console_mode
 #else
@@ -266,14 +242,6 @@ namespace ConsoleApplication1
         //parsing->(has new line) parsing
         //parsing->(wait 4 get line) wait4read
 
-        void load_hanvietdict()
-        {
-            var dict = new myDictHV(0);
-            string path = @"Assets/hanvietdict.js";
-            load_dict_2(dict, path, 1);
-            hvdict = dict;
-        }
-
         void load_dict_2(myDictBase dict, string path, int isJsFile = 0)
         {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
@@ -299,9 +267,12 @@ namespace ConsoleApplication1
             int nRec;
             int iRec = 0;
             bool bFetch;
+            Int64 preSize = m_processedSize;
             for (; s != wrkState.end;)
             {
-                double percent = 100 * csv.progress_processed / csv.progress_total;
+                m_processedSize = preSize + csv.progress_processed;
+                double percent = 100.0 * m_processedSize / m_totalSize;
+                loadProgress = percent;
                 Debug.WriteLine(string.Format("{0} load_dict % {1} s {2}", this, percent.ToString("F2"), s));
                 switch (s)
                 {
@@ -375,7 +346,7 @@ namespace ConsoleApplication1
                         break;
                 }
             }
-            for (int i = 0; i<isJsFile; i++)
+            for (int i = 0; i < isJsFile; i++)
             {
                 arr = csv.getRec();
             }
@@ -425,7 +396,7 @@ namespace ConsoleApplication1
             rd.Close();
             rd.Dispose();
         }
-#endregion
+        #endregion
         void load_hvchubothu()
         {
             string path = @"Assets/hvchubothu.js";
@@ -454,15 +425,6 @@ namespace ConsoleApplication1
             rd.Dispose();
             hvbt = dict;
         }
-        void load_kangxi()
-        {
-            var dict = new myDictKangxi(0);
-            string path = @"Assets/kangxi.csv";
-            //myTextReader rd = new myTextReader();
-            //load_dict(dict, rd, path);
-            load_dict_2(dict, path);
-            kxDict = dict;
-        }
         void load_hannom_index()
         {
             var dict = new myDictHannom(0);
@@ -471,97 +433,71 @@ namespace ConsoleApplication1
             load_dict(dict, rd, path);
             hnDict = dict;
         }
-        void load_character()
+
+        class loadRec
         {
-            var dict = new myDictCharacter(0);
-            string path = @"Assets/character.csv";
-            load_dict_2(dict, path);
-            chDict = dict;
+            public myDictBase bDict;
+            public string path;
+            public int isJsFile;
+        };
+        Int64 m_totalSize;
+        Int64 m_processedSize;
+        void load_dicts()
+        {
+            loadRec[] arr = new loadRec[] {
+                new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
+                new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
+                new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
+                new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
+                new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
+                //character_jdict.csv
+                new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv", isJsFile = 0 },
+                new loadRec{ bDict = bt214 = new myDict214(0), path = @"Assets/bothu214.csv", isJsFile = 0 },
+                //load kanji component
+                //  req: kangxi.csv, bothu214.csv loaded
+                new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt", isJsFile = 0 },
+                new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
+                new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
+            };
+            //cacl total size
+            m_totalSize = 0;
+            m_processedSize = 0;
+            foreach (loadRec rec in arr)
+            {
+                m_totalSize += getFileSize(rec.path);
+            }
+            //load
+            foreach (loadRec rec in arr)
+            {
+                load_dict_2(rec.bDict, rec.path, rec.isJsFile);
+            }
+            Debug.Assert(loadProgress == 100);
         }
-        //character_jdict.csv
-        void load_character_jdict()
+        Int64 getFileSize(string path)
         {
-            var dict = new myDictJDC(0);
-            string path = @"Assets/character_jdict.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            jdcDict = dict;
-        }
-        void load_bt214()
-        {
-            var dict = new myDict214(0);
-            string path = @"Assets/bothu214.csv";
-            //myTextReader rd = new myTextReader();
-            //load_dict(dict, rd, path);
-            load_dict_2(dict, path);
-            bt214 = dict;
-        }
-        //load kanji component
-        void load_kjCompo()
-        {
-            var dict = new myCompo(0);
-            string path = @"Assets/component.txt";
-            load_dict_2(dict, path);
-            //myTextReader rd = new myTextReader();
-            //load_dict(dict, rd, path);
-            kjCompo = dict;
-        }
-        void load_conj()
-        {
-            var dict = new myDictConj(0);
-            string path = @"Assets/conjugation.csv";
-            //myTextReader rd = new myTextReader();
-            //load_dict(dict, rd, path);
-            load_dict_2(dict, path);
-            dictConj = dict;
-        }
-        void load_search()
-        {
-            var dict = new myDictSearch(0);
-            string path = @"Assets/search.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            dictSearch = dict;
+            Int64 size = 0;
+            var t = Task.Run(async () =>
+            {
+                var sf = await StorageFile.GetFileFromApplicationUriAsync(getUri(path));
+                if (sf != null)
+                {
+                    BasicProperties pro = await sf.GetBasicPropertiesAsync();
+                    size = (long)pro.Size;
+                }
+            });
+            t.Wait();
+            return size;
         }
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
-        public static int loadProgress = 0;
+        public static double loadProgress = 0;
         public static myDict Load()
         {
             if (m_instance == null)
             {
                 m_instance = new myDict();
-#if false
-                m_instance.load_character();
-                loadProgress = 10;
-
-                m_instance.load_hv_org_2();
-                loadProgress = 20;
-#endif
-                //m_instance.load_hanvietdict();
-                //loadProgress = 30;
-
-                ////m_instance.load_hvchubothu();
-                //m_instance.load_hv_word();
-                //loadProgress = 40;
-                m_instance.load_kangxi();
-                loadProgress = 50;
-                //m_instance.load_hannom_index();
-
-                //m_instance.load_character_jdict();
-                //loadProgress = 60;
-
-                m_instance.load_bt214();
-                //loadProgress = 70;
-                m_instance.load_kjCompo();
-
-                //verd info
-                m_instance.load_conj();
-                //m_instance.load_search();
-
-                loadProgress = 100;
-
+                m_instance.load_dicts();
             }
             return m_instance;
         }
@@ -714,7 +650,6 @@ namespace ConsoleApplication1
             if ((c & 0xFF00) == 0x3000) return false;
             return true;
         }
-
         public void add(string line)
         {
             //add(line, false);
@@ -737,7 +672,7 @@ namespace ConsoleApplication1
                 {
                     if (!isKanji(c))
                     {
-                        Debug.Write(c);
+                        //Debug.Write(c);
                         continue;
                     }
                     if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
@@ -765,7 +700,7 @@ namespace ConsoleApplication1
         //        m_data.Add(rec.getKey(), rec);
         //}
 
-#region csv parser
+        #region csv parser
         enum myTkType
         {
             t_comma = 0,
@@ -931,7 +866,7 @@ namespace ConsoleApplication1
             //case eol
             return res;
         }
-#endregion
+        #endregion
     }
     public class myDefinition
     {
@@ -969,6 +904,7 @@ namespace ConsoleApplication1
             }
             return word;
         }
+        public List<myWord> relateVerbs = new List<myWord>();
     }
     public interface IRecord
     {
@@ -1409,16 +1345,20 @@ namespace ConsoleApplication1
                     var l = myDictConj.m_list.FindAll((rec) => { return rec.pos == i; });
                     foreach (myDictConj.recordConj conj in l)
                     {
-                        ret = hira + "\n" + conj.ToString();
+                        ret = hira + "\n" + meaning + "\n" + conj.ToString();
                         break;
                     }
                 }
                 return ret;
             }
+            public bool isVerd()
+            {
+                return getDef() != "";
+            }
             public void format(myKanji kanji)
             {
                 bool found = false;
-                foreach(var ch in term)
+                foreach (var ch in term)
                 {
                     if (isKanji(ch))
                     {
@@ -1429,9 +1369,16 @@ namespace ConsoleApplication1
                 if (found)
                 {
                     string def = getDef();
-                    if (def != "") {
+                    if (def != "")
+                    {
+#if false
                         var word = kanji.relateWord(term);
                         word.definitions.Add(new myDefinition { text = def });
+#else
+                        var w = new myWord() { term = hira };
+                        w.definitions.Add(new myDefinition { text = def });
+                        kanji.relateVerbs.Add(w);
+#endif
                     }
                 }
             }
@@ -1443,7 +1390,10 @@ namespace ConsoleApplication1
         protected override IRecord crtRec(string[] arr)
         {
             var rec = new recordSrch(arr);
-            return rec;
+            if (rec.isVerd())
+                return rec;
+            else
+                return null;
         }
         protected override string[] parseLine(string line)
         {
