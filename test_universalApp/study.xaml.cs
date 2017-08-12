@@ -153,6 +153,12 @@ namespace test_universalApp
             m_option.showVerd = (bool)optVerbChk.IsChecked;
         }
 
+        private void OptSelectTxtOn_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.selectTxtOn = (bool)optSelectTxtOn.IsChecked;
+            srchRtb.IsTextSelectionEnabled = m_option.selectTxtOn;
+        }
+
         //private void OptSrchTxtEnableChk_Click(object sender, RoutedEventArgs e)
         //{
         //    m_option.srchTxtEnable = (bool)optSrchTxtEnableChk.IsChecked;
@@ -375,6 +381,7 @@ namespace test_universalApp
 
             //search
             srchRtb.Blocks.Clear();
+            //srchRtb.IsTextSelectionEnabled = m_option.selectTxtOn;
             //srchRtb.Visibility = Visibility.Collapsed;
             //srchTxt.Visibility = Visibility.Collapsed;
             //srchBtn.Visibility = Visibility.Collapsed;
@@ -868,7 +875,7 @@ namespace test_universalApp
         {
             var hb = new Hyperlink();
             hb.Click += Hb_Click;
-            hb.Inlines.Add(new Run() { Text = val.ToString() });
+            hb.Inlines.Add(new Run() { Text = val.ToString(), FontSize = 30});
             return hb;
         }
         private Hyperlink crtHb(string txt)
@@ -1029,6 +1036,8 @@ namespace test_universalApp
             public bool showVerd;
             [DataMember]
             public bool fullDef;
+            [DataMember]
+            public bool selectTxtOn;
 
             public studyOption() { }
 
@@ -1219,6 +1228,7 @@ namespace test_universalApp
             optSpkTermChk.IsChecked = m_option.spkTerm;
             optFullDefChk.IsChecked = m_option.fullDef;
             optVerbChk.IsChecked = m_option.showVerd;
+            optSelectTxtOn.IsChecked = m_option.selectTxtOn;
             //+ search
             //optSrchEnableChk.IsChecked = m_option.srchEnable;
             //optSrchTxtEnableChk.IsChecked = m_option.srchTxtEnable;
@@ -1237,6 +1247,9 @@ namespace test_universalApp
 
             //update status
             updateStatus(string.Format("Marked/Total: {0}/{1}", m_markedItems.Count, m_items.Count));
+
+            //selection text
+            srchRtb.IsTextSelectionEnabled = m_option.selectTxtOn;
         }
 
         private void initEvents()
@@ -1275,6 +1288,7 @@ namespace test_universalApp
             optSpkDefineChk.Click += OptSpkDefineChk_Click;
             optFullDefChk.Click += OptFullDefChk_Click;
             optVerbChk.Click += OptVerbChk_Click;
+            optSelectTxtOn.Click += OptSelectTxtOn_Click;
             //search option
             //optSrchEnableChk.Click += OptSrchEnableChk_Click;
             //optSrchTxtEnableChk.Click += OptSrchTxtEnableChk_Click;

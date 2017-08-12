@@ -1,4 +1,5 @@
 ﻿#define use_worker
+#define load_dict_use_thread
 
 using System;
 using System.Threading.Tasks;
@@ -166,11 +167,15 @@ namespace test_universalApp
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateStatus, data = "Loading dict ..." });
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.prepareProgress });
                         Task t = Task.Run(() => { myDict.Load(); });
-                        while(myDict.loadProgress < 100)
+                        while(t.Status != TaskStatus.RanToCompletion)
+                        //while (myDict.loadProgress < 100)
                         {
                             m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateProgress, data = (double)myDict.loadProgress });
-                            myWorker.sleep(100);
+                            //myWorker.sleep(100);
+                            t.Wait(100);
                         }
+                        Debug.Assert(myDict.loadProgress == 100);
+                        //Debug.Assert(t.Status == TaskStatus.RanToCompletion);
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.hideProgress });
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateStatus, data = "Loading completed!" });
                     }
@@ -241,8 +246,12 @@ namespace test_universalApp
             //load db
             s_content.loadDb();
 
+#if load_dict_use_thread
             m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadDict });
-#endif
+#else
+            myDict.Load();
+#endif  //load_dict_use_thread
+#endif  //not enable_loaddata
         }
 
         private void loadLastPath()

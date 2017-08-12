@@ -60,7 +60,7 @@
                                     VerticalAlignment="Top"
                                     Width="35"
                                     Height="35">
-                        <Image Source="Assets\option.png"></Image>
+                        <Image Source="Assets\option.png" Height="31" VerticalAlignment="Top"></Image>
                     </Button>
                     <Grid Grid.Column="1"
                                 Grid.Row="0">
@@ -89,6 +89,7 @@
                                 <TextBlock>Search result</TextBlock>
                                 <CheckBox Name="optFullDefChk" Margin="10,0,0,0">Full define</CheckBox>
                                 <CheckBox Name="optVerbChk" Margin="10,0,0,0">Show verb</CheckBox>
+                                <CheckBox Name="optSelectTxtOn" Margin="10,0,0,0">Enable text selection</CheckBox>
                                 <!--<TextBlock>Search</TextBlock>-->
                                 <!--<CheckBox Name="optSrchEnableChk" Margin="10,0,0,0">Search enable</CheckBox>-->
                             </StackPanel>

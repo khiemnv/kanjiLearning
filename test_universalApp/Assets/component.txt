@@ -1,254 +1,254 @@
-ch	rad	hn	mean
-｜	2	CỔN	nét sổ
-ノ	4	no	0
-ハ	0	ha	0
-マ	0	ma	0
-ユ	0	yu	0
-ヨ	0	yo	0
-⺅	9	0	0
-⺌	42	0	0
-⺹	125	0	0
-⺾	140	0	0
-⻏	163	0	0
-⻖	170	0	0
-一	1	NHẤT	số một
-世	0	THẾ	Thời đại, đời, thời
-丶	3	CHỦ	điểm, chấm
-乃	0	NÃI	là, nên
-久	0	CỬU	Lâu
-乙	5	ẤT	vị trí thứ 2 trong thiên can
-九	0	CỬU	0
-也	0	DÃ	cũng
-亀	213	0	0
-亅	6	QUYẾT	nét sổ có móc
-二	7	NHỊ	số hai
-五	0	NGŨ	0
-井	0	TỈNH	Giếng
-亠	8	ĐẦU	(Không có nghĩa)
-亡	23	VÔ/ VONG	0
-人	9	NHÂN (NHÂN ĐỨNG)	người
-儿	10	NHI	Trẻ con
-元	0	NGUYÊN	0
-免	0	MIỄN	0
-入	11	NHẬP	vào
-冂	13	QUYNH	vùng biên giới xa; hoang địa
-冊	0	SÁCH	0
-冖	14	MỊCH	trùm khăn lên
-冫	15	BĂNG	nước đá
-几	16	KỶ	ghế dựa
-凵	17	KHẢM	há miệng
-刀	18	ĐAO	con dao, cây đao (vũ khí)
-刂	18	ĐAO	0
-力	19	LỰC	sức mạnh
-勹	20	BAO	bao bọc
-勿	0	VẬT	không, không nên
-匕	21	CHỦY	cái thìa (cái muỗng)
-匚	22	PHƯƠNG	tủ đựng
-十	24	THẬP	số mười
-卜	25	BỐC	xem bói
-卩	26	TIẾT	đốt tre
-厂	27	HÁN	sườn núi, vách đá
-厶	28	KHƯ/ TƯ	riêng tư
-又	29	HỰU	lại nữa, một lần nữa
-及	0	CẬP	Đến, tới
-口	30	KHẨU	cái miệng
-品	0	PHẨM	0
-囗	31	VI	vây quanh
-土	32	THỔ	đất
-士	33	SĨ	kẻ sĩ
-夂	34	TRĨ	đến ở phía sau
-夕	36	TỊCH	đêm tối
-大	37	ĐẠI	to lớn
-奄	0	YỂM/ YÊM	bao trùm, Gấp rút, Thình lình
-女	38	NỮ	nữ giới, con gái, đàn bà
-子	39	TỬ	con
-宀	40	MIÊN	mái nhà, mái che
-寸	41	THỐN	đơn vị «tấc» (đo chiều dài)
-小	42	TIỂU	nhỏ bé
-尢	43	UÔNG	yếu đuối
-尤	43	0	0
-尸	44	THI	xác chết, thây ma
-屮	45	TRIỆT	mầm non, cỏ non mới mọc
-屯	45	0	0
-山	46	SƠN	núi non
-岡	0	CƯƠNG	Sườn núi
-巛	47	XUYÊN	sông ngòi
-川	47	0	0
-工	48	CÔNG	người thợ, công việc
-巨	0	CỰ	To, lớn, đồ sộ, khổng lồ
-已	49	KỶ	bản thân mình
-巴	0	BA	0
-巾	50	CÂN	cái khăn
-干	51	CAN	thiên can, can dự
-并	0	TINH	Hợp, gồm
-幺	52	YÊU	nhỏ nhắn
-广	53	NGHIỄM	mái nhà
-廴	54	DẪN	bước dài
-廾	55	CỦNG	chắp tay
-弋	56	DẶC	bắn, chiếm lấy
-弓	57	CUNG	cái cung (để bắn tên)
-彑	58	0	0
-彡	59	SAM	lông,  tóc dài
-彳	60	XÍCH	bước chân trái
-心	61	TÂM (TÂM ĐỨNG)	quả tim, tâm trí, tấm lòng
-忄	61	0	0
-戈	62	QUA	cây qua(một thứ binh khí dài)
-戸	63	HỘ	cửa một cánh
-手	64	THỦ	tay
-扌	64	0	0
-支	65	CHI	cành nhánh
-攵	66	PHỘC	đánh khẽ
-文	67	VĂN	văn vẻ, văn chương, vẻ sáng
-斉	210	0	0
-斗	68	ĐẨU	cái đấu để đong
-斤	69	CẨN	cái búa, rìu
-方	70	PHƯƠNG	vuông
-无	71	VÔ	không
-日	72	NHẬT	ngày, mặt trời
-曰	73	VIẾT	nói rằng
-月	74	NGUYỆT	tháng, mặt trăng
-木	75	MỘC	gỗ, cây cối
-欠	76	KHIẾM	khiếm khuyết, thiếu vắng
-止	77	CHỈ	dừng lại
-歯	211	0	0
-歹	78	ĐÃI	xấu xa, tệ hại
-殳	79	THÙ	binh khí dài, cái gậy
-毋	80	VÔ	chớ, đừng
-母	80	0	0
-比	81	TỶ	so sánh
-毛	82	MAO	lông
-氏	83	THỊ	họ
-气	84	KHÍ	hơi nước
-水	85	THỦY	nước
-氵	85	0	0
-滴	0	TÍCH/ TRÍCH	Giọt nước
-火	86	HỎA	lửa
-灬	86	0	0
-無	71	0	0
-爪	87	TRẢO	móng vuốt cầm thú
-父	88	PHỤ	cha
-爻	89	HÀO	hào âm, hào dương (Kinh Dịch)
-爿	90	TƯỜNG	mảnh gỗ, cái giường
-片	91	PHIẾN	mảnh, tấm, miếng
-牙	92	NHA	răng
-牛	93	NGƯU	trâu
-犬	94	KHUYỂN	con chó
-犭	94	0	0
-玄	95	HUYỀN	màu đen huyền, huyền bí
-王	96	0	0
-瓜	97	QUA	quả dưa
-瓦	98	NGÕA	ngói
-甘	99	CAM	ngọt
-生	100	SINH	sinh đẻ, sinh sống
-用	101	DỤNG	dùng
-田	102	ĐIỀN	ruộng
-疋	103	THẤT	đơn vị đo chiều dài, tấm (vải)
-疒	104	NẠCH	bệnh tật
-癶	105	BÁT	gạt ngược lại, trở lại
-白	106	BẠCH	màu trắng
-皮	107	BÌ	da
-皿	108	MÃNH	bát dĩa
-目	109	MỤC	mắt
-矛	110	MÂU	cây giáo để đâm
-矢	111	THỈ	cây tên, mũi tên
-石	112	THẠCH	đá
-示	113	THỊ (KỲ)	chỉ thị; thần đất
-礻	113	0	0
-禸	114	NHỰU	vết chân, lốt chân
-禾	115	HÒA	lúa
-穴	116	HUYỆT	hang lỗ
-立	117	LẬP	đứng, thành lập
-竜	212	0	0
-竹	118	TRÚC	tre trúc
-米	119	MỄ	gạo
-糸	120	MỊCH	sợi tơ nhỏ
-缶	121	PHẪU	đồ sành
-罒	122	VÕNG	cái lưới
-羊	123	DƯƠNG	con dê
-羽	124	VŨ	lông vũ
-而	126	NHI	mà, và
-耒	127	LỖI	cái cày
-耳	128	NHĨ	tai (lỗ tai)
-聿	129	DUẬT	cây bút
-肉	130	NHỤC	thịt
-臣	131	THẦN	bầy tôi
-自	132	TỰ	tự bản thân, kể từ
-至	133	CHÍ	đến
-臼	134	CỬU	cái cối giã gạo
-舌	135	THIỆT	cái lưỡi
-舛	136	SUYỄN	sai suyễn, sai lầm
-舟	137	CHU	cái thuyền
-艮	138	CẤN	quẻ Cấn (Kinh Dịch); dừng, bền cứng
-色	139	SẮC	màu, dáng vẻ, nữ sắc
-虍	141	HỔ	vằn vện của con hổ
-虫	142	TRÙNG	sâu bọ
-血	143	HUYẾT	máu
-行	144	HÀNH	đi, thi hành, làm được
-衣	145	Y	áo
-衤	145	0	0
-西	146	Á	che đậy, úp lên
-見	147	KIẾN	trông thấy
-角	148	GIÁC	góc, sừng thú
-言	149	NGÔN	nói
-谷	150	CỐC	khe nước chảy giữa hai núi
-豆	151	ĐẬU	hạt đậu, cây đậu
-豕	152	THỈ	con heo, con lợn
-豸	153	TRÃI	loài sâu không chân
-貝	154	BỐI	vật báu
-赤	155	XÍCH	màu đỏ
-走	156	TẨU	đi, chạy
-足	157	TÚC	chân, đầy đủ
-身	158	THÂN	thân thể, thân mình
-車	159	XA	chiếc xe
-辛	160	TÂN	cay, vất vả
-辰	161	THẦN	nhật, nguyệt, tinh; thìn (12 chi)
-辶	162	0	0
-邑	163	ẤP	vùng đất, đất phong cho quan
-酉	164	DẬU	một trong 12 địa chi
-釆	165	BIỆN	phân biệt
-里	166	LÝ	dặm; làng xóm
-金	167	KIM	kim loại; vàng
-長	168	TRƯỜNG	dài; lớn (trưởng)
-門	169	MÔN	cửa hai cánh
-隶	171	ĐÃI	kịp, kịp đến
-隹	172	TRUY	 CHUY
-雨	173	VŨ	mưa
-青	174	THANH	màu xanh
-非	175	PHI	không
-面	176	DIỆN	mặt, bề mặt
-革	177	CÁCH	da thú; thay đổi, cải cách
-韋	178	VI	da đã thuộc rồi
-韭	179	PHỈ	 CỬU
-音	180	ÂM	âm thanh, tiếng
-頁	181	HIỆT	đầu; trang giấy
-風	182	PHONG	gió
-飛	183	PHI	bay
-食	184	THỰC	ăn
-首	185	THỦ	đầu
-香	186	HƯƠNG	mùi hương,hương thơm
-馬	187	MÃ	con ngựa
-骨	118	0	0
-高	189	CAO	cao
-髟	190	BƯU	 TIÊU
-鬥	191	ĐẤU	chống nhau, chiến đấu
-鬯	192	SƯỞNG	rượu nếp; bao đựng cây cung
-鬲	193	CÁCH	tên một con sông xưa, cái đỉnh
-鬼	194	QUỶ	con quỷ
-魚	195	NGƯ	con cá
-鳥	196	ĐIỂU	con chim
-鹵	197	LỖ	đất mặn
-鹿	198	LỘC	con hươu
-麦	199	MẠCH	lúa mạch
-麻	200	MA	cây gai
-黄	20	0	0
-黍	202	THỬ	lúa nếp
-黒	203	0	0
-黹	204	CHỈ	may áo, khâu vá
-黽	205	MÃNH	con ếch; cố gắng (mãnh miễn)
-鼎	206	ĐỈNH	cái đỉnh
-鼓	207	CỔ	cái trống
-鼠	208	THỬ	con chuột
-鼻	209	TỴ	cái mũi
-齊	210	TỀ	ngang bằng, cùng nhau
-龠	214	DƯỢC	sáo 3 lỗ
-𠆢	9	0	0
+ch,rad,hn,mean,
+"｜","2","CỔN","nét sổ",
+"ノ","4","no","0",
+"ハ","0","ha","0",
+"マ","0","ma","0",
+"ユ","0","yu","0",
+"ヨ","0","yo","0",
+"⺅","9","0","0",
+"⺌","42","0","0",
+"⺹","125","0","0",
+"⺾","140","0","0",
+"⻏","163","0","0",
+"⻖","170","0","0",
+"一","1","NHẤT","số một",
+"世","0","THẾ","Thời đại, đời, thời",
+"丶","3","CHỦ","điểm, chấm",
+"乃","0","NÃI","là, nên",
+"久","0","CỬU","Lâu",
+"乙","5","ẤT","vị trí thứ 2 trong thiên can",
+"九","0","CỬU","0",
+"也","0","DÃ","cũng",
+"亀","213","0","0",
+"亅","6","QUYẾT","nét sổ có móc",
+"二","7","NHỊ","số hai",
+"五","0","NGŨ","0",
+"井","0","TỈNH","Giếng",
+"亠","8","ĐẦU","(Không có nghĩa)",
+"亡","23","VÔ/ VONG","0",
+"人","9","NHÂN (NHÂN ĐỨNG)","người",
+"儿","10","NHI","Trẻ con",
+"元","0","NGUYÊN","0",
+"免","0","MIỄN","0",
+"入","11","NHẬP","vào",
+"冂","13","QUYNH","vùng biên giới xa; hoang địa",
+"冊","0","SÁCH","0",
+"冖","14","MỊCH","trùm khăn lên",
+"冫","15","BĂNG","nước đá",
+"几","16","KỶ","ghế dựa",
+"凵","17","KHẢM","há miệng",
+"刀","18","ĐAO","con dao, cây đao (vũ khí)",
+"刂","18","ĐAO","0",
+"力","19","LỰC","sức mạnh",
+"勹","20","BAO","bao bọc",
+"勿","0","VẬT","không, không nên",
+"匕","21","CHỦY","cái thìa (cái muỗng)",
+"匚","22","PHƯƠNG","tủ đựng",
+"十","24","THẬP","số mười",
+"卜","25","BỐC","xem bói",
+"卩","26","TIẾT","đốt tre",
+"厂","27","HÁN","sườn núi, vách đá",
+"厶","28","KHƯ/ TƯ","riêng tư",
+"又","29","HỰU","lại nữa, một lần nữa",
+"及","0","CẬP","Đến, tới",
+"口","30","KHẨU","cái miệng",
+"品","0","PHẨM","0",
+"囗","31","VI","vây quanh",
+"土","32","THỔ","đất",
+"士","33","SĨ","kẻ sĩ",
+"夂","34","TRĨ","đến ở phía sau",
+"夕","36","TỊCH","đêm tối",
+"大","37","ĐẠI","to lớn",
+"奄","0","YỂM/ YÊM","bao trùm, Gấp rút, Thình lình",
+"女","38","NỮ","nữ giới, con gái, đàn bà",
+"子","39","TỬ","con",
+"宀","40","MIÊN","mái nhà, mái che",
+"寸","41","THỐN","đơn vị «tấc» (đo chiều dài)",
+"小","42","TIỂU","nhỏ bé",
+"尢","43","UÔNG","yếu đuối",
+"尤","43","0","0",
+"尸","44","THI","xác chết, thây ma",
+"屮","45","TRIỆT","mầm non, cỏ non mới mọc",
+"屯","45","0","0",
+"山","46","SƠN","núi non",
+"岡","0","CƯƠNG","Sườn núi",
+"巛","47","XUYÊN","sông ngòi",
+"川","47","0","0",
+"工","48","CÔNG","người thợ, công việc",
+"巨","0","CỰ","To, lớn, đồ sộ, khổng lồ",
+"已","49","KỶ","bản thân mình",
+"巴","0","BA","0",
+"巾","50","CÂN","cái khăn",
+"干","51","CAN","thiên can, can dự",
+"并","0","TINH","Hợp, gồm",
+"幺","52","YÊU","nhỏ nhắn",
+"广","53","NGHIỄM","mái nhà",
+"廴","54","DẪN","bước dài",
+"廾","55","CỦNG","chắp tay",
+"弋","56","DẶC","bắn, chiếm lấy",
+"弓","57","CUNG","cái cung (để bắn tên)",
+"彑","58","0","0",
+"彡","59","SAM","lông,  tóc dài",
+"彳","60","XÍCH","bước chân trái",
+"心","61","TÂM (TÂM ĐỨNG)","quả tim, tâm trí, tấm lòng",
+"忄","61","0","0",
+"戈","62","QUA","cây qua(một thứ binh khí dài)",
+"戸","63","HỘ","cửa một cánh",
+"手","64","THỦ","tay",
+"扌","64","0","0",
+"支","65","CHI","cành nhánh",
+"攵","66","PHỘC","đánh khẽ",
+"文","67","VĂN","văn vẻ, văn chương, vẻ sáng",
+"斉","210","0","0",
+"斗","68","ĐẨU","cái đấu để đong",
+"斤","69","CẨN","cái búa, rìu",
+"方","70","PHƯƠNG","vuông",
+"无","71","VÔ","không",
+"日","72","NHẬT","ngày, mặt trời",
+"曰","73","VIẾT","nói rằng",
+"月","74","NGUYỆT","tháng, mặt trăng",
+"木","75","MỘC","gỗ, cây cối",
+"欠","76","KHIẾM","khiếm khuyết, thiếu vắng",
+"止","77","CHỈ","dừng lại",
+"歯","211","0","0",
+"歹","78","ĐÃI","xấu xa, tệ hại",
+"殳","79","THÙ","binh khí dài, cái gậy",
+"毋","80","VÔ","chớ, đừng",
+"母","80","0","0",
+"比","81","TỶ","so sánh",
+"毛","82","MAO","lông",
+"氏","83","THỊ","họ",
+"气","84","KHÍ","hơi nước",
+"水","85","THỦY","nước",
+"氵","85","0","0",
+"滴","0","TÍCH/ TRÍCH","Giọt nước",
+"火","86","HỎA","lửa",
+"灬","86","0","0",
+"無","71","0","0",
+"爪","87","TRẢO","móng vuốt cầm thú",
+"父","88","PHỤ","cha",
+"爻","89","HÀO","hào âm, hào dương (Kinh Dịch)",
+"爿","90","TƯỜNG","mảnh gỗ, cái giường",
+"片","91","PHIẾN","mảnh, tấm, miếng",
+"牙","92","NHA","răng",
+"牛","93","NGƯU","trâu",
+"犬","94","KHUYỂN","con chó",
+"犭","94","0","0",
+"玄","95","HUYỀN","màu đen huyền, huyền bí",
+"王","96","0","0",
+"瓜","97","QUA","quả dưa",
+"瓦","98","NGÕA","ngói",
+"甘","99","CAM","ngọt",
+"生","100","SINH","sinh đẻ, sinh sống",
+"用","101","DỤNG","dùng",
+"田","102","ĐIỀN","ruộng",
+"疋","103","THẤT","đơn vị đo chiều dài, tấm (vải)",
+"疒","104","NẠCH","bệnh tật",
+"癶","105","BÁT","gạt ngược lại, trở lại",
+"白","106","BẠCH","màu trắng",
+"皮","107","BÌ","da",
+"皿","108","MÃNH","bát dĩa",
+"目","109","MỤC","mắt",
+"矛","110","MÂU","cây giáo để đâm",
+"矢","111","THỈ","cây tên, mũi tên",
+"石","112","THẠCH","đá",
+"示","113","THỊ (KỲ)","chỉ thị; thần đất",
+"礻","113","0","0",
+"禸","114","NHỰU","vết chân, lốt chân",
+"禾","115","HÒA","lúa",
+"穴","116","HUYỆT","hang lỗ",
+"立","117","LẬP","đứng, thành lập",
+"竜","212","0","0",
+"竹","118","TRÚC","tre trúc",
+"米","119","MỄ","gạo",
+"糸","120","MỊCH","sợi tơ nhỏ",
+"缶","121","PHẪU","đồ sành",
+"罒","122","VÕNG","cái lưới",
+"羊","123","DƯƠNG","con dê",
+"羽","124","VŨ","lông vũ",
+"而","126","NHI","mà, và",
+"耒","127","LỖI","cái cày",
+"耳","128","NHĨ","tai (lỗ tai)",
+"聿","129","DUẬT","cây bút",
+"肉","130","NHỤC","thịt",
+"臣","131","THẦN","bầy tôi",
+"自","132","TỰ","tự bản thân, kể từ",
+"至","133","CHÍ","đến",
+"臼","134","CỬU","cái cối giã gạo",
+"舌","135","THIỆT","cái lưỡi",
+"舛","136","SUYỄN","sai suyễn, sai lầm",
+"舟","137","CHU","cái thuyền",
+"艮","138","CẤN","quẻ Cấn (Kinh Dịch); dừng, bền cứng",
+"色","139","SẮC","màu, dáng vẻ, nữ sắc",
+"虍","141","HỔ","vằn vện của con hổ",
+"虫","142","TRÙNG","sâu bọ",
+"血","143","HUYẾT","máu",
+"行","144","HÀNH","đi, thi hành, làm được",
+"衣","145","Y","áo",
+"衤","145","0","0",
+"西","146","Á","che đậy, úp lên",
+"見","147","KIẾN","trông thấy",
+"角","148","GIÁC","góc, sừng thú",
+"言","149","NGÔN","nói",
+"谷","150","CỐC","khe nước chảy giữa hai núi",
+"豆","151","ĐẬU","hạt đậu, cây đậu",
+"豕","152","THỈ","con heo, con lợn",
+"豸","153","TRÃI","loài sâu không chân",
+"貝","154","BỐI","vật báu",
+"赤","155","XÍCH","màu đỏ",
+"走","156","TẨU","đi, chạy",
+"足","157","TÚC","chân, đầy đủ",
+"身","158","THÂN","thân thể, thân mình",
+"車","159","XA","chiếc xe",
+"辛","160","TÂN","cay, vất vả",
+"辰","161","THẦN","nhật, nguyệt, tinh; thìn (12 chi)",
+"辶","162","0","0",
+"邑","163","ẤP","vùng đất, đất phong cho quan",
+"酉","164","DẬU","một trong 12 địa chi",
+"釆","165","BIỆN","phân biệt",
+"里","166","LÝ","dặm; làng xóm",
+"金","167","KIM","kim loại; vàng",
+"長","168","TRƯỜNG","dài; lớn (trưởng)",
+"門","169","MÔN","cửa hai cánh",
+"隶","171","ĐÃI","kịp, kịp đến",
+"隹","172","TRUY"," CHUY",
+"雨","173","VŨ","mưa",
+"青","174","THANH","màu xanh",
+"非","175","PHI","không",
+"面","176","DIỆN","mặt, bề mặt",
+"革","177","CÁCH","da thú; thay đổi, cải cách",
+"韋","178","VI","da đã thuộc rồi",
+"韭","179","PHỈ"," CỬU",
+"音","180","ÂM","âm thanh, tiếng",
+"頁","181","HIỆT","đầu; trang giấy",
+"風","182","PHONG","gió",
+"飛","183","PHI","bay",
+"食","184","THỰC","ăn",
+"首","185","THỦ","đầu",
+"香","186","HƯƠNG","mùi hương,hương thơm",
+"馬","187","MÃ","con ngựa",
+"骨","118","0","0",
+"高","189","CAO","cao",
+"髟","190","BƯU"," TIÊU",
+"鬥","191","ĐẤU","chống nhau, chiến đấu",
+"鬯","192","SƯỞNG","rượu nếp; bao đựng cây cung",
+"鬲","193","CÁCH","tên một con sông xưa, cái đỉnh",
+"鬼","194","QUỶ","con quỷ",
+"魚","195","NGƯ","con cá",
+"鳥","196","ĐIỂU","con chim",
+"鹵","197","LỖ","đất mặn",
+"鹿","198","LỘC","con hươu",
+"麦","199","MẠCH","lúa mạch",
+"麻","200","MA","cây gai",
+"黄","20","0","0",
+"黍","202","THỬ","lúa nếp",
+"黒","203","0","0",
+"黹","204","CHỈ","may áo, khâu vá",
+"黽","205","MÃNH","con ếch; cố gắng (mãnh miễn)",
+"鼎","206","ĐỈNH","cái đỉnh",
+"鼓","207","CỔ","cái trống",
+"鼠","208","THỬ","con chuột",
+"鼻","209","TỴ","cái mũi",
+"齊","210","TỀ","ngang bằng, cùng nhau",
+"龠","214","DƯỢC","sáo 3 lỗ",
+"𠆢","9","0","0",
