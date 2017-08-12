@@ -1,5 +1,5 @@
 ﻿#define use_res_queue
-#define bg_parse
+//#define bg_parse
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,54 @@ using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
+    class myReader
+    {
+        public long size
+        {
+            get
+            {
+                return fs.Seek(0, SeekOrigin.End);
+            }
+        }
+        public long Seek(long offset, SeekOrigin seek)
+        {
+            return fs.Seek(offset, seek);
+        }
+        public void Open(Uri uri)
+        {
+            string[] arr = {
+                @"C:\Users\Khiem\Desktop\hv_word.csv",
+                @"C:\Users\Khiem\Desktop\kangxi.csv",
+                @"C:\Users\Khiem\Desktop\hv_org.csv",
+                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js",
+                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js",
+                @"C:\Users\Khiem\Desktop\hannom_index.csv",
+                @"C:\Users\Khiem\Desktop\character.csv",
+                @"C:\Users\Khiem\Desktop\character_jdict.csv",
+                @"C:\Users\Khiem\Desktop\bothu214.csv",
+                @"C:\Users\Khiem\Desktop\component.txt",
+                @"C:\Users\Khiem\Desktop\search.csv",
+                @"C:\Users\Khiem\Desktop\conjugation.csv",
+            };
+            var name = Path.GetFileName(uri.ToString());
+            string path = arr.First((s) => { return s.Contains(name); });
+
+            fs = File.OpenRead(path);
+        }
+        FileStream fs;
+        public int Read(byte[] block, int offset, int count)
+        {
+            return fs.Read(block, offset, count);
+        }
+        public void Close()
+        {
+            fs.Close();
+        }
+        public void Dispose()
+        {
+            fs.Dispose();
+        }
+    }
     class myQueue<T>
     {
         class queueItem
@@ -38,7 +86,6 @@ namespace ConsoleApplication1
             return (T)obj;
         }
     }
-
     class csvParser : IDisposable
     {
         int m_recCount = 0;
@@ -55,8 +102,8 @@ namespace ConsoleApplication1
             return res.ToArray();
         }
         public Uri uri;
-        public Int64 total_size = 1;
-        public Int64 processed = 0;
+        public long progress_total = 1;
+        public long progress_processed = 0;
         enum binParserState
         {
             s,
@@ -71,20 +118,6 @@ namespace ConsoleApplication1
             t_eol,
             t_other,
         }
-        string[] arr = {
-                @"C:\Users\Khiem\Desktop\hv_word.csv",
-                @"C:\Users\Khiem\Desktop\kangxi.csv",
-                @"C:\Users\Khiem\Desktop\hv_org.csv",
-                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js",
-                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js",
-                @"C:\Users\Khiem\Desktop\hannom_index.csv",
-                @"C:\Users\Khiem\Desktop\character.csv",
-                @"C:\Users\Khiem\Desktop\character_jdict.csv",
-                @"C:\Users\Khiem\Desktop\bothu214.csv",
-                @"C:\Users\Khiem\Desktop\component.txt",
-                @"C:\Users\Khiem\Desktop\search.csv",
-                @"C:\Users\Khiem\Desktop\conjugation.csv",
-            };
         class myToken
         {
             public myTkType type;
@@ -257,10 +290,11 @@ namespace ConsoleApplication1
             o1,
             bs,
             ba,
-            zz
+            zz,
+            sz
         };
         static cbid[,] cbidTbl = new cbid[5, 4] {
-            {cbid.ss, cbid.sa, cbid.en, cbid.se},
+            {cbid.ss, cbid.sa, cbid.sz, cbid.se},
             {cbid.aa, cbid.o1, cbid.aa, cbid.aa },
             {cbid.bs, cbid.ba, cbid.en, cbid.o1 },
             {cbid.es, cbid.o1, cbid.en, cbid.aa },
@@ -357,6 +391,9 @@ namespace ConsoleApplication1
                     res.curObj.iCur += 2;
                     res.curObj.dblQt = true;
                     break;
+                case cbid.sz:
+                    res.curObj.iStart = res.curObj.iCur;
+                    goto case cbid.en;
                 case cbid.en:
                     res.arr.Add(res.gerCurObj());
                     //save rec & reset
@@ -444,10 +481,9 @@ namespace ConsoleApplication1
         byte[] block = new byte[page_size + block_prefix];
         public void start()
         {
-            var name = Path.GetFileName(uri.ToString());
-            string path = arr.First((s) => { return s.Contains(name); });
-
-            var fs = File.OpenRead(path);
+            var fs = new myReader();
+            fs.Open(uri);
+            progress_total = fs.size;
             fs.Seek(0, SeekOrigin.Begin);
 
             int nRead;
@@ -461,6 +497,13 @@ namespace ConsoleApplication1
 #else
                 parseBlock(nRead, block);
 #endif
+            }
+
+            //save last record
+            if (type != myTkType.t_eol)
+            {
+                type = myTkType.t_eol;
+                executeRule();
             }
 
             fs.Close();
@@ -511,7 +554,7 @@ namespace ConsoleApplication1
                     block[k] = preRemain[k];
                 }
 #endif
-                processed += nRead;
+                progress_processed += nRead;
                 //start point
                 //  |remain|block read  |
                 //   ^--i
@@ -604,17 +647,19 @@ namespace ConsoleApplication1
                     preRemain[block_prefix - block_remain + k] = block[i + k];
                 }
 #else
-                if (block_remain > 0)
+                //if (block_remain > 0)
+                //{
+                //    //         |<block size>      |
+                //    //|prefix  |parsed byte|remain|
+                //    //  |remain|            ^--i
+                //    Buffer.BlockCopy(block, i, block, block_prefix - block_remain, block_remain);
+                //}
+                for (int k = 0; k < block_remain; k++)
                 {
-                    //         |<block size>      |
-                    //|prefix  |parsed byte|remain|
-                    //  |remain|            ^--i
-                    Buffer.BlockCopy(block, i, block, block_prefix - block_remain, block_remain);
+                    block[block_prefix - block_remain + k] = block[i + k];
                 }
 #endif
             }
-            //fs.Close();
-            //fs.Dispose();
         }
 
 #region IDisposable Support
