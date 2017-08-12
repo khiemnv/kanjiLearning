@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define bg_parse
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -695,12 +697,16 @@ namespace test_universalApp
                     preRemain[block_prefix - block_remain + k] = block[i + k];
                 }
 #else
-                if (block_remain > 0)
+                //if (block_remain > 0)
+                //{
+                //    //         |<block size>      |
+                //    //|prefix  |parsed byte|remain|
+                //    //  |remain|            ^--i
+                //    Buffer.BlockCopy(block, i, block, block_prefix - block_remain, block_remain);
+                //}
+                for (int k = 0; k < block_remain; k++)
                 {
-                    //         |<block size>      |
-                    //|prefix  |parsed byte|remain|
-                    //  |remain|            ^--i
-                    Buffer.BlockCopy(block, i, block, block_prefix - block_remain, block_remain);
+                    block[block_prefix - block_remain + k] = block[i + k];
                 }
 #endif
             }
@@ -898,13 +904,6 @@ namespace test_universalApp
         myCompo kjCompo;        //kanji component
         myDictSearch dictSearch;//verd info
         myDictConj dictConj;
-        void load_hv_word()
-        {
-            string path = @"Assets/hv_word.csv";
-            var dict = new myDictHvWord(0);
-            load_dict_2(dict, path);
-            hv_word = dict;
-        }
 
         private void Rd_OnReading(object sender, int e)
         {
@@ -927,13 +926,6 @@ namespace test_universalApp
             rd.Close();
             hv_org = dict1;
             rd.Dispose();
-        }
-        void load_hv_org_2()
-        {
-            var dict = new myDictHVORG(0);
-            string path = @"Assets/hv_org.csv";
-            load_dict_2(dict, path);
-            hv_org = dict;
         }
 #if console_mode
 #else
@@ -971,20 +963,18 @@ namespace test_universalApp
         //parsing->(has new line) parsing
         //parsing->(wait 4 get line) wait4read
 
-        void load_hanvietdict()
-        {
-            var dict = new myDictHV(0);
-            string path = @"Assets/hanvietdict.js";
-            load_dict_2(dict, path);
-            hvdict = dict;
-        }
+        const int isJsFile = 0;
         void load_dict_2(myDictBase dict, string path)
         {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
             //var lines = await FileIO.ReadLinesAsync(fs);
             csvParser csv = new csvParser();
             csv.uri = getUri(path);
+#if parse_use_thread
             Task t = Task.Run(() => csv.start());
+#else
+            csv.start();
+#endif
 
             int startTC = Environment.TickCount;
             wrkState s = wrkState.init;
@@ -999,7 +989,6 @@ namespace test_universalApp
             int nRec;
             int iRec = 0;
             bool bFetch;
-            int baseProgress = loadProgress;
             for (; s != wrkState.end;)
             {
                 double percent = 100 * csv.progress_processed / csv.progress_total;
@@ -1018,7 +1007,11 @@ namespace test_universalApp
 #endif
                         nRec = csv.recCount;
                         if (nRec > 0) s = wrkState.begin;
+#if parse_use_thread
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
                         break;
                     case wrkState.begin:
                         arr = csv.getRec();   //ignore first line
@@ -1026,7 +1019,7 @@ namespace test_universalApp
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (bFetch) s = wrkState.parsing;
                         else s = wrkState.wait4read;
@@ -1035,10 +1028,14 @@ namespace test_universalApp
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (bFetch) s = wrkState.parsing;
+#if parse_use_thread
                         else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
                         Task.Delay(1);
                         break;
                     case wrkState.parsing:
@@ -1052,7 +1049,7 @@ namespace test_universalApp
                             iBlock++;
                             csv.parseBlock(nRead, block);
 #endif
-                            nRec = csv.recCount;
+                            nRec = (csv.recCount - isJsFile);
                             for (; iRec < nRec;)
                             {
                                 arr = csv.getRec();
@@ -1063,11 +1060,15 @@ namespace test_universalApp
 #if bg_parse
                         bFetch = (iBlock < csv.blockCount);
 #else
-                        bFetch = (iRec < csv.recCount);
+                        bFetch = (iRec < (csv.recCount - isJsFile));
 #endif
                         if (!bFetch) s = wrkState.wait4read;
                         break;
                 }
+            }
+            for (int i = 0; i < isJsFile; i++)
+            {
+                arr = csv.getRec();
             }
             csv.Dispose();
         }
@@ -1144,14 +1145,6 @@ namespace test_universalApp
             rd.Dispose();
             hvbt = dict;
         }
-        void load_kangxi()
-        {
-            var dict = new myDictKangxi(0);
-            string path = @"Assets/kangxi.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            kxDict = dict;
-        }
         void load_hannom_index()
         {
             var dict = new myDictHannom(0);
@@ -1160,92 +1153,68 @@ namespace test_universalApp
             load_dict(dict, rd, path);
             hnDict = dict;
         }
-        void load_character()
+
+        class loadRec
         {
-            var dict = new myDictCharacter(0);
-            string path = @"Assets/character.csv";
-            load_dict_2(dict, path);
-            chDict = dict;
+            public myDictBase bDict;
+            public string path;
+        };
+        Int64 m_totalSize;
+        Int64 m_processedSize;
+        void load_dicts()
+        {
+            loadRec[] arr = new loadRec[] {
+                //new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv" },
+                //new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv" },
+                //new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js" },
+                //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv" },
+                new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv" },
+                //character_jdict.csv
+                //new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv" },
+                new loadRec{ bDict = bt214 = new myDict214(0), path = @"Assets/bothu214.csv" },
+                //load kanji component
+                //  req: kangxi.csv loaded
+                new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt" },
+                //new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv" },
+                //new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv" },
+            };
+            //cacl total size
+            m_totalSize = 0;
+            m_processedSize = 0;
+            foreach (loadRec rec in arr)
+            {
+                m_totalSize += getFileSize(rec.path);
+            }
+            //load
+            foreach (loadRec rec in arr) {
+                load_dict_2(rec.bDict, rec.path);
+            }
+            loadProgress = 100;
         }
-        //character_jdict.csv
-        void load_character_jdict()
+        Int64 getFileSize(string path)
         {
-            var dict = new myDictJDC(0);
-            string path = @"Assets/character_jdict.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            jdcDict = dict;
-        }
-        void load_bt214()
-        {
-            var dict = new myDict214(0);
-            string path = @"Assets/bothu214.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            bt214 = dict;
-        }
-        //load kanji component
-        void load_kjCompo()
-        {
-            var dict = new myCompo(0);
-            string path = @"Assets/component.txt";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            kjCompo = dict;
-        }
-        void load_conj()
-        {
-            var dict = new myDictConj(0);
-            string path = @"Assets/conjugation.csv";
-            myTextReader rd = new myTextReader();
-            load_dict(dict, rd, path);
-            dictConj = dict;
-        }
-        void load_search()
-        {
-            var dict = new myDictSearch(0);
-            string path = @"Assets/search.csv";
-            load_dict_2(dict, path);
-            dictSearch = dict;
+            Int64 size = 0;
+            var t = Task.Run(async () => {
+                var sf = await StorageFile.GetFileFromApplicationUriAsync(getUri(path));
+                if (sf != null)
+                {
+                    BasicProperties pro = await sf.GetBasicPropertiesAsync();
+                    size = (long)pro.Size;
+                }
+            });
+            t.Wait();
+            return size;
         }
         myDict() { }
         public Dictionary<char, List<IRecord>> m_kanjis { get { return myDictBase.m_kanjis; } }
         static myDict m_instance;
-        public static int loadProgress = 0;
+        public static double loadProgress = 0;
         public static myDict Load()
         {
             if (m_instance == null)
             {
                 m_instance = new myDict();
-                m_instance.load_character();
-                loadProgress = 10;
-
-                m_instance.load_hv_org_2();
-                loadProgress = 20;
-                m_instance.load_hanvietdict();
-                loadProgress = 30;
-                //m_instance.load_hvchubothu();
-                m_instance.load_hv_word();
-                loadProgress = 40;
-                m_instance.load_kangxi();
-                loadProgress = 50;
-                //m_instance.load_hannom_index();
-
-                m_instance.load_character_jdict();
-                loadProgress = 60;
-
-                m_instance.load_bt214();
-                loadProgress = 70;
-                m_instance.load_kjCompo();
-                loadProgress = 80;
-                //verd info
-                m_instance.load_conj();
-                loadProgress = 90;
-
-                m_instance.load_search();
-
-                loadProgress = 100;
-
+                m_instance.load_dicts();
             }
             return m_instance;
         }
