@@ -150,7 +150,7 @@ namespace test_universalApp
 
         private void OptVerbChk_Click(object sender, RoutedEventArgs e)
         {
-            m_option.showVerd = (bool)optVerbChk.IsChecked;
+            m_option.showVerb = (bool)optVerbChk.IsChecked;
         }
 
         private void OptSelectTxtOn_Click(object sender, RoutedEventArgs e)
@@ -741,7 +741,7 @@ namespace test_universalApp
             }
 
             //verb
-            if (m_option.showVerd)
+            if (m_option.showVerb)
             {
                 foreach(var v in verbs)
                 {
@@ -1033,7 +1033,7 @@ namespace test_universalApp
             [DataMember]
             public bool spkDefine;
             [DataMember]
-            public bool showVerd;
+            public bool showVerb;
             [DataMember]
             public bool fullDef;
             [DataMember]
@@ -1227,7 +1227,7 @@ namespace test_universalApp
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
             optFullDefChk.IsChecked = m_option.fullDef;
-            optVerbChk.IsChecked = m_option.showVerd;
+            optVerbChk.IsChecked = m_option.showVerb;
             optSelectTxtOn.IsChecked = m_option.selectTxtOn;
             //+ search
             //optSrchEnableChk.IsChecked = m_option.srchEnable;
