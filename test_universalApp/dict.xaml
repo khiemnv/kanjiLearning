@@ -1,0 +1,111 @@
+﻿<Page
+    x:Class="test_universalApp.dict"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:test_universalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="35" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="35" />
+        </Grid.RowDefinitions>
+        <Grid Name="header" Grid.Row="0"
+              Background="Blue"
+              Margin="1,1,1,1">
+            <TextBlock Name="statusBar"/>
+        </Grid>
+        
+        <Grid Name="searchPanel"
+              Grid.Row="1"
+              Background="Silver">
+            <!--search panel-->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="35"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="35"/>
+                    <ColumnDefinition Width="35"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Name="srchTxt"
+                    Grid.Column="0"></TextBox>
+                <Button Name="srchBtn"
+                    Grid.Column="2"
+                    Padding="0"
+                    Width="35">
+                    <Image Source="Assets\search.png"></Image>
+                </Button>
+                <Button Name="pasteBtn"
+                    Grid.Column="1"
+                    Padding="0"
+                    Width="35">
+                    <Image Source="Assets\paste.png"></Image>
+                </Button>
+            </Grid>
+            <ScrollViewer Name="rtbScroll" Grid.Row="1">
+                <RichTextBlock Name="srchRtb">
+                    <Paragraph>
+                        阿 (bảo 8) ⻖(phụ 2)
+                        <LineBreak></LineBreak>
+                        保 (an 9) ホ (moc 5)
+                        <LineBreak></LineBreak>
+
+                    </Paragraph>
+                    <Paragraph>
+                        para1
+                        <Run>text run</Run>
+                        list item
+                        <LineBreak></LineBreak>
+                        list item 2
+                        <Span>span1</Span>
+                        <Span>span with linebrk
+                                            line1
+                            <LineBreak></LineBreak>
+                            line2
+                        </Span>
+                        <Span>
+                            <Span>span in span
+                                <LineBreak></LineBreak>
+                                linebr
+                            </Span>
+                        </Span>
+                    </Paragraph>
+                    <Paragraph>para2
+                    </Paragraph>
+                </RichTextBlock>
+            </ScrollViewer>
+
+            <Button Name="nextBtn"
+                    Grid.Row="2"
+                    Width="40"
+                    HorizontalAlignment="Right">
+                <Image Source="Assets\next.png"></Image>
+            </Button>
+            <TextBlock Name="historyTxt"
+                       Grid.Row="2"                       
+                       TextAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="40,0,40,0">history</TextBlock>
+            <Button Name="prevBtn"
+                    Grid.Row="2"
+                    Width="40"
+                    HorizontalAlignment="Left">
+                    <Image Source="Assets\prev.png"></Image>
+            </Button>
+            
+        </Grid>
+
+        <Button Name="mainBtn"
+                Grid.Row="2"
+                Content="Back"
+                Margin="1,1,1,1"
+                HorizontalAlignment="Right"/>
+    </Grid>
+</Page>

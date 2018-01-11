@@ -55,7 +55,18 @@ namespace test_universalApp
             }
         }
 
-        public static TypedEventHandler<Hyperlink, HyperlinkClickEventArgs> OnHyberlinkClick { get; set; }
+        public static void regOnHyberlinkClick(string zKey, TypedEventHandler<Hyperlink, HyperlinkClickEventArgs> obj)
+        {
+            if (dictOnHyberlinkClick.ContainsKey(zKey))
+            {
+                OnHyberlinkClick -= dictOnHyberlinkClick[zKey];
+                dictOnHyberlinkClick.Remove(zKey);
+            }
+            OnHyberlinkClick += obj;
+            dictOnHyberlinkClick.Add(zKey, obj);
+        }
+        private static Dictionary<string, TypedEventHandler<Hyperlink, HyperlinkClickEventArgs>> dictOnHyberlinkClick = new Dictionary<string, TypedEventHandler<Hyperlink, HyperlinkClickEventArgs>>();
+        private static TypedEventHandler<Hyperlink, HyperlinkClickEventArgs> OnHyberlinkClick { get; set; }
 
         public string zType;
 

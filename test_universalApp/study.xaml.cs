@@ -1312,7 +1312,7 @@ namespace test_universalApp
             //search & dict
             searchBnt2.Tapped += srchBtn_Click;                //search or show search panel
             searchBnt2.DoubleTapped += SrchBtn_DoubleTapped;   //hide search panel
-            myNode.OnHyberlinkClick += Hb_Click;
+            myNode.regOnHyberlinkClick("studyModule", Hb_Click);
             //searchBnt2.Click += SearchBnt2_Click;
 
             srchTxt.KeyUp += SrchTxt_KeyUp;

@@ -51,6 +51,7 @@ namespace test_universalApp
             reloadBtn.Click += reloadBtn_Click;
             addBtn.Click += btnAdd_Click;
             nextBtn.Click += btnNext_Click;
+            prevBtn.Click += PrevBtn_Click;
             clean.Click += btnClean_Click;
 
             //background work
@@ -58,6 +59,7 @@ namespace test_universalApp
             m_bgwork.BgProcess += bg_process;
             m_bgwork.FgProcess += fg_process;
         }
+
 
         enum bgTaskType
         {
@@ -327,6 +329,18 @@ namespace test_universalApp
             else
             {
                 this.Frame.Navigate(typeof(chapters));
+            }
+        }
+
+        private void PrevBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (myDict.loadProgress < 100)
+            {
+                showErrMsg();
+            }
+            else
+            {
+                this.Frame.Navigate(typeof(dict));
             }
         }
 

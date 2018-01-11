@@ -113,5 +113,11 @@
             x:Name="nextBtn"
             Content="Next"
             HorizontalAlignment="Right"/>
+        <Button
+            Grid.Row="4"
+            Margin="1,1,1,1"
+            x:Name="prevBtn"
+            Content="Dict"
+            HorizontalAlignment="Left"/>
     </Grid>
 </Page>

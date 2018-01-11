@@ -19,7 +19,7 @@
     <PackageCertificateKeyFile>test_universalApp_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
-    <AppxBundlePlatforms>x86</AppxBundlePlatforms>
+    <AppxBundlePlatforms>arm</AppxBundlePlatforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -116,6 +116,7 @@
     <Content Include="Assets\conjugation.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\paste.png" />
     <Content Include="Assets\search.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -129,6 +130,9 @@
       <DependentUpon>chapters.xaml</DependentUpon>
     </Compile>
     <Compile Include="content.cs" />
+    <Compile Include="dict.xaml.cs">
+      <DependentUpon>dict.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -189,6 +193,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="chapters.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="dict.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

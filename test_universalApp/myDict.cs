@@ -1174,9 +1174,9 @@ namespace test_universalApp
         {
             loadRec[] arr = new loadRec[] {
                 new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
-                new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
+                //new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
                 new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
-                new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
+                //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
                 new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
                 //character_jdict.csv
                 new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv", isJsFile = 0 },
@@ -1184,8 +1184,8 @@ namespace test_universalApp
                 //load kanji component
                 //  req: kangxi.csv, bothu214.csv loaded
                 new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt", isJsFile = 0 },
-                new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
-                new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
+                //new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
+                //new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
             };
             //cacl total size
             m_totalSize = 0;
