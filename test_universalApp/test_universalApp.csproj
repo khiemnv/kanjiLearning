@@ -130,6 +130,7 @@
       <DependentUpon>chapters.xaml</DependentUpon>
     </Compile>
     <Compile Include="content.cs" />
+    <Compile Include="csvParser.cs" />
     <Compile Include="dict.xaml.cs">
       <DependentUpon>dict.xaml</DependentUpon>
     </Compile>

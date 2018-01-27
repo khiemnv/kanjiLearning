@@ -254,6 +254,7 @@ namespace test_universalApp
 #if dict_dist
             if (!wd.definitions[0].bFormated)
 #endif
+            if (true)
             {
 #if sepate_kanji
                 foreach (var kj in wd.term) s.Inlines.Add(crtBlck(kj));
@@ -404,18 +405,63 @@ namespace test_universalApp
             search(callback, txt);
         }
 
+        List<myKanji> mixSearch(string txt)
+        {
+            List<myKanji> ret = new List<myKanji>();
+            char[] buff = new char[txt.Length];
+            string zKanji = "";
+            int i;
+            for (i = 0; i < txt.Length; i++)
+            {
+                char ch = txt[i];
+                if (mDict.m_kanjis.ContainsKey(ch))
+                {
+                    zKanji += ch;
+                    ch = ' ';
+                }
+                buff[i] = ch;
+            }
+            ret.AddRange(mDict.Search(zKanji));
+            ret.AddRange(mDict.SearchHn(new string(buff)));
+            return ret;
+        }
+
         //int m_limitContentLen { get { return m_option.fullDef ? -1 : 3; } }
         //int m_limitContentCnt { get { return m_option.fullDef ? -1 : 7; } }
         int m_limitContentLen = -1;
         int m_limitContentCnt = -1;
+        myWord removeDuplicate(List<myKanji> kanjis, string w, List<myWord> words)
+        {
+            var tHash = new HashSet<string>();
+            myWord found = null;
+            words.RemoveAll(word =>
+            {
+                if (tHash.Contains(word.term))
+                {
+                    return true;
+                }
+                tHash.Add(word.term);
+                if (kanjis.Exists(kanji => (word.term.Length == 1) && (kanji.val == word.term[0])))
+                {
+                    return true;
+                }
+                if (w == word.hn || w == word.term)
+                {
+                    found = word;
+                    return true;
+                }
+                return false;
+            });
+            return found;
+        }
         void search(srchCallback callback, string txt)
         {
             //= m_preTxt;
-            var ret = mDict.Search(txt);
+            var kanjis = mixSearch(txt);
             List<myWord> words = new List<myWord>();
             List<myWord> verbs = new List<myWord>();
             //Span s = new Span();
-            foreach (var kanji in ret)
+            foreach (var kanji in kanjis)
             {
                 //display kanji with link
                 callback(myFgTask.qryType.hyperlink, kanji.val);
@@ -462,16 +508,15 @@ namespace test_universalApp
                 callback(myFgTask.qryType.linebreak, null);
             }
             callback(myFgTask.qryType.linebreak, null);
-            //found word
-            myWord found = null;
-            if (ret.Count > 1) { found = words.Find((w) => { return w.term == txt; }); }
+
+            //remove duplicated
+            var found = removeDuplicate(kanjis, txt, words);
+
             //var sFound = new Span();
             if (found != null)
             {
                 callback(myFgTask.qryType.word, found);
                 callback(myFgTask.qryType.linebreak, null);
-                //remove from list
-                words.Remove(found);
             }
             //related word
             //if (found != null) bg_qryDisplay(sFound);
