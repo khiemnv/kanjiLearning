@@ -559,6 +559,7 @@ namespace test_universalApp
                     IRecord rd;
                     //rd = hvbt.Search(kanji.radical.iRadical);
                     //rd.format(kanji);
+                    Debug.Assert(kanji.radical.iRadical > 0);
                     rd = kxDict[kanji.radical.iRadical];
                     rd.format(kanji);
                     kjCompo.Update(kanji);
@@ -714,7 +715,7 @@ namespace test_universalApp
             string[] arr = parseLine(line);
             add(arr);
         }
-        public void add(string[] arr)
+        public virtual void add(string[] arr)
         {
             IRecord rec = crtRec(arr);
             if (rec == null) return;
@@ -732,8 +733,9 @@ namespace test_universalApp
                         //Debug.Write(c);
                         continue;
                     }
+                    //Debug.Assert(m_kanjis.ContainsKey(c));
                     if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
-                    else m_kanjis.Add(c, new List<IRecord> { rec });
+                    //else m_kanjis.Add(c, new List<IRecord> { rec });
                 }
             }
             else
@@ -1163,6 +1165,10 @@ namespace test_universalApp
                 for (int col = 0; col < nCol; col++)
                 {
                     char kanjiCh = kanji[col];
+                    //if (kanjiCh == '臯')
+                    //{
+                    //    Debug.Assert(false);
+                    //}
                     if (!m_kanjis.ContainsKey(kanjiCh)) continue;
 
                     Debug.Assert(col < kanji.Length);
@@ -1300,6 +1306,34 @@ namespace test_universalApp
         protected override string[] parseLine(string line)
         {
             return parseLine(line, true);
+        }
+        public override void add(string[] arr)
+        {
+            IRecord rec = crtRec(arr);
+            if (rec == null) return;
+
+            string zKey = rec.getKey();
+            if (!m_data.ContainsKey(zKey))
+            {
+                //add to local dict
+                m_data.Add(zKey, rec);
+                //add to share kanji data
+                foreach (var c in zKey)
+                {
+                    if (!isKanji(c))
+                    {
+                        //Debug.Write(c);
+                        continue;
+                    }
+                    Debug.Assert(!m_kanjis.ContainsKey(c));
+                    if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
+                    else m_kanjis.Add(c, new List<IRecord> { rec });
+                }
+            }
+            else
+            {
+                ResolveConfilct(rec);
+            }
         }
     }
 
