@@ -450,7 +450,7 @@ namespace test_universalApp
         {
             loadRec[] arr = new loadRec[] {
                 new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
-                //new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
+                new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
                 new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
                 //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
                 new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
@@ -735,7 +735,7 @@ namespace test_universalApp
                     }
                     //Debug.Assert(m_kanjis.ContainsKey(c));
                     if (m_kanjis.ContainsKey(c)) { m_kanjis[c].Add(rec); }
-                    //else m_kanjis.Add(c, new List<IRecord> { rec });
+                    else m_kanjis.Add(c, new List<IRecord> { rec });
                 }
             }
             else

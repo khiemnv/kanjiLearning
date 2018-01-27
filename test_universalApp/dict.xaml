@@ -82,30 +82,43 @@
                 </RichTextBlock>
             </ScrollViewer>
 
-            <Button Name="nextBtn"
-                    Grid.Row="2"
-                    Width="40"
-                    HorizontalAlignment="Right">
-                <Image Source="Assets\next.png"></Image>
-            </Button>
-            <TextBlock Name="historyTxt"
-                       Grid.Row="2"                       
-                       TextAlignment="Center"
-                       VerticalAlignment="Center"
-                       Margin="40,0,40,0">history</TextBlock>
-            <Button Name="prevBtn"
-                    Grid.Row="2"
-                    Width="40"
-                    HorizontalAlignment="Left">
-                    <Image Source="Assets\prev.png"></Image>
-            </Button>
-            
+            <Grid Name="bntStack"
+                Grid.Row="2"
+                Grid.RowSpan="1"
+                  BorderBrush="White"
+                  BorderThickness="0,1,0,0"
+                  Background="Silver">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="35"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="35"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Image Name="prevBtn"
+                    Grid.Column="0"
+                    Source="Assets/prev.png">
+                </Image>
+
+                <TextBlock Grid.Column="1"
+                Name="historyTxt"
+                TextAlignment="Center"
+                VerticalAlignment="Center"/>
+                <Image x:Name="nextBtn"
+                Grid.Column="2"
+                Source="Assets/next.png">
+                </Image>
+            </Grid>
+
         </Grid>
 
         <Button Name="mainBtn"
                 Grid.Row="2"
-                Content="Back"
+                Content="Main"
                 Margin="1,1,1,1"
                 HorizontalAlignment="Right"/>
+        <Button Name="studyBtn"
+                Grid.Row="2"
+                Content="Back"
+                Margin="1,1,1,1"
+                HorizontalAlignment="Left"/>
     </Grid>
 </Page>

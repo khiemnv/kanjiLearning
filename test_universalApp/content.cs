@@ -738,7 +738,106 @@ namespace test_universalApp
         }
     }
 
-#region config
+
+    public class rHistory
+    {
+        const int m_MAXCOUNT = 16;
+        int nCount;
+        int ifirst;
+        int iCur;
+        string[] data;
+        public rHistory()
+        {
+            nCount = 0;
+            ifirst = 0;
+            iCur = -1; //zero base
+            data = new string[m_MAXCOUNT];
+        }
+        public string print()
+        {
+            var txt = "";
+            for (int i = 0; i < nCount; i++)
+            {
+                var j = (i + ifirst) % m_MAXCOUNT;
+                if (i == iCur)
+                    txt = txt + " [" + data[j] + "]";
+                else
+                    txt = txt + " " + data[j];
+            }
+            return txt;
+        }
+        //...[newData]
+        //   cursor
+        public void add(string txt)
+        {
+            //[first]...[curosr]...[last]
+            //<-----n------------------->
+            Debug.Assert(iCur < nCount);
+            //[first]...[curosr][+1]
+            //<-----n-------------->
+            if (iCur < (m_MAXCOUNT - 1))
+            {
+                //|0|1| ......|i]|i+1|
+                //^first ...      ^curosr
+                //<-----n = -------->
+                iCur++;
+                nCount = iCur + 1;
+            }
+            else
+            {
+                //data|0|1
+                //>>    |0|1| ......|max-1]
+                //       ^first ...   ^curosr
+                //      <-----n = max----->
+                ifirst = (ifirst + 1) % m_MAXCOUNT;
+            }
+
+            var i = (ifirst + iCur) % m_MAXCOUNT;
+            data[i] = txt;
+        }
+        //[cursor][next]
+        public string next()
+        {
+            //|0|...|i+1|      |n-1|
+            //       ^cur       ^last
+            var ret = "";
+            if (iCur < (nCount - 1))
+            {
+                iCur++;
+                var i = (iCur + ifirst) % m_MAXCOUNT;
+                ret = data[i];
+            }
+            return ret;
+        }
+        //[prev][cursor]
+        public string prev()
+        {
+            //|0|.....[i-1]|i|
+            // ^first  ^cur
+            var ret = "";
+            if (iCur > 0)
+            {
+                iCur--;
+                var i = (iCur + ifirst) % m_MAXCOUNT;
+                ret = data[i];
+            }
+            return ret;
+        }
+        public string cur()
+        {
+            //|0|.....[i-1]|i|
+            // ^first  ^cur
+            var ret = "";
+            if (iCur >= 0)
+            {
+                var i = (iCur + ifirst) % m_MAXCOUNT;
+                ret = data[i];
+            }
+            return ret;
+        }
+    }
+
+    #region config
     [DataContract]
     public class myConfig
     {

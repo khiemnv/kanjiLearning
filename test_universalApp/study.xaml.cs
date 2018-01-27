@@ -88,6 +88,24 @@ namespace test_universalApp
             Unloaded += Study_Unloaded;
         }
 
+        public class studyNaviParam
+        {
+            public int prePos;
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            studyNaviParam parameter = e.Parameter as studyNaviParam;
+            if (parameter != null)
+            {
+                m_iCursor = parameter.prePos;
+            }
+            else
+            {
+                m_iCursor = 0;
+            }
+        }
+
         private void Study_Unloaded(object sender, RoutedEventArgs e)
         {
             foreach(var s in synthDic.Values)
@@ -1187,11 +1205,6 @@ namespace test_universalApp
             split.IsPaneOpen = !split.IsPaneOpen;
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-        }
-
 #region loadData
         private void loadData()
         {
@@ -1239,7 +1252,7 @@ namespace test_universalApp
             initEvents();
 
             //update term
-            m_iCursor = 0;
+            //m_iCursor = 0;
             updateTerm();
             updateNum();
 
@@ -1257,9 +1270,9 @@ namespace test_universalApp
             termGrid.Tapped += term_Tapped;
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += term_swiped;
-            swipeTxt.Tapped += term_Tapped;
-            swipeTxt.ManipulationMode = ManipulationModes.TranslateX;
-            swipeTxt.ManipulationCompleted += term_swiped;
+            //swipeTxt.Tapped += term_Tapped;
+            //swipeTxt.ManipulationMode = ManipulationModes.TranslateX;
+            //swipeTxt.ManipulationCompleted += term_swiped;
             numberTxt.Tapped += term_Tapped;
             numberTxt.ManipulationMode = ManipulationModes.TranslateX;
             numberTxt.ManipulationCompleted += term_swiped;
@@ -1319,6 +1332,15 @@ namespace test_universalApp
 
             //set search event
             turnSearchOnOff(m_option.srchEnable);
+
+            //next to full dict
+            dictBtn.Click += DictBtn_Click;
+        }
+
+        private void DictBtn_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(dict), new dict.dictNaviParam {
+                searchTxt = termTxt.Text, prePos = m_iCursor });
         }
 
         private void SearchBnt2_Click(object sender, RoutedEventArgs e)

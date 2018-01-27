@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
@@ -33,11 +34,52 @@ namespace test_universalApp
 
             mainBtn.Click += MainBtn_Click;
             srchBtn.Click += SrchBtn_Click;
-            nextBtn.Click += NextBtn_Click;
-            prevBtn.Click += PrevBtn_Click;
+            nextBtn.Tapped += NextBtn_Click;
+            prevBtn.Tapped += PrevBtn_Click;
             pasteBtn.Click += PasteBtn_Click;
+            studyBtn.Click += StudyBtn_Click;
 
             myNode.regOnHyberlinkClick("dictModule", Hb_Click);
+
+            Loaded += Dict_Loaded;
+        }
+
+        private void Dict_Loaded(object sender, RoutedEventArgs e)
+        {
+            string txt = mHistory.cur();
+            if (txt != "")
+            {
+                historyTxt.Text = mHistory.print();
+                search(txt, true);
+            }
+        }
+
+        public class dictNaviParam
+        {
+            public string searchTxt;
+            public int prePos;
+        }
+
+        private study.studyNaviParam studyNP;
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            dictNaviParam parameter = (dictNaviParam)e.Parameter;
+            if (parameter != null)
+            {
+                studyNP = new study.studyNaviParam { prePos = parameter.prePos };
+                mainBtn.Visibility = Visibility.Collapsed;
+
+                search(parameter.searchTxt);
+            }
+            else
+            {
+                studyBtn.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void StudyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(study), studyNP);
         }
 
         private void PasteBtn_Click(object sender, RoutedEventArgs e)
@@ -82,74 +124,7 @@ namespace test_universalApp
 
         myDict mDict = myDict.Load();
 
-        class rHistory
-        {
-            const int maxcount = 16;
-            int nCount;
-            int ifirst;
-            int cursor;
-            string[] data;
-            public rHistory()
-            {
-                nCount = 0;
-                ifirst = 0;
-                cursor = 0; //zero base
-                data = new string[maxcount];
-            }
-            public string print()
-            {
-                var txt = "";
-                for (int i = 0; i < nCount; i++)
-                {
-                    var j = (i + ifirst) % maxcount;
-                    if (i == cursor)
-                        txt = txt + " [" + data[j] + "]";
-                    else
-                        txt = txt + " " + data[j];
-                }
-                return txt;
-            }
-            public void add(string txt)
-            {
-                nCount = cursor + 1;
-                if (nCount == maxcount)
-                {
-                    ifirst = (ifirst + 1) % maxcount;
-                }
-                else
-                    nCount++;
-
-                cursor = nCount - 1;
-                var i = (ifirst + cursor) % maxcount;
-                data[i] = txt;
-            }
-            //[cursor][next]
-            public string next()
-            {
-                var ret = "";
-                if (cursor < (nCount - 1))
-                {
-                    cursor++;
-                    var i = (cursor + ifirst) % maxcount;
-                    ret = data[i];
-                }
-                return ret;
-            }
-            //[prev][cursor]
-            public string prev()
-            {
-                var ret = "";
-                if (cursor > 0)
-                {
-                    cursor--;
-                    var i = (cursor + ifirst) % maxcount;
-                    ret = data[i];
-                }
-                return ret;
-            }
-        }
-
-        rHistory mHistory = new rHistory();
+        static rHistory mHistory = new rHistory();
 
         string m_preTxt;
         Span curLine = new Span();
@@ -404,10 +379,12 @@ namespace test_universalApp
             srchCallback callback = bg_qryFgTask;
             search(callback, txt);
         }
-
+        
         List<myKanji> mixSearch(string txt)
         {
             List<myKanji> ret = new List<myKanji>();
+            Regex reg = new Regex(@"[^\w\s]+");
+            txt = reg.Replace(txt, " ");
             char[] buff = new char[txt.Length];
             string zKanji = "";
             int i;
@@ -419,9 +396,14 @@ namespace test_universalApp
                     zKanji += ch;
                     ch = ' ';
                 }
-                buff[i] = ch;
+                else if ((0x3040 < ch && ch < 0x3097)
+                   || (0x30A0 < ch && ch < 0x31FF))
+                {
+                    ch = ' ';
+                }
+                buff[i] = char.ToLower(ch);
             }
-            ret.AddRange(mDict.Search(zKanji));
+            if (zKanji.Length > 0) ret.AddRange(mDict.Search(zKanji));
             ret.AddRange(mDict.SearchHn(new string(buff)));
             return ret;
         }
@@ -525,7 +507,6 @@ namespace test_universalApp
             int count = 0;
             foreach (var rWd in words)
             {
-                if (txt.Contains(rWd.term)) continue;
 #if !show_brift
                 //m_limitContentCnt
                 //  (-1) no limit
@@ -545,8 +526,8 @@ namespace test_universalApp
             }
 
             //verb
-            //if (m_option.showVerb)
-            if (false)
+#if show_verb
+            if (m_option.showVerb)
             {
                 foreach (var v in verbs)
                 {
@@ -560,7 +541,7 @@ namespace test_universalApp
                     bg_qryDisplay(crtWdBlck(rWd, true));
                 }
                 else
-#endif
+#endif  //show_brift
                     {
                         callback(myFgTask.qryType.word, (v));
                     }
@@ -568,7 +549,7 @@ namespace test_universalApp
                     callback(myFgTask.qryType.linebreak, null);
                 }
             }
-
+#endif //show_verb
             callback(myFgTask.qryType.scroll, null);
         }
     }

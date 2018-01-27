@@ -441,11 +441,19 @@
                 Margin="1"
                 Grid.Row="3"
                 Content="Back"
+                Width="50"
                 HorizontalAlignment="Left"/>
-        <TextBlock
+        <!--<TextBlock
             Name="swipeTxt"
             Grid.Row="3"
-            Margin="50,0,0,0"
-            ></TextBlock>
+            Margin="50,0,50,0"
+            HorizontalAlignment="Center"
+            ></TextBlock>-->
+        <Button Name="dictBtn"
+                Margin="1"
+                Grid.Row="3"
+                Content="Dict"
+                Width="50"
+                HorizontalAlignment="Right"/>
     </Grid>
 </Page>
