@@ -30,7 +30,7 @@ namespace test_universalApp
     public sealed partial class chapters : Page
     {
         static contentProvider s_cp = contentProvider.getInstance();
-        myConfig m_config;
+        myChapterPgCfg m_config;
         ObservableCollection<chapterItem> m_data;
 
         class chapterItem
@@ -190,7 +190,7 @@ namespace test_universalApp
 
         private void loadData()
         {
-            m_config = myConfig.getInstance();
+            m_config = myChapterPgCfg.getInstance();
 
             //load chapter data
             chapterList.Items.Clear();

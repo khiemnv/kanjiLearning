@@ -126,6 +126,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="lessonPg.xaml.cs">
+      <DependentUpon>lessonPg.xaml</DependentUpon>
+    </Compile>
     <Compile Include="chapters.xaml.cs">
       <DependentUpon>chapters.xaml</DependentUpon>
     </Compile>
@@ -139,9 +142,15 @@
     </Compile>
     <Compile Include="myDb.cs" />
     <Compile Include="myDict.cs" />
+    <Compile Include="myDictCtrl.xaml.cs">
+      <DependentUpon>myDictCtrl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="myNode.cs" />
     <Compile Include="myWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="readPg.xaml.cs">
+      <DependentUpon>readPg.xaml</DependentUpon>
+    </Compile>
     <Compile Include="study.xaml.cs">
       <DependentUpon>study.xaml</DependentUpon>
     </Compile>
@@ -193,6 +202,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="lessonPg.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="chapters.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -202,6 +215,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="myDictCtrl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="readPg.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

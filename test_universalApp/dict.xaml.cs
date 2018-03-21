@@ -186,11 +186,57 @@ namespace test_universalApp
             }
             else
             {
+#if false
                 var s = new Span();
                 s.Inlines.Add(new Run() { Text = def.text });
                 s.Inlines.Add(new LineBreak());
                 return s;
+#else
+                return addLink(def.text);
+#endif
             }
+        }
+        Span addLink(string txt)
+        {
+            Span spn = null;
+            //var sentences = txt.Split(new char[] { });
+            var sentences = new string[] { txt };
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                var line = sentences[i];
+                spn = new Span();
+                var buff = new char[line.Length];
+                int len = 0;
+                foreach (char ch in line)
+                {
+                    if (mDict.IsKanji(ch))
+                    {
+                        Hyperlink hb = crtHb(ch.ToString());
+                        if (len > 0)
+                        {
+                            var tmp = new string(buff, 0, len);
+                            spn.Inlines.Add(new Run
+                            {
+                                Text = tmp
+                            });
+                            len = 0;
+                        }
+                        spn.Inlines.Add(hb);
+                    }
+                    else
+                    {
+                        buff[len] = ch;
+                        len++;
+                    }
+                }
+                if (len > 0)
+                {
+                    var tmp = new string(buff, 0, len);
+                    spn.Inlines.Add(new Run { Text = tmp });
+                    len = 0;
+                }
+            }
+            return spn;
         }
         Span crtBlck(myRadical rd)
         {
@@ -239,7 +285,10 @@ namespace test_universalApp
                 s.Inlines.Add(new Run { Text = string.Format(" {0}", wd.hn) });
                 s.Inlines.Add(new LineBreak());
             }
-            s.Inlines.Add(crtDefBlck(wd.definitions[0]));
+            if (wd.definitions.Count > 0)
+            {
+                s.Inlines.Add(crtDefBlck(wd.definitions[0]));
+            }
             return s;
         }
         Block crtBlck(myKanji kanji)

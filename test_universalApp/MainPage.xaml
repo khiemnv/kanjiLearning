@@ -90,6 +90,12 @@
                 OpenPaneLength="250">
             <SplitView.Pane>
                 <Grid Name="optionsStack" Background="DarkGray">
+                    <StackPanel
+                        Margin="5,5,0,0"
+                        VerticalAlignment="Bottom">
+                        <RadioButton Name="optNews">Reading news</RadioButton>
+                        <RadioButton Name="optWords">Learning words</RadioButton>
+                    </StackPanel>
                 </Grid>
             </SplitView.Pane>
             <SplitView.Content>

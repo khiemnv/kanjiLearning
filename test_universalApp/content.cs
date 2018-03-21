@@ -23,10 +23,15 @@ namespace test_universalApp
     {
         public readonly content m_content;
         public myDb m_db;
-        public myConfig m_config;
+        public myMainPgCfg m_mainPgCfg;
+        public myChapterPgCfg m_chapterPgCfg;
+        public myLessonPgCfg m_lessonPgCfg;
 
         [DataMember]
         public Dictionary<string, chapter> m_chapters { get; private set; }
+
+        [DataMember]
+        public Dictionary<string, lessons> m_lessons { get; private set; }
 
         public void loadDb()
         {
@@ -69,8 +74,11 @@ namespace test_universalApp
         {
             m_content = new content();
             m_chapters = new Dictionary<string, chapter>();
+            m_lessons = new Dictionary<string, lessons>();
             m_db = new myDb();
-            m_config = myConfig.getInstance();
+            m_mainPgCfg = myMainPgCfg.getInstance();
+            m_chapterPgCfg = myChapterPgCfg.getInstance();
+            m_lessonPgCfg = myLessonPgCfg.getInstance();
 
             m_content.SaveCompleted += M_content_SaveCompleted;
             m_content.LoadCompleted += M_content_LoadCompleted;
@@ -152,7 +160,23 @@ namespace test_universalApp
             }
             return -1;
         }
-
+        public async Task<int> loadSingleLesson(StorageFile file)
+        {
+            if (file != null)
+            {
+                {
+                    Debug.WriteLine(file.Name);
+                    string txt = await FileIO.ReadTextAsync(file);
+                    var sentences = parseLesson(txt);
+                    if (sentences.Count > 0)
+                    {
+                        updateLessonsDict(file, sentences);
+                    }
+                }
+                return 0;
+            }
+            return -1;
+        }
         //for test
         public List<word> parse(string text)
         {
@@ -165,7 +189,16 @@ namespace test_universalApp
             }
             return words;
         }
-
+        public List<string> parseLesson(string text)
+        {
+            var senctences = new List<string>();
+            var lines = text.Split(new char[] { '\r', '\n', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                senctences.Add(line);
+            }
+            return senctences;
+        }
         public static contentProvider m_instance;
         public static contentProvider getInstance()
         {
@@ -404,12 +437,12 @@ namespace test_universalApp
 
         private void M_content_LoadCompleted(object sender, EventArgs e)
         {
-            updateDict();
+            updateChapterDict();
             OnLoadChaperCompleted(new EventArgs());
         }
         private void M_content_SaveCompleted(object sender, EventArgs e)
         {
-            updateDict();
+            updateChapterDict();
         }
         private void updateDict(StorageFile file, List<word> words)
         {
@@ -427,7 +460,23 @@ namespace test_universalApp
                 m_chapters.Add(key, new chapter() { words = words, name = name, path = path, file = file });
             }
         }
-        private void updateDict()
+        private void updateLessonsDict(StorageFile file, List<string> sentences)
+        {
+            string path = file.Path;
+            string name = Path.GetFileNameWithoutExtension(path);
+            string key = path;
+            if (m_lessons.ContainsKey(key))
+            {
+                //var oldWords = m_chapters[key].words;
+                m_lessons[key].sentences = sentences;
+                //oldWords.Clear();
+            }
+            else
+            {
+                m_lessons.Add(key, new lessons() { sentences = sentences, name = name, path = path, file = file });
+            }
+        }
+        private void updateChapterDict()
         {
             //update chapters dict
             var file = m_content.m_file;
@@ -461,7 +510,7 @@ namespace test_universalApp
         public void saveMarkeds()
         {
             //save marked
-            foreach (var key in m_config.selectedChapters)
+            foreach (var key in m_chapterPgCfg.selectedChapters)
             {
                 var ch = m_chapters[key];
                 m_db.saveMarked(ch);
@@ -631,6 +680,31 @@ namespace test_universalApp
         }
     }
 
+    public class lessons
+    {
+        public bool selected;
+        //        public string path;
+        public string name;
+        //public List<int> markedIndexs;
+
+        public string path;
+        public List<string> sentences;
+
+        public int readed;
+
+        public StorageFile file
+        {
+            get
+            {
+                throw new Exception();
+            }
+            set
+            {
+                Debug.WriteLine(value.Path);
+            }
+        }
+    }
+
     public class content
     {
         public event EventHandler LoadCompleted;
@@ -738,7 +812,6 @@ namespace test_universalApp
         }
     }
 
-
     public class rHistory
     {
         const int m_MAXCOUNT = 16;
@@ -837,9 +910,131 @@ namespace test_universalApp
         }
     }
 
-    #region config
     [DataContract]
     public class myConfig
+    {
+        public myConfig() { }
+        protected async Task saveAsyn<T>()
+        {
+            object configData = this;
+            string configFile = m_configFile;
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                configFile, CreationCollisionOption.OpenIfExists);
+            Stream writeStream = await dataFile.OpenStreamForWriteAsync();
+            writeStream.SetLength(0);
+            DataContractSerializer serializer = new DataContractSerializer(typeof(T));
+            serializer.WriteObject(writeStream, configData);
+            await writeStream.FlushAsync();
+            writeStream.Dispose();
+        }
+
+        protected async Task<object> load<T>()
+        {
+            string cfgFile = m_configFile;
+            object ret = null;
+            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                cfgFile, CreationCollisionOption.OpenIfExists);
+            BasicProperties bs = await dataFile.GetBasicPropertiesAsync();
+            if (bs.Size > 0)
+            {
+                Stream stream = await dataFile.OpenStreamForReadAsync();
+                stream.Seek(0, SeekOrigin.Begin);
+                DataContractSerializer serializer = new DataContractSerializer(typeof(T));
+                var obj = serializer.ReadObject(stream);
+                if (obj != null) { ret = obj; }
+                stream.Dispose();
+            }
+            //await Task.Delay(1000);
+            Debug.WriteLine("{0} load complete {1}", cfgFile, Environment.TickCount);
+            return ret;
+        }
+        protected string m_configFile;
+        protected object m_configData;
+    }
+
+    #region main_pg_config
+    [DataContract]
+    public class myMainPgCfg:myConfig
+    {
+        [DataMember]
+        public EStudyMode studyMode;
+
+        public enum EStudyMode
+        {
+            learningWords,
+            readingNews,
+        }
+
+        public myMainPgCfg() {
+            m_configFile = "mainPg.cfg";
+        }
+        static myMainPgCfg m_config;
+        public static myMainPgCfg getInstance()
+        {
+            if (m_config == null)
+            {
+                var cfgObj = new myMainPgCfg();
+                var t = Task.Run(async () => m_config = (myMainPgCfg) await cfgObj.load<myMainPgCfg>());
+                t.Wait();
+                if (m_config == null)
+                {
+                    m_config = cfgObj;
+                }
+                m_config.m_configData = m_config;
+            }
+            return m_config;
+        }
+        public void save()
+        {
+            var t = Task.Run(() => saveAsyn<myMainPgCfg>());
+            t.Wait();
+        }
+    }
+    #endregion
+    #region lesson_pg_config
+    [DataContract]
+    public class myLessonPgCfg:myConfig
+    {
+        [DataMember]
+        public string mruToken;
+        [DataMember]
+        public string lastPath;
+        [DataMember]
+        public List<string> selectedLessons;
+
+        public myLessonPgCfg()
+        {
+            mruToken = "";
+            lastPath = "";
+            selectedLessons = new List<string>();
+            m_configFile = "lessonPg.cfg";
+        }
+        static myLessonPgCfg m_config;
+
+        public static myLessonPgCfg getInstance()
+        {
+            if (m_config == null)
+            {
+                var newObj = new myLessonPgCfg();
+                var t = Task.Run(async () => m_config = (myLessonPgCfg) await newObj.load<myLessonPgCfg>());
+                t.Wait();
+                if (m_config == null)
+                {
+                    m_config = new myLessonPgCfg();
+                }
+            }
+            return m_config;
+        }
+        public void save()
+        {
+            var t = Task.Run(() => saveAsyn<myLessonPgCfg>());
+            t.Wait();
+        }
+    }
+    #endregion
+    #region chapter_pg_config
+    [DataContract]
+    public class myChapterPgCfg:myConfig
     {
         [DataMember]
         public string mruToken;
@@ -848,62 +1043,35 @@ namespace test_universalApp
         [DataMember]
         public List<string> selectedChapters;
 
-        public myConfig() {
+        public myChapterPgCfg()
+        {
             mruToken = "";
             lastPath = "";
             selectedChapters = new List<string>();
+            m_configFile = "chapterPg.cfg";
         }
-        static myConfig m_config;
-        static string m_configFile = "config.cfg";
+        static myChapterPgCfg m_config;
 
-        public static myConfig getInstance()
+        public static myChapterPgCfg getInstance()
         {
             if (m_config == null)
             {
-                var t = Task.Run(async () => m_config = await load());
+                var newCfg = new myChapterPgCfg();
+                var t = Task.Run(async () => m_config = (myChapterPgCfg) await newCfg.load<myChapterPgCfg>());
                 t.Wait();
                 if (m_config == null)
                 {
-                    m_config = new myConfig();
+                    m_config = newCfg;
                 }
             }
             return m_config;
         }
-        static async Task<myConfig> load()
-        {
-            myConfig ret = null;
-            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
-                m_configFile, CreationCollisionOption.OpenIfExists);
-            BasicProperties bs = await dataFile.GetBasicPropertiesAsync();
-            if (bs.Size > 0)
-            {
-                Stream stream = await dataFile.OpenStreamForReadAsync();
-                stream.Seek(0, SeekOrigin.Begin);
-                DataContractSerializer serializer = new DataContractSerializer(typeof(myConfig));
-                var obj = (myConfig)serializer.ReadObject(stream);
-                if (obj != null) { ret = obj; }
-                stream.Dispose();
-            }
-            //await Task.Delay(1000);
-            Debug.WriteLine("{0} load complete {1}", "myConfig", Environment.TickCount);
-            return ret;
-        }
         public void save()
         {
-            var t = Task.Run(() => saveAsyn());
+            var t = Task.Run(() => saveAsyn<myChapterPgCfg>());
             t.Wait();
-        }
-        public async Task saveAsyn()
-        {
-            StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
-                m_configFile, CreationCollisionOption.OpenIfExists);
-            Stream writeStream = await dataFile.OpenStreamForWriteAsync();
-            writeStream.SetLength(0);
-            DataContractSerializer serializer = new DataContractSerializer(typeof(myConfig));
-            serializer.WriteObject(writeStream, m_config);
-            await writeStream.FlushAsync();
-            writeStream.Dispose();
         }
     }
     #endregion
+
 }

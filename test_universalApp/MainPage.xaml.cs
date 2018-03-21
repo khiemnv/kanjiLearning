@@ -24,13 +24,20 @@ namespace test_universalApp
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        static contentProvider s_content = contentProvider.getInstance();
-        myConfig m_config { get { return s_content.m_config; } }
-        myWorker m_bgwork;
+        readonly contentProvider m_content;
+        readonly myMainPgCfg m_config;
+        readonly myChapterPgCfg m_chapterPgCfg;
+        readonly myLessonPgCfg m_lessonPgCfg;
+        readonly myWorker m_bgwork;
 
         public MainPage()
         {
             this.InitializeComponent();
+
+            m_content = contentProvider.getInstance();
+            m_config = m_content.m_mainPgCfg;
+            m_lessonPgCfg = m_content.m_lessonPgCfg;
+            m_chapterPgCfg = m_content.m_chapterPgCfg;
 
             //test();
             //testWriteData();
@@ -60,12 +67,25 @@ namespace test_universalApp
             m_bgwork.FgProcess += fg_process;
         }
 
+        private void OptWords_Checked(object sender, RoutedEventArgs e)
+        {
+            m_config.studyMode = myMainPgCfg.EStudyMode.learningWords;
+            m_config.save();
+        }
+
+        private void OptNews_Click(object sender, RoutedEventArgs e)
+        {
+            m_config.studyMode = myMainPgCfg.EStudyMode.readingNews;
+            m_config.save();
+        }
 
         enum bgTaskType
         {
             saveFolder,
             loadData,
-            loadDict
+            loadDict,
+            loadLessons,
+            saveLessonFolder
         }
         enum fgTaskType
         {
@@ -90,8 +110,16 @@ namespace test_universalApp
             if (folder != null)
             {
                 Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
-                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder});
-                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveLessonFolder, data = folder });
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = folder });
+                }
+                else
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder});
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                }
                 browserPath.Text = folder.Path;
             }
         }
@@ -127,12 +155,32 @@ namespace test_universalApp
                     {
                         StorageFolder folder = (StorageFolder)e.data;
                         //save last selected folder
-                        if (folder.Path != m_config.lastPath)
+                        if (folder.Path != m_chapterPgCfg.lastPath)
                         {
-                            m_config.lastPath = folder.Path;
+                            m_chapterPgCfg.lastPath = folder.Path;
                             //clear prev data
-                            m_config.selectedChapters.Clear();
-                            s_content.m_chapters.Clear();
+                            m_chapterPgCfg.selectedChapters.Clear();
+                            m_chapterPgCfg.save();
+
+                            m_content.m_chapters.Clear();
+                        }
+                        var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+                        mru.Clear();
+                        string mruToken = mru.Add(folder, folder.Path);
+                    }
+                    break;
+                case bgTaskType.saveLessonFolder:
+                    {
+                        StorageFolder folder = (StorageFolder)e.data;
+                        //save last selected folder
+                        if (folder.Path != m_lessonPgCfg.lastPath)
+                        {
+                            m_lessonPgCfg.lastPath = folder.Path;
+                            //clear prev data
+                            m_lessonPgCfg.selectedLessons.Clear();
+                            m_lessonPgCfg.save();
+
+                            m_content.m_lessons.Clear();
                         }
                         var mru = StorageApplicationPermissions.MostRecentlyUsedList;
                         mru.Clear();
@@ -154,11 +202,36 @@ namespace test_universalApp
                         for (int i = 0; i < n; i++)
                         {
                             t = Task.Run(async () => { 
-                                ret = await s_content.loadSingleChapter(fileList[i]);
+                                ret = await m_content.loadSingleChapter(fileList[i]);
                             });
                             t.Wait();
 
                             m_bgwork.qryFgTask(new FgTask {type = (int)fgTaskType.updateProgress, data = (double)i*100/n });
+                        }
+
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.hideProgress });
+                    }
+                    break;
+                case bgTaskType.loadLessons:
+                    {
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.prepareProgress });
+
+                        StorageFolder folder = (StorageFolder)e.data;
+                        IReadOnlyList<StorageFile> fileList = null;
+                        var t = Task.Run(async () => {
+                            fileList = await folder.GetFilesAsync();
+                        });
+                        t.Wait();
+                        int n = fileList.Count;
+                        int ret = 0;
+                        for (int i = 0; i < n; i++)
+                        {
+                            t = Task.Run(async () => {
+                                ret = await m_content.loadSingleLesson(fileList[i]);
+                            });
+                            t.Wait();
+
+                            m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateProgress, data = (double)i * 100 / n });
                         }
 
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.hideProgress });
@@ -187,7 +260,7 @@ namespace test_universalApp
 
         private void btnClean_Click(object sender, RoutedEventArgs e)
         {
-            s_content.m_content.m_words.Clear();
+            m_content.m_content.m_words.Clear();
             txtBox.Text = "";
         }
 
@@ -227,9 +300,9 @@ namespace test_universalApp
         {
 #if !enable_loaddata
             Debug.WriteLine("loaded");
-            if (s_lastFolderLoaded) {
-                browserPath.Text = m_config.lastPath;
-                updateStatus(string.Format("Total chapters: {0}", s_content.m_chapters.Count));
+            if (s_lastFolderLoaded == true) {
+                browserPath.Text = m_chapterPgCfg.lastPath;
+                updateStatus(string.Format("Total chapters: {0}", m_content.m_chapters.Count));
             }
             else
             {
@@ -239,14 +312,14 @@ namespace test_universalApp
 
             //load last open file
             {
-                foreach(var w in s_content.m_content.m_words)
+                foreach(var w in m_content.m_content.m_words)
                 {
                     txtBox.Text += w.ToString() + "\r\n";
                 }
             }
 
             //load db
-            s_content.loadDb();
+            m_content.loadDb();
 
 #if load_dict_use_thread
             m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadDict });
@@ -254,16 +327,39 @@ namespace test_universalApp
             myDict.Load();
 #endif  //load_dict_use_thread
 #endif  //not enable_loaddata
+
+            if (m_config.studyMode == myMainPgCfg.EStudyMode.learningWords)
+            {
+                optWords.IsChecked = true;
+            }
+            else
+            {
+                optNews.IsChecked = true;
+            }
+            optNews.Checked += OptNews_Click;
+            optWords.Checked += OptWords_Checked;
+
+            optBtn.Click += OptBtn_Click;
+        }
+
+        private void OptBtn_Click(object sender, RoutedEventArgs e)
+        {
+            split.IsPaneOpen = true;
         }
 
         private void loadLastPath()
         {
+            var lastPath = m_chapterPgCfg.lastPath;
+            if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+            {
+                lastPath = m_lessonPgCfg.lastPath;
+            }
             //load last selected folder
             IStorageItem item = null;
             var mru = StorageApplicationPermissions.MostRecentlyUsedList;
             foreach (AccessListEntry entry in mru.Entries)
             {
-                if (entry.Metadata == m_config.lastPath)
+                if (entry.Metadata == lastPath)
                 {
                     string mruToken = entry.Token;
                     string mruMetadata = entry.Metadata;
@@ -286,8 +382,15 @@ namespace test_universalApp
             var lastFolder = (StorageFolder)item;
             if (lastFolder != null)
             {
-                browserPath.Text = m_config.lastPath;
-                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = lastFolder});
+                browserPath.Text = lastPath;
+                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = lastFolder });
+                }
+                else
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = lastFolder});
+                }
             }
         }
 
@@ -328,7 +431,14 @@ namespace test_universalApp
             }
             else
             {
-                this.Frame.Navigate(typeof(chapters));
+                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                {
+                    this.Frame.Navigate(typeof(lessonPg));
+                }
+                else
+                {
+                    this.Frame.Navigate(typeof(chapters));
+                }
             }
         }
 
@@ -352,14 +462,14 @@ namespace test_universalApp
 
         private async void reloadBtn_Click(object sender, RoutedEventArgs e)
         {
-            int ret = await s_content.loadChapter();
+            int ret = await m_content.loadChapter();
             Debug.WriteLine(string.Format("{0} {1} {2}", this.ToString(), "loadChapter", ret));
         }
 
         private void C_LoadCompleted(object sender, EventArgs e)
         {
             string txt = "";
-            foreach (var word in s_content.m_content.m_words)
+            foreach (var word in m_content.m_content.m_words)
             {
                 txt = txt + word.ToString() + "\r\n";
             }
@@ -370,7 +480,7 @@ namespace test_universalApp
         private async void btnAdd_Click(object sender, RoutedEventArgs e)
         {
             string txt = txtBox.Text;
-            int ret = await s_content.saveChapter(txt);
+            int ret = await m_content.saveChapter(txt);
         }
 
         private void browserBtn_Click(object sender, RoutedEventArgs e)

@@ -1439,8 +1439,8 @@ namespace test_universalApp
             m_items.Clear();
 #if !test_study_page
             int loadedChapter = 0;
-            int totalChaptes = s_cp.m_config.selectedChapters.Count;
-            foreach (var key in s_cp.m_config.selectedChapters)
+            int totalChaptes = s_cp.m_chapterPgCfg.selectedChapters.Count;
+            foreach (var key in s_cp.m_chapterPgCfg.selectedChapters)
             {
                 var chapter = s_cp.m_chapters[key];
                 {

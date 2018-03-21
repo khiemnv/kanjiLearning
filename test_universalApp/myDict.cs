@@ -451,8 +451,8 @@ namespace test_universalApp
             loadRec[] arr = new loadRec[] {
                 new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
                 new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
-                new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
-                //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
+                //new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
+                new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
                 new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
                 //character_jdict.csv
                 new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv", isJsFile = 0 },
@@ -516,7 +516,10 @@ namespace test_universalApp
             }
             return m_instance;
         }
-
+        public bool IsKanji(char ch)
+        {
+            return m_kanjis.ContainsKey(ch);
+        }
         public List<myKanji> SearchHn(string txt)
         {
             List<myKanji> kanjis = new List<myKanji>();
@@ -1229,12 +1232,40 @@ namespace test_universalApp
         class recordHvWord : IRecord
         {
             string word, hn, def;
-
+            wordSpliter mWdSpltr = new wordSpliter();
             public recordHvWord(string[] arr)
             {
                 word = arr[1];
                 hn = arr[2];
                 def = arr[3];
+
+                var kanji = word;
+                int nRow, nCol;
+                var nWd = mWdSpltr.split(hn, out nRow, out nCol);
+                for (int col = 0; col < nCol; col++)
+                {
+                    char kanjiCh = kanji[col];
+                    //if (kanjiCh == '臯')
+                    //{
+                    //    Debug.Assert(false);
+                    //}
+                    if (!m_kanjis.ContainsKey(kanjiCh)) continue;
+
+                    Debug.Assert(col < kanji.Length);
+                    for (int row = 0; row < nRow; row++)
+                    {
+                        string hnWord = mWdSpltr.get(row, col);
+                        Debug.Assert(hnWord != null);
+
+                        if (m_hns.ContainsKey(hnWord))
+                        {
+                            m_hns[hnWord].Add(kanjiCh);
+                        }
+                        else
+                            m_hns.Add(hnWord, new List<char> { kanjiCh });
+                    }
+                    col++;
+                }
             }
 
             public void format(myKanji kanji)
