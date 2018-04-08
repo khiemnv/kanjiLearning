@@ -1073,5 +1073,39 @@ namespace test_universalApp
         }
     }
     #endregion
+    #region db_file_config
+    [DataContract]
+    public class myDbFileCfg : myConfig
+    {
+        [DataMember]
+        public List<chapterRec> chapters;
 
+        public myDbFileCfg()
+        {
+            chapters = new List<chapterRec>();
+            m_configFile = "dbfile.cfg";
+        }
+        static myDbFileCfg m_config;
+
+        public static myDbFileCfg getInstance()
+        {
+            if (m_config == null)
+            {
+                var newCfg = new myDbFileCfg();
+                var t = Task.Run(async () => m_config = (myDbFileCfg)await newCfg.load<myDbFileCfg>());
+                t.Wait();
+                if (m_config == null)
+                {
+                    m_config = newCfg;
+                }
+            }
+            return m_config;
+        }
+        public void save()
+        {
+            var t = Task.Run(() => saveAsyn<myDbFileCfg>());
+            t.Wait();
+        }
+    }
+    #endregion
 }

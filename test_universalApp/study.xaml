@@ -13,7 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="35"></RowDefinition>
             <RowDefinition Height="1*"/>
-            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="50"></RowDefinition>
             <RowDefinition Height="35"></RowDefinition>
         </Grid.RowDefinitions>
         <!--header-->
@@ -43,7 +43,7 @@
                 IsPaneOpen="False"
                 DisplayMode="CompactOverlay"
                 OpenPaneLength="250"
-                CompactPaneLength="35"
+                CompactPaneLength="0"
                 >
             <SplitView.Pane>
                 <Grid Name="optionsStack" Background="DarkGray">
@@ -55,15 +55,16 @@
                         <RowDefinition Height="1*"></RowDefinition>
                         <RowDefinition Height="1*"></RowDefinition>
                     </Grid.RowDefinitions>
-                    <Button Name="optionBtn"
+                    <!--<Button Name="optionBtn"
                                     Padding="0"
                                     VerticalAlignment="Top"
                                     Width="35"
                                     Height="35">
                         <Image Source="Assets\option.png" Height="31" VerticalAlignment="Top"></Image>
-                    </Button>
+                    </Button>-->
                     <Grid Grid.Column="1"
-                                Grid.Row="0">
+                          Grid.Row="0"
+                          Grid.RowSpan="2">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="35"></RowDefinition>
                             <RowDefinition Height="*"></RowDefinition>
@@ -96,7 +97,7 @@
                         </ScrollViewer>
                     </Grid>
                     <!--half below-->
-                    <Grid Grid.Row="1"
+                    <!--<Grid Grid.Row="1"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="2">
                         <Grid.RowDefinitions>
@@ -192,7 +193,7 @@
 
                             </StackPanel>
                         </ScrollViewer>
-                    </Grid>
+                    </Grid>-->
                 </Grid>
             </SplitView.Pane>
             <SplitView.Content>
@@ -212,12 +213,23 @@
                             <RowDefinition Height="35"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <!--<Button Name="srchBtn"
+                        <Button Name="srchBtn"
                                 Padding="0"
-                                Width="35">
+                                Width="35"
+                                Height="35"
+                                HorizontalAlignment="Right">
                             <Image Source="Assets\search.png"></Image>
-                            </Button>-->
+                            </Button>
+                        <Button Name="srchSpkBtn"
+                                Padding="0"
+                                Width="35"
+                                Height="35"
+                                Margin="0,0,35,0"
+                                HorizontalAlignment="Right">
+                            <Image Source="Assets\speak.png"></Image>
+                        </Button>
                         <TextBox Name="srchTxt"
+                                Margin="0,0,70,0"
                                 Grid.Row="0"></TextBox>
                         <!--<Button Name="srchBtn"
                             Grid.Row="0"
@@ -298,7 +310,58 @@
                 </Grid>
             </SplitView.Content>
         </SplitView>
+        <Grid Grid.Row="1"
+              Grid.RowSpan="2">
+            <CommandBar VerticalAlignment="Bottom">
+                <AppBarButton Name="prevBtn" Label="Prev" Icon="Previous"></AppBarButton>
+                <AppBarButton Name="nextBtn" Label="Next" Icon="Next"></AppBarButton>
+                <AppBarButton Name="canvasSpeak" Label="Speak">
+                    <Image
+                                                    Name="speakImage"
+                                                    Source="Assets/speak.png"/>
+                </AppBarButton>
+                <AppBarButton Name="canvasStar" Label="Star">
+                    <Image
+                                                    Name="starImg"
+                                                    Source="Assets/star_m.png"/>
+                </AppBarButton>
+                <CommandBar.SecondaryCommands>
+                    <AppBarButton Name="canvasCancel"
+          Padding="0"
+          Margin="0,2,0,2"
+          Width="35"
+          Height="35"
+          Visibility="Collapsed">
+                        <Image Source="Assets/cancel.png"/>
+                    </AppBarButton>
+                    <AppBarButton Name="canvasAccept"
+          Visibility="Collapsed"
+          Padding="0"
+          Margin="0,2,0,2"
+          Width="35"
+          Height="35">
+                        <Image Source="Assets/accept.png"/>
+                    </AppBarButton>
 
+                    <AppBarButton Name="canvasEdit"
+              Padding="0"
+              Width="35"
+              Height="35">
+                        <Image
+                  Source="Assets/pencil.png"/>
+                    </AppBarButton>
+                    <AppBarButton Name="optionBtn" Label="Setting" Icon="Setting"></AppBarButton>
+                    <AppBarToggleButton Name="searchBnt2" Label="Dict">
+                        <Image Source="Assets/search.png"/>
+                    </AppBarToggleButton>
+                    <AppBarToggleButton Name="sulfBnt" Label="Shuffle" Icon="Shuffle"></AppBarToggleButton>
+                </CommandBar.SecondaryCommands>
+                <CommandBar.Content>
+                    <TextBox Name="numberTxt" Margin="4,8"></TextBox>
+                </CommandBar.Content>
+            </CommandBar>
+            
+        </Grid>
         <!--canvas buttons-->
         <StackPanel
                 Grid.Row="0"
@@ -397,7 +460,7 @@
             </Canvas>-->
         </StackPanel>
 
-        <Grid Name="bntStack"
+        <!--<Grid Name="bntStack"
             Grid.Row="2"
             Grid.RowSpan="1"
               BorderBrush="White"
@@ -421,7 +484,7 @@
                 Grid.Column="2"
                 Source="Assets/next.png">
             </Image>
-            <!--<StackPanel Name="bntStack"
+            --><!--<StackPanel Name="bntStack"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top">
@@ -434,8 +497,8 @@
             <!--<Button x:Name="flipBtn" Content="Flip"
                     Margin="1,1,1,1"/>-->
             <!--
-            </StackPanel>-->
-        </Grid>
+            </StackPanel>--><!--
+        </Grid>-->
         <!--back to page-->
         <Button Name="backBtn"
                 Margin="1"

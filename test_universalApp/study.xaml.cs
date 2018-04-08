@@ -70,7 +70,7 @@ namespace test_universalApp
         Queue<myBgTask> m_msgQueue = new Queue<myBgTask>();
 
         //singleton dict
-        myDict dict = myDict.Load();
+        myDict mDict = myDict.Load();
 
         public study()
         {
@@ -671,7 +671,7 @@ namespace test_universalApp
         }
         void search(srchCallback callback, string txt) {
              //= m_preTxt;
-            var ret = dict.Search(txt);
+            var ret = mDict.Search(txt);
             List<myWord> words = new List<myWord>();
             List<myWord> verbs = new List<myWord>();
             //Span s = new Span();
@@ -698,7 +698,7 @@ namespace test_universalApp
                 else
                 {
                     //display radical info
-                    var rdInfo = dict.Search(kanji.radical.zRadical.ToString());
+                    var rdInfo = mDict.Search(kanji.radical.zRadical.ToString());
                     string zRad = string.Format("Bộ {0} {1} {2} [{3}, {4}] {5}",
                         kanji.radical.iRadical, kanji.radical.zRadical, kanji.radical.hn, kanji.radical.nStrokes,
                         kanji.totalStrokes, kanji.val);
@@ -810,11 +810,56 @@ namespace test_universalApp
             }
             else
             {
+#if false
                 var s = new Span();
                 s.Inlines.Add(new Run() { Text = def.text });
                 s.Inlines.Add(new LineBreak());
                 return s;
+#else
+                return addLink(def.text);
+#endif
             }
+        }
+        Span addLink(string txt)
+        {
+            Span spn = null;
+            var sentences = new string[] { txt };
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                var line = sentences[i];
+                spn = new Span();
+                var buff = new char[line.Length];
+                int len = 0;
+                foreach (char ch in line)
+                {
+                    if (mDict.IsKanji(ch))
+                    {
+                        Hyperlink hb = crtHb(ch.ToString());
+                        if (len > 0)
+                        {
+                            var tmp = new string(buff, 0, len);
+                            spn.Inlines.Add(new Run
+                            {
+                                Text = tmp
+                            });
+                            len = 0;
+                        }
+                        spn.Inlines.Add(hb);
+                    }
+                    else
+                    {
+                        buff[len] = ch;
+                        len++;
+                    }
+                }
+                if (len > 0)
+                {
+                    var tmp = new string(buff, 0, len);
+                    spn.Inlines.Add(new Run { Text = tmp });
+                    len = 0;
+                }
+            }
+            return spn;
         }
         Span crtBlck(myRadical rd)
         {
@@ -850,6 +895,11 @@ namespace test_universalApp
         Span crtWdBlck(myWord wd)
         {
             var s = new Span();
+
+            //fix wd has not def
+            Debug.Assert(wd.definitions.Count > 0);
+            if (wd.definitions.Count == 0) return s;
+
 #if dict_dist
             if (!wd.definitions[0].bFormated)
 #endif
@@ -1056,6 +1106,10 @@ namespace test_universalApp
             public bool fullDef;
             [DataMember]
             public bool selectTxtOn;
+            [DataMember]
+            public bool suftEnable;
+            [DataMember]
+            public int suftRandSeed;
 
             public studyOption() { }
 
@@ -1251,6 +1305,17 @@ namespace test_universalApp
             //  =>necessary to involked event when updateTerm
             initEvents();
 
+            //set search event
+            turnSearchOnOff(m_option.srchEnable);
+            searchBnt2.IsChecked = m_option.srchEnable;     //use toggle button
+            sulfBnt.IsChecked = m_option.suftEnable;
+
+            //suft
+            if (m_option.suftEnable == true)
+            {
+                sulf();
+            }
+
             //update term
             //m_iCursor = 0;
             updateTerm();
@@ -1323,18 +1388,30 @@ namespace test_universalApp
             //flipBtn.Click += term_Tapped;
 
             //search & dict
-            searchBnt2.Tapped += srchBtn_Click;                //search or show search panel
-            searchBnt2.DoubleTapped += SrchBtn_DoubleTapped;   //hide search panel
+            srchBtn.Tapped += srchBtn_Click;                //search or show search panel
+            //searchBnt2.DoubleTapped += SrchBtn_DoubleTapped;   //hide search panel
+            searchBnt2.Tapped += SearchBnt2_Click;
             myNode.regOnHyberlinkClick("studyModule", Hb_Click);
             //searchBnt2.Click += SearchBnt2_Click;
 
             srchTxt.KeyUp += SrchTxt_KeyUp;
 
-            //set search event
-            turnSearchOnOff(m_option.srchEnable);
-
             //next to full dict
             dictBtn.Click += DictBtn_Click;
+
+            srchSpkBtn.Tapped += SrchSpkBtn_Tapped;
+        }
+
+        private void SrchSpkBtn_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            string txt = srchTxt.Text;
+            string lang = "ja-JP";
+            Debug.Assert(txt != "");
+            qryBgTask(new myBgTask
+            {
+                type = myBgTask.taskType.speek,
+                data = new mySpeechQry { txt = txt, lang = lang }
+            });
         }
 
         private void DictBtn_Click(object sender, RoutedEventArgs e)
@@ -1427,13 +1504,20 @@ namespace test_universalApp
         {
             //load option
             //m_worker.ReportProgress(20);
-            bg_qryFgTask(myFgTask.qryType.loadProgress, 20);
+            //bg_qryFgTask(myFgTask.qryType.loadProgress, 20);
             Debug.WriteLine("{0} call load option {1}", this, Environment.TickCount);
             m_option = studyOption.getInstance();
             Debug.WriteLine("{0} load option return {1}", this, Environment.TickCount);
             //m_worker.ReportProgress(50);
-            bg_qryFgTask(myFgTask.qryType.loadProgress, 50);
+            //bg_qryFgTask(myFgTask.qryType.loadProgress, 50);
 
+            loadWords();
+
+            //update gui
+            bg_qryFgTask(myFgTask.qryType.updateGUI, null);
+        }
+        private void loadWords()
+        {
             //load marked words
             m_markedItems.Clear();
             m_items.Clear();
@@ -1465,7 +1549,7 @@ namespace test_universalApp
                 }
                 loadedChapter++;
                 //m_worker.ReportProgress(50 + (loadedChapter * 50 / totalChaptes));
-                bg_qryFgTask(myFgTask.qryType.loadProgress, 50 + (loadedChapter * 50 / totalChaptes));
+                //bg_qryFgTask(myFgTask.qryType.loadProgress, 50 + (loadedChapter * 50 / totalChaptes));
                 Debug.WriteLine("{0} M_worker_DoWork loadedChapter {1} ", this, loadedChapter);
             }
 #else
@@ -1485,7 +1569,6 @@ namespace test_universalApp
                     c = ch, index = i++, marked = marked });
             }
 #endif
-            bg_qryFgTask(myFgTask.qryType.updateGUI, null);
         }
 
         private void updateTerm()
@@ -1587,9 +1670,31 @@ namespace test_universalApp
 
         private void sulfBnt_Click(object sender, RoutedEventArgs e)
         {
+            if (sulfBnt.IsChecked == true)
+            {
+                var curDate = DateTime.Now;
+                int seed = curDate.Minute ^ curDate.Millisecond ^ curDate.Hour;
+                m_option.suftRandSeed = seed;
+                m_option.suftEnable = true;
+                sulf();
+                m_iCursor = 0;
+                updateTerm();
+                updateNum();
+            }
+            else
+            {
+                m_option.suftEnable = false;
+                loadWords();
+                m_iCursor = 0;
+                updateTerm();
+                updateNum();
+            }
+        }
+        private void sulf()
+        {
+            Debug.Assert(m_option.suftEnable);
             var items = getCurItems();
-
-            Random rng = new Random();
+            Random rng = new Random(m_option.suftRandSeed);
             int count = items.Count;
             for (int i = 0; i<count;i++)
             {
@@ -1598,9 +1703,6 @@ namespace test_universalApp
                 items[i] = items[irand];
                 items[irand] = temp;
             }
-            m_iCursor = 0;
-            updateTerm();
-            updateNum();
         }
 
         private void back_Click(object sender, RoutedEventArgs e)

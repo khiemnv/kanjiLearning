@@ -1,8 +1,11 @@
-﻿using System;
+﻿#define use_xml
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -27,14 +30,17 @@ namespace test_universalApp
     //          |rMarked
     //+rMarked  |marked as string
     //          |....
+    [DataContract]
     public class chapterRec
     {
         public UInt32 offset;
         public UInt32 size;
         public bool isDeleted;
         public UInt32 keyLen;
+        [DataMember]
         public string key;
         public UInt32 markedLen;
+        [DataMember]
         public string marked;
     }
     public class myFileDb
@@ -233,22 +239,34 @@ namespace test_universalApp
                 }
             }
         }
-
+        
         public void unload()
         {
             if (!m_bLoaded) return;
             m_bLoaded = false;
-
+#if use_xml
+            m_dbfile.save();
+#endif
+#if !use_xml
             m_file.unload();
+#endif
             m_dict.Clear();
             m_cache.Clear();
             m_deltedItem.Clear();
         }
+        myDbFileCfg m_dbfile;
         public void load()
         {
             if (m_bLoaded) return;
             m_bLoaded = true;
-
+#if use_xml
+            m_dbfile = myDbFileCfg.getInstance();
+            foreach(var ch in m_dbfile.chapters)
+            {
+                m_dict.Add(ch.key, ch);
+            }
+#endif
+#if !use_xml
             //open file db
             m_file.load();
 
@@ -277,6 +295,7 @@ namespace test_universalApp
                 }
                 error = nextChapter(out ch);
             }
+#endif
         }
         chapterRec findRec(string key)
         {
@@ -349,7 +368,25 @@ namespace test_universalApp
 
             return null;
         }
-
+#if use_xml
+        List<chapterRec> m_reclst;
+        private void addMarked(chapterRec rec)
+        {
+            m_dbfile.chapters.Add(rec);
+        }
+        private void updateMarked(chapterRec rec)
+        {
+            try
+            {
+                var foundRec = m_dbfile.chapters.Find((t) => { return t.key == rec.key; });
+            }
+            catch
+            {
+                Debug.Assert(false, "not found rec!");
+            }
+        }
+#endif
+#if !use_xml
         private void addMarked(chapterRec rec)
         {
             //estimate req size
@@ -416,5 +453,6 @@ namespace test_universalApp
                 m_file.writeData(t_buff, (int)rec.markedLen);
             }
         }
+#endif
     }
 }
