@@ -52,8 +52,12 @@ namespace test_universalApp
         List<wordItem> m_markedItems = new List<wordItem>();
         //BackgroundWorker m_worker = new BackgroundWorker();
         BackgroundWorker m_srchWorker;
+        bool m_srchWorkerStopReq = false;
+
         bool m_srchWorkerIsRunning { get { return m_srchWorker.IsBusy; } }
         int m_iCursor;
+
+        bool m_bAutoPlay = false;
 
         class myBgTask
         {
@@ -62,7 +66,8 @@ namespace test_universalApp
                 speek,
                 search,
                 loadData,
-                //loadDataComplete,
+                playNext,
+                playNext2,
             }
             public taskType type;
             public object data;
@@ -104,6 +109,11 @@ namespace test_universalApp
             {
                 m_iCursor = 0;
             }
+        }
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            m_srchWorkerStopReq = true;
+            base.OnNavigatedFrom(e);
         }
 
         private void Study_Unloaded(object sender, RoutedEventArgs e)
@@ -250,6 +260,13 @@ namespace test_universalApp
         }
         speakStatus m_speakStat = speakStatus.end;
 
+        private int[] m_playSpeedModeMap = new int[] { 5, 7, 9, 11 };
+        int playSpeedMode2Int(int mode)
+        {
+            mode = mode & 3;
+            return m_playSpeedModeMap[mode];
+        }
+
         void speakTxt()
         {
 #if false
@@ -376,7 +393,13 @@ namespace test_universalApp
             optWordTermDefineCmb.Items.Add("hán nôm");
             optWordTermDefineCmb.Items.Add("vietnamese");
             optWordTermDefineCmb.SelectedIndex = 1;
-#endregion
+
+            foreach (int i in m_playSpeedModeMap)
+            {
+                optPlaySpeedCmb.Items.Add(i);
+            }
+            optPlaySpeedCmb.SelectedIndex = 0;
+            #endregion
 
 #if item_editable
             //editTxt.AcceptsReturn = true;
@@ -393,7 +416,7 @@ namespace test_universalApp
 
             detailTxt.Text = "";
             termTxt.Text = "";
-            numberTxt.Text = "";
+            //numberTxt.Text = "";
 
             //termTxt.IsTextSelectionEnabled = true;
 
@@ -438,8 +461,8 @@ namespace test_universalApp
         {
             //throw new NotImplementedException();
             uint i = 0;
-            for(;;i++) {
-                if (m_msgQueue.Count >0)
+            for(; !m_srchWorkerStopReq; i++) {
+                if (m_msgQueue.Count > 0)
                 {
                     var msg = m_msgQueue.Dequeue();
                     switch (msg.type)
@@ -467,13 +490,43 @@ namespace test_universalApp
                                 Debug.WriteLine("M_srchWorker_DoWork speak end {0}", tBegin);
                             }
                             break;
+                        case myBgTask.taskType.playNext:
+                            if ( m_bAutoPlay )
+                            {
+                                var items = getCurItems();
+                                int remain = (int)msg.data;
+                                //if ((remain > 0) && (m_iCursor < (items.Count - 1)))
+                                {
+                                    int timeout = playSpeedMode2Int(m_option.playSpeedMode) + 1000;
+                                    sleep(timeout);
+                                    bg_qryFgTask(myFgTask.qryType.playNext, remain);
+                                }
+                                //else
+                                //{
+                                //    m_bAutoPlay = false;
+                                //    bg_qryFgTask(myFgTask.qryType.playNext, 0);
+                                //}
+                            }
+                            break;
+                        case myBgTask.taskType.playNext2:
+                            if (m_bAutoPlay)
+                            {
+                                int remain = (int)msg.data;
+                                //if (remain > 0)
+                                {
+                                    int timeout = playSpeedMode2Int(m_option.playSpeedMode) + 1000;
+                                    sleep(timeout);
+                                    bg_qryFgTask(myFgTask.qryType.playNext2, remain);
+                                }
+                            }
+                            break;
                     }
                 }
                 else
                 {
                     Debug.WriteLine("M_srchWorker_DoWork fall sleep, i = {0}", i);
-                    //sleep(1000);
-                    break;
+                    sleep(500);
+                    //break;
                 }
             }
         }
@@ -573,7 +626,9 @@ namespace test_universalApp
                 scroll,
                 speech,
                 loadProgress,
-                updateGUI
+                updateGUI,
+                playNext,
+                playNext2
             }
             public qryType type;
             public object data;
@@ -654,6 +709,50 @@ namespace test_universalApp
                     //rtbScroll.ScrollToVerticalOffset(0);
                     rtbScroll.ChangeView(0, 0, 1);
                     break;
+                case myFgTask.qryType.playNext:
+                    if (m_bAutoPlay)
+                    {
+                        var items = getCurItems();
+                        bool bPlay = false;
+                        if (m_iCursor < (items.Count - 1))
+                        {
+                            m_iCursor++;
+                            bPlay = true;
+                        }
+                        else if (m_option.playRepeate)
+                        {
+                            m_iCursor = 0;
+                            bPlay = true;
+                        }
+                        else
+                        {
+                            m_bAutoPlay = false;
+                            playBtn.IsChecked = false;
+                        }
+
+                        if (bPlay)
+                        {
+#if init_status
+                items[m_iCursor].status = itemStatus.term;
+#endif
+                            updateTerm();
+                            updateNum();
+                            qryBgTask(new myBgTask { type = myBgTask.taskType.playNext2, data = data });
+                        }
+                    }
+                    //else
+                    //{
+                    //    playBtn.IsChecked = false;
+                    //}
+                    break;
+                case myFgTask.qryType.playNext2:
+                    {
+                        int remain = (int)data;
+                        remain--;
+                        term_Tapped(this, null);
+                        qryBgTask(new myBgTask { type = myBgTask.taskType.playNext, data = remain });
+                    }
+                    break;
             }
         }
         //run in background
@@ -706,6 +805,7 @@ namespace test_universalApp
                         if (kanji.hn != null) zRad += string.Format(" ({0})", kanji.hn);
                         if (kanji.simple != '\0') zRad += string.Format(" simple {0}", kanji.simple);
                     }
+                    zRad = "\n" + zRad + "\n";
                     callback(myFgTask.qryType.run, zRad);
 
                     //display other kanji define
@@ -897,8 +997,8 @@ namespace test_universalApp
             var s = new Span();
 
             //fix wd has not def
-            Debug.Assert(wd.definitions.Count > 0);
-            if (wd.definitions.Count == 0) return s;
+            //Debug.Assert(wd.definitions.Count > 0);
+            //if (wd.definitions.Count == 0) return s;
 
 #if dict_dist
             if (!wd.definitions[0].bFormated)
@@ -1062,6 +1162,12 @@ namespace test_universalApp
             m_option.termMode = (mode)cmb.SelectedIndex;
         }
 
+        private void PlaySpeedCmb_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox cmb = (ComboBox)sender;
+            m_option.playSpeedMode = cmb.SelectedIndex;
+        }
+
         private void DefineCmb_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ComboBox cmb = (ComboBox)sender;
@@ -1110,6 +1216,10 @@ namespace test_universalApp
             public bool suftEnable;
             [DataMember]
             public int suftRandSeed;
+            [DataMember]
+            public int playSpeedMode;
+            [DataMember]
+            public bool playRepeate;
 
             public studyOption() { }
 
@@ -1290,6 +1400,7 @@ namespace test_universalApp
             //+ cmb
             optWordTermCmb.SelectedIndex = (int)m_option.termMode;
             optWordTermDefineCmb.SelectedIndex = (int)m_option.defineMode;
+            optPlaySpeedCmb.SelectedIndex = m_option.playSpeedMode;
             //+ speak
             optSpkDefineChk.IsChecked = m_option.spkDefine;
             optSpkTermChk.IsChecked = m_option.spkTerm;
@@ -1309,6 +1420,7 @@ namespace test_universalApp
             turnSearchOnOff(m_option.srchEnable);
             searchBnt2.IsChecked = m_option.srchEnable;     //use toggle button
             sulfBnt.IsChecked = m_option.suftEnable;
+            rptBnt.IsChecked = m_option.playRepeate;
 
             //suft
             if (m_option.suftEnable == true)
@@ -1343,8 +1455,12 @@ namespace test_universalApp
             numberTxt.ManipulationCompleted += term_swiped;
 
             sulfBnt.Click += sulfBnt_Click;
+            rptBnt.Click += RptBnt_Click;
+
             prevBtn.Tapped += prevBtn_Click;
+            playBtn.Click += PlayBtn_Click;
             nextBtn.Tapped += nextBtn_Click;
+            numberTxt.SelectionChanged += NumberTxt_SelectionChanged;
             backBtn.Click += back_Click;
 
             //canvas buttons
@@ -1358,6 +1474,7 @@ namespace test_universalApp
             optionBtn.Click += OptionBtn_Click;
             optWordTermDefineCmb.SelectionChanged += DefineCmb_SelectionChanged;
             optWordTermCmb.SelectionChanged += TermCmb_SelectionChanged;
+            optPlaySpeedCmb.SelectionChanged += PlaySpeedCmb_SelectionChanged;
 
             optWordDetailChk.Tapped += DetailChk_Tapped;
             optWordStarChk.Click += OptStarChk_Click;
@@ -1402,16 +1519,35 @@ namespace test_universalApp
             srchSpkBtn.Tapped += SrchSpkBtn_Tapped;
         }
 
+        private void NumberTxt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (numberTxtSelectedIndexChgIgnore)
+            {
+                numberTxtSelectedIndexChgIgnore = false;
+            }
+            else
+            {
+                m_iCursor = numberTxt.SelectedIndex;
+                updateTerm();
+            }
+        }
+
+        private void RptBnt_Click(object sender, RoutedEventArgs e)
+        {
+            m_option.playRepeate = (bool)rptBnt.IsChecked;
+        }
+
         private void SrchSpkBtn_Tapped(object sender, TappedRoutedEventArgs e)
         {
             string txt = srchTxt.Text;
             string lang = "ja-JP";
-            Debug.Assert(txt != "");
-            qryBgTask(new myBgTask
-            {
-                type = myBgTask.taskType.speek,
-                data = new mySpeechQry { txt = txt, lang = lang }
-            });
+            if(txt != "") {
+                qryBgTask(new myBgTask
+                {
+                    type = myBgTask.taskType.speek,
+                    data = new mySpeechQry { txt = txt, lang = lang }
+                });
+            }
         }
 
         private void DictBtn_Click(object sender, RoutedEventArgs e)
@@ -1647,6 +1783,17 @@ namespace test_universalApp
             }
         }
 
+        private void PlayBtn_Click(object sender, RoutedEventArgs e)
+        {
+            m_bAutoPlay = (bool)playBtn.IsChecked;
+            if (m_bAutoPlay)
+            {
+                var items = getCurItems();
+                int remain = items.Count - m_iCursor;
+                qryBgTask(new myBgTask { type = myBgTask.taskType.playNext, data = remain });
+            }
+        }
+
         private void prevBtn_Click(object sender, RoutedEventArgs e)
         {
             if (m_iCursor > 0)
@@ -1661,11 +1808,31 @@ namespace test_universalApp
             }
         }
 
+        private bool numberTxtSelectedIndexChgIgnore = false;
         private void updateNum()
         {
             var items = getCurItems();
-            int count = items.Count;
-            numberTxt.Text = string.Format("{0}/{1}", m_iCursor + 1, count);
+            //int count = items.Count;
+            //numberTxt.Text = string.Format("{0}/{1}", m_iCursor + 1, count);
+            if (numberTxt.Items.Count != items.Count)
+            {
+                numberTxtSelectedIndexChgIgnore = true;
+                numberTxt.Items.Clear();
+                for (int i = 0; i < items.Count; i++)
+                {
+                    numberTxt.Items.Add(i + 1);
+                }
+            }
+            //else if (numberTxt.Items.Count > items.Count)
+            //{
+            //    var j = items.Count;
+            //    for (int i = items.Count; i < numberTxt.Items.Count; i++)
+            //    {
+            //        numberTxt.Items.RemoveAt(j);
+            //    }
+            //}
+            numberTxtSelectedIndexChgIgnore = true;
+            numberTxt.SelectedIndex = m_iCursor;
         }
 
         private void sulfBnt_Click(object sender, RoutedEventArgs e)
@@ -1693,7 +1860,8 @@ namespace test_universalApp
         private void sulf()
         {
             Debug.Assert(m_option.suftEnable);
-            var items = getCurItems();
+            //var items = getCurItems();
+            var items = m_items;
             Random rng = new Random(m_option.suftRandSeed);
             int count = items.Count;
             for (int i = 0; i<count;i++)
@@ -1702,6 +1870,12 @@ namespace test_universalApp
                 var temp = items[i];
                 items[i] = items[irand];
                 items[irand] = temp;
+            }
+
+            m_markedItems.Clear();
+            foreach (var item in items)
+            {
+                if (item.marked) m_markedItems.Add(item);
             }
         }
 

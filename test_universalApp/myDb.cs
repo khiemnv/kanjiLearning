@@ -147,7 +147,7 @@ namespace test_universalApp
         Dictionary<string, chapterRec> m_dict;  //path - marker data offset
         Dictionary<string, chapterRec> m_cache; //path - marker data offset
         List<chapterRec> m_deltedItem;    //header & offset
-        myFileDb m_file;
+        //myFileDb m_file;
         UInt32 c_pageSize = 32;
         UInt32 c_nPageMark = 0x0FFFffff;
         UInt32 c_fDeleted = 0x80000000;
@@ -164,9 +164,9 @@ namespace test_universalApp
             m_deltedItem = new List<chapterRec>();
             t_buff = new byte[1024];
             t_page = new byte[c_pageSize];
-            m_file = new myFileDb();
+            //m_file = new myFileDb();
         }
-
+#if !use_xml
         readBdError firstChapter(out chapterRec rec)
         {
             rec = null;
@@ -227,7 +227,7 @@ namespace test_universalApp
 
             return readBdError.success;
         }
-
+#endif
         public void loadMarkeds(List<string> keys)
         {
             m_cache.Clear();
@@ -239,7 +239,11 @@ namespace test_universalApp
                 }
             }
         }
-        
+        public void save()
+        {
+            Debug.Assert(m_bLoaded);
+            m_dbfile.save();
+        }
         public void unload()
         {
             if (!m_bLoaded) return;
@@ -369,7 +373,6 @@ namespace test_universalApp
             return null;
         }
 #if use_xml
-        List<chapterRec> m_reclst;
         private void addMarked(chapterRec rec)
         {
             m_dbfile.chapters.Add(rec);

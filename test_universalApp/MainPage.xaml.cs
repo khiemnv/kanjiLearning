@@ -54,7 +54,7 @@ namespace test_universalApp
 
             initCtrls();
 
-            browserBtn.Tapped += browserBtn_Click;
+            browserBtn.Tapped += browserBtn_ClickAsync;
             reloadBtn.Click += reloadBtn_Click;
             addBtn.Click += btnAdd_Click;
             nextBtn.Click += btnNext_Click;
@@ -96,32 +96,24 @@ namespace test_universalApp
         }
 
         //pick folder
-        async void getFolder()
+        async Task<StorageFolder> getFolderAsync()
         {
-            FolderPicker picker;
-            StorageFolder folder;
+            FolderPicker picker = null;
+            StorageFolder folder = null;
 
             picker = new FolderPicker();
             picker.ViewMode = PickerViewMode.Thumbnail;
             picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
             picker.FileTypeFilter.Add("*");
+            try
+            { 
             folder = await picker.PickSingleFolderAsync();
-
-            if (folder != null)
-            {
-                Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
-                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
-                {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveLessonFolder, data = folder });
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = folder });
-                }
-                else
-                {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder});
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
-                }
-                browserPath.Text = folder.Path;
             }
+            catch(Exception e)
+            {
+                txtBox.Text += e.Message.ToString();
+            }
+            return folder;
         }
 
         private void fg_process(object sender, FgTask e)
@@ -483,10 +475,33 @@ namespace test_universalApp
             int ret = await m_content.saveChapter(txt);
         }
 
-        private void browserBtn_Click(object sender, RoutedEventArgs e)
+        private async void browserBtn_ClickAsync(object sender, RoutedEventArgs e)
         {
             //m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.selectFolder });
-            getFolder();
+            StorageFolder folder = null;
+            try
+            {
+                folder = await getFolderAsync();
+            }
+            catch
+            {
+                txtBox.Text += "get folder error!";
+            }
+            if (folder != null)
+            {
+                Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
+                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveLessonFolder, data = folder });
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = folder });
+                }
+                else
+                {
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder });
+                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                }
+                browserPath.Text = folder.Path;
+            }
             Debug.WriteLine("browserBtn_Click end");
         }
     }

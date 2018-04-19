@@ -84,6 +84,10 @@
                                     <TextBlock Width="50">Define</TextBlock>
                                     <ComboBox Name="optWordTermDefineCmb" Margin="10,0,0,0"></ComboBox>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="50">PlaySpd</TextBlock>
+                                    <ComboBox Name="optPlaySpeedCmb" Margin="10,0,0,0"></ComboBox>
+                                </StackPanel>
                                 <TextBlock>Speak</TextBlock>
                                 <CheckBox Name="optSpkTermChk" Margin="10,0,0,0">Term</CheckBox>
                                 <CheckBox Name="optSpkDefineChk" Margin="10,0,0,0">Define</CheckBox>
@@ -313,14 +317,15 @@
         <Grid Grid.Row="1"
               Grid.RowSpan="2">
             <CommandBar VerticalAlignment="Bottom">
-                <AppBarButton Name="prevBtn" Label="Prev" Icon="Previous"></AppBarButton>
-                <AppBarButton Name="nextBtn" Label="Next" Icon="Next"></AppBarButton>
-                <AppBarButton Name="canvasSpeak" Label="Speak">
+                <AppBarButton Name="prevBtn" Label="Prev" Icon="Previous" Width="40"></AppBarButton>
+                <AppBarToggleButton Name="playBtn" Label="Play" Icon="Play"></AppBarToggleButton>
+                <AppBarButton Name="nextBtn" Label="Next" Icon="Next" Width="40"></AppBarButton>
+                <AppBarButton Name="canvasSpeak" Label="Speak" Width="40">
                     <Image
                                                     Name="speakImage"
                                                     Source="Assets/speak.png"/>
                 </AppBarButton>
-                <AppBarButton Name="canvasStar" Label="Star">
+                <AppBarButton Name="canvasStar" Label="Star" Width="40">
                     <Image
                                                     Name="starImg"
                                                     Source="Assets/star_m.png"/>
@@ -355,9 +360,10 @@
                         <Image Source="Assets/search.png"/>
                     </AppBarToggleButton>
                     <AppBarToggleButton Name="sulfBnt" Label="Shuffle" Icon="Shuffle"></AppBarToggleButton>
+                    <AppBarToggleButton Name="rptBnt" Label="Repeat" Icon="RepeatAll"></AppBarToggleButton>
                 </CommandBar.SecondaryCommands>
                 <CommandBar.Content>
-                    <TextBox Name="numberTxt" Margin="4,8"></TextBox>
+                    <ComboBox Name="numberTxt" Margin="4,8"></ComboBox>
                 </CommandBar.Content>
             </CommandBar>
             

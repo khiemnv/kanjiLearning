@@ -36,7 +36,6 @@ namespace test_universalApp
             this.InitializeComponent();
             this.Suspending += OnSuspending;
             Resuming += App_Resuming;
-            
         }
 
         private void App_Resuming(object sender, object e)
@@ -132,7 +131,7 @@ namespace test_universalApp
             t.Wait();
 #endif
             s_cp.saveMarkeds();
-            s_cp.unloadDb();
+            s_cp.m_db.save();
 
             deferral.Complete();
         }

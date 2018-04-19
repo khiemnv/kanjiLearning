@@ -916,14 +916,14 @@ namespace test_universalApp
         public myConfig() { }
         protected async Task saveAsyn<T>()
         {
-            object configData = this;
-            string configFile = m_configFile;
+            //object configData = this;
+            //string configFile = m_configFile;
             StorageFile dataFile = await ApplicationData.Current.LocalFolder.CreateFileAsync(
-                configFile, CreationCollisionOption.OpenIfExists);
+                m_configFile, CreationCollisionOption.OpenIfExists);
             Stream writeStream = await dataFile.OpenStreamForWriteAsync();
             writeStream.SetLength(0);
             DataContractSerializer serializer = new DataContractSerializer(typeof(T));
-            serializer.WriteObject(writeStream, configData);
+            serializer.WriteObject(writeStream, this);
             await writeStream.FlushAsync();
             writeStream.Dispose();
         }
@@ -1068,6 +1068,11 @@ namespace test_universalApp
         }
         public void save()
         {
+            Debug.Assert(m_configFile != null);
+            if (m_configFile == null)
+            {
+                m_configFile = "chapterPg.cfg";
+            }
             var t = Task.Run(() => saveAsyn<myChapterPgCfg>());
             t.Wait();
         }
