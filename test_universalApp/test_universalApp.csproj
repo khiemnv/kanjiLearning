@@ -148,6 +148,9 @@
     <Compile Include="myNode.cs" />
     <Compile Include="myWorker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="readPg2.xaml.cs">
+      <DependentUpon>readPg2.xaml</DependentUpon>
+    </Compile>
     <Compile Include="readPg.xaml.cs">
       <DependentUpon>readPg.xaml</DependentUpon>
     </Compile>
@@ -219,6 +222,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="myDictCtrl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="readPg2.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

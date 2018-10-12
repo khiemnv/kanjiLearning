@@ -85,14 +85,16 @@ namespace test_universalApp
             loadData,
             loadDict,
             loadLessons,
-            saveLessonFolder
+            saveLessonFolder,
+            delayNext
         }
         enum fgTaskType
         {
             prepareProgress,
             updateProgress,
             hideProgress,
-            updateStatus
+            updateStatus,
+            delayNext
         }
 
         //pick folder
@@ -132,6 +134,16 @@ namespace test_universalApp
                     break;
                 case fgTaskType.updateStatus:
                     statusBar.Text = (string)e.data;
+                    break;
+                case fgTaskType.delayNext:
+                    if (s_loadLastPathSuccess)
+                    {
+                        this.Frame.Navigate(typeof(chapters));
+                    }
+                    else
+                    {
+                        showErrMsg("Load folder data error!");
+                    }
                     break;
             }
         }
@@ -247,6 +259,11 @@ namespace test_universalApp
                         m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.updateStatus, data = "Loading completed!" });
                     }
                     break;
+                case bgTaskType.delayNext:
+                    {
+                        m_bgwork.qryFgTask(new FgTask { type = (int)fgTaskType.delayNext });
+                    }
+                    break;
             }
         }
 
@@ -269,7 +286,28 @@ namespace test_universalApp
             termGrid.ManipulationMode = ManipulationModes.TranslateX;
             termGrid.ManipulationCompleted += swipedLeft;
 
+            //recent list
+            recentLst.SelectionChanged += RecentLst_SelectionChanged;
+
+            //read btn
+            readBtn.Click += ReadBtn_Click;
+
             Debug.WriteLine("{0} initCtrls done", this);
+        }
+
+        private void ReadBtn_Click(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(readPg2));
+        }
+
+        private void RecentLst_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //save selected path
+            if (recentLst.SelectedItems.Count > 0)
+            {
+                var selectedItem = recentLst.SelectedItem.ToString();
+                m_chapterPgCfg.lastPath = selectedItem;
+            }
         }
 
         private void swipedLeft(object sender, ManipulationCompletedRoutedEventArgs e)
@@ -287,24 +325,41 @@ namespace test_universalApp
             Debug.WriteLine("unloaded");
         }
 
-        static bool s_lastFolderLoaded = false;
-        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        static string s_lastFolderLoaded = "";
+        static bool s_loadLastPathSuccess = false;
+        private async void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
 #if !enable_loaddata
             Debug.WriteLine("loaded");
-            if (s_lastFolderLoaded == true) {
-                browserPath.Text = m_chapterPgCfg.lastPath;
-                updateStatus(string.Format("Total chapters: {0}", m_content.m_chapters.Count));
-            }
-            else
+
+            //recent list
             {
-                s_lastFolderLoaded = true;
-                loadLastPath();
+                recentLst.Items.Clear();
+                IStorageItem item = null;
+                var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+                foreach (AccessListEntry entry in mru.Entries)
+                {
+                    try
+                    {
+                        item = await mru.GetFolderAsync(entry.Token);
+                        recentLst.Items.Add(entry.Metadata);
+                        if (entry.Metadata == m_chapterPgCfg.lastPath)
+                        {
+                            recentLst.SelectedItem = m_chapterPgCfg.lastPath;
+                        }
+                    }
+                    catch
+                    {
+                        //case last folder is removed
+                        Debug.WriteLine("loadLastPath last path not exists");
+                    }
+                }
             }
+            
 
             //load last open file
             {
-                foreach(var w in m_content.m_content.m_words)
+                foreach (var w in m_content.m_content.m_words)
                 {
                     txtBox.Text += w.ToString() + "\r\n";
                 }
@@ -339,51 +394,89 @@ namespace test_universalApp
             split.IsPaneOpen = true;
         }
 
-        private void loadLastPath()
+        private async void loadLastPath()
         {
+            //load data?
+            if (s_lastFolderLoaded != m_chapterPgCfg.lastPath)
+            {
+                s_lastFolderLoaded = m_chapterPgCfg.lastPath;
+                //clear prev data
+                m_chapterPgCfg.selectedChapters.Clear();
+                m_chapterPgCfg.save();
+                m_content.m_chapters.Clear();
+            }
+            else
+            {
+                m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.delayNext });
+                return;
+            }
+
+            //open last path
             var lastPath = m_chapterPgCfg.lastPath;
             if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
             {
                 lastPath = m_lessonPgCfg.lastPath;
             }
-            //load last selected folder
+
+            s_loadLastPathSuccess = false;
+
             IStorageItem item = null;
             var mru = StorageApplicationPermissions.MostRecentlyUsedList;
-            foreach (AccessListEntry entry in mru.Entries)
+            AccessListEntry entry;
+            string token="";
+            for (int i =0;i< mru.Entries.Count;i++)
             {
-                if (entry.Metadata == lastPath)
+                entry = mru.Entries[i];
+                token = entry.Token;
+                if (lastPath == entry.Metadata)
                 {
-                    string mruToken = entry.Token;
-                    string mruMetadata = entry.Metadata;
-                    var t = Task.Run(async () =>
+                    try
                     {
-                        try
-                        {
-                            item = await mru.GetFolderAsync(mruToken);
-                        }
-                        catch
-                        {
-                            //case last folder is removed
-                            Debug.WriteLine("loadLastPath last path not exists");
-                        }
-                    });
-                    t.Wait();
+                        item = await mru.GetFolderAsync(entry.Token);
+                    }
+                    catch
+                    {
+                        //case last folder is removed
+                        Debug.WriteLine("loadLastPath last path not exists");
+                    }                        
                     break;
                 }
             }
-            var lastFolder = (StorageFolder)item;
-            if (lastFolder != null)
+
+            //check open last path error
+            do
             {
-                browserPath.Text = lastPath;
-                if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                if (item == null){break;}
+                if (item.Path != lastPath){break;}
+
+                s_loadLastPathSuccess = true;
+            }                
+            while (false);
+
+            if (!s_loadLastPathSuccess)
+            {
+                mru.Remove(token);
+                recentLst.Items.Remove(lastPath);
+            }            
+            else
+            {
+                var lastFolder = (StorageFolder)item;
+                if (lastFolder != null)
                 {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = lastFolder });
-                }
-                else
-                {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = lastFolder});
+                    //browserPath.Text = lastPath;
+                    if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
+                    {
+                        m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = lastFolder });
+                    }
+                    else
+                    {
+                        m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = lastFolder });
+                    }
                 }
             }
+
+            //delay next
+            m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.delayNext });
         }
 
         //private void S_content_LoadMultiChapterCompleted(object sender, contentProvider.LoadChapterCompletedEventArgs e)
@@ -409,10 +502,10 @@ namespace test_universalApp
             txt = w.ToString();
         }
 
-        async void showErrMsg()
+        async void showErrMsg(string msg = "Data is loading")
         {
-            MessageDialog msgbox = new MessageDialog("Data is loading...");
-            msgbox.Title = "Data is loaing...!";
+            MessageDialog msgbox = new MessageDialog(msg);
+            msgbox.Title = "ERROR";
             await msgbox.ShowAsync();
         }
         private void btnNext_Click(object sender, RoutedEventArgs e)
@@ -429,7 +522,16 @@ namespace test_universalApp
                 }
                 else
                 {
-                    this.Frame.Navigate(typeof(chapters));
+                    //load selected data
+                    if (recentLst.SelectedItems.Count > 0)
+                    {
+                        loadLastPath();
+                        //this.Frame.Navigate(typeof(chapters));
+                    }
+                    else
+                    {
+                        showErrMsg("Not select folder!");
+                    }
                 }
             }
         }
@@ -490,17 +592,37 @@ namespace test_universalApp
             if (folder != null)
             {
                 Debug.WriteLine(string.Format("getFolder success {0}", folder.Path));
+
+                //save recent folder
+                if (!recentLst.Items.Contains(folder.Path))
+                {
+                    var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+                    string mruToken = mru.Add(folder, folder.Path);
+                    recentLst.Items.Insert(0, folder.Path);
+                    recentLst.SelectedItem = recentLst.Items[0];
+                }
+
                 if (m_config.studyMode == myMainPgCfg.EStudyMode.readingNews)
                 {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveLessonFolder, data = folder });
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = folder });
+                    //m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveLessonFolder, data = folder });
+                    //m_lessonPgCfg.lastPath = folder.Path;
+                    //m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadLessons, data = folder });
                 }
                 else
                 {
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder });
-                    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                    //m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.saveFolder, data = folder });
+                    //if (folder.Path != m_chapterPgCfg.lastPath)
+                    //{
+                    //    m_chapterPgCfg.lastPath = folder.Path;
+                    //    //clear prev data
+                    //    m_chapterPgCfg.selectedChapters.Clear();
+                    //    m_chapterPgCfg.save();
+
+                    //    m_content.m_chapters.Clear();
+                    //    m_bgwork.qryBgTask(new BgTask { type = (int)bgTaskType.loadData, data = folder });
+                    //}
                 }
-                browserPath.Text = folder.Path;
+                //browserPath.Text = folder.Path;
             }
             Debug.WriteLine("browserBtn_Click end");
         }
