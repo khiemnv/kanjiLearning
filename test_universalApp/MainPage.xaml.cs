@@ -157,13 +157,16 @@ namespace test_universalApp
             {
                 case bgTaskType.saveFolder:
                     {
+                        //not used
+                        throw new Exception("not use");
+
                         StorageFolder folder = (StorageFolder)e.data;
                         //save last selected folder
                         if (folder.Path != m_chapterPgCfg.lastPath)
                         {
                             m_chapterPgCfg.lastPath = folder.Path;
                             //clear prev data
-                            m_chapterPgCfg.selectedChapters.Clear();
+                            m_chapterPgCfg.clean();
                             m_chapterPgCfg.save();
 
                             m_content.m_chapters.Clear();
@@ -394,15 +397,19 @@ namespace test_universalApp
             split.IsPaneOpen = true;
         }
 
-        private async void loadLastPath()
+        private async void loadLastPath(string path)
         {
             //load data?
-            if (s_lastFolderLoaded != m_chapterPgCfg.lastPath)
+            if (s_lastFolderLoaded != path)
             {
-                s_lastFolderLoaded = m_chapterPgCfg.lastPath;
+                s_lastFolderLoaded = path;
                 //clear prev data
-                m_chapterPgCfg.selectedChapters.Clear();
-                m_chapterPgCfg.save();
+                if ( path != m_chapterPgCfg.lastPath)
+                {
+                    m_chapterPgCfg.lastPath = path;
+                    m_chapterPgCfg.clean();
+                    m_chapterPgCfg.save();
+                }
                 m_content.m_chapters.Clear();
             }
             else
@@ -525,7 +532,7 @@ namespace test_universalApp
                     //load selected data
                     if (recentLst.SelectedItems.Count > 0)
                     {
-                        loadLastPath();
+                        loadLastPath(recentLst.SelectedItem.ToString());
                         //this.Frame.Navigate(typeof(chapters));
                     }
                     else

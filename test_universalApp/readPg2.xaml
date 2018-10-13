@@ -20,8 +20,12 @@
         <!--header-->
         <CommandBar>
             <CommandBar.SecondaryCommands>
+                <AppBarButton Icon="OpenFile" Name="openBtn" Label="Open"></AppBarButton>
                 <AppBarButton Name="pasteBtn" Label="Paste" Icon="Paste"></AppBarButton>
             </CommandBar.SecondaryCommands>
+            <CommandBar.Content>
+                <TextBlock Margin="5,15,5,0" Name="titleTxt">Content</TextBlock>
+            </CommandBar.Content>
         </CommandBar>
         <Grid Grid.Row="0"
             Background="Blue"

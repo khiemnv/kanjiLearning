@@ -512,6 +512,11 @@
                 Content="Back"
                 Width="50"
                 HorizontalAlignment="Left"/>
+        <Button Name="saveBtn"
+                Grid.Row="3"
+                Content="Save"
+                HorizontalAlignment="Center"/>
+
         <!--<TextBlock
             Name="swipeTxt"
             Grid.Row="3"

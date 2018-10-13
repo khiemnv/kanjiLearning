@@ -4,7 +4,9 @@
 //#define start_use_checkbox
 #define once_synth
 #define reduce_disk_opp
+//#define save_async
 //#define transparent_canvas
+//#define test_save_marked
 
 #define dict_dist
 #define sepate_kanji
@@ -436,6 +438,9 @@ namespace test_universalApp
 
             //disable search txt select
             //srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
+#if !test_save_marked
+            saveBtn.Visibility = Visibility.Collapsed;
+#endif
         }
 
         private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -1462,7 +1467,9 @@ namespace test_universalApp
             nextBtn.Tapped += nextBtn_Click;
             numberTxt.SelectionChanged += NumberTxt_SelectionChanged;
             backBtn.Click += back_Click;
-
+#if test_save_marked
+            saveBtn.Click += SaveBtn_Click;
+#endif
             //canvas buttons
 #if start_use_checkbox
             starChk.Click += starChk_Checked;
@@ -1519,6 +1526,31 @@ namespace test_universalApp
             srchSpkBtn.Tapped += SrchSpkBtn_Tapped;
         }
 
+#if test_save_marked
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var chapters = s_cp.m_chapters;
+            var chapterCfg = s_cp.m_chapterPgCfg;
+            var db = s_cp.m_db;
+            if (chapters.Count > 0)
+            {
+                //data was loaded
+                //save marked
+                foreach (var key in chapterCfg.selectedChapters)
+                {
+                    var ch = chapters[key];
+                    db.saveMarked(ch);
+                }
+            }
+            //s_cp.m_db.save();
+            foreach (chapterRec rec in db.getRecLst())
+            {
+                string tmp = rec.key + ":" + rec.marked;
+                chapterCfg.starLst.Add(tmp);
+            }
+        }
+#endif
+
         private void NumberTxt_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (numberTxtSelectedIndexChgIgnore)
@@ -1552,8 +1584,20 @@ namespace test_universalApp
 
         private void DictBtn_Click(object sender, RoutedEventArgs e)
         {
-            this.Frame.Navigate(typeof(dict), new dict.dictNaviParam {
-                searchTxt = termTxt.Text, prePos = m_iCursor });
+#if reduce_disk_opp
+#if save_async
+            await s_cp.saveMarkedsAsyn();
+#else
+
+            s_cp.saveMarkeds();
+
+#endif
+#endif
+            this.Frame.Navigate(typeof(dict), new dict.dictNaviParam
+            {
+                searchTxt = termTxt.Text,
+                prePos = m_iCursor
+            });
         }
 
         private void SearchBnt2_Click(object sender, RoutedEventArgs e)
@@ -1882,7 +1926,13 @@ namespace test_universalApp
         private void back_Click(object sender, RoutedEventArgs e)
         {
 #if reduce_disk_opp
+#if save_async
+            await s_cp.saveMarkedsAsyn();
+#else
+
             s_cp.saveMarkeds();
+
+#endif
 #endif
             this.Frame.Navigate(typeof(chapters));
         }

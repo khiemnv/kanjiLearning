@@ -331,6 +331,9 @@ namespace test_universalApp
 
             //disable search txt select
             //srchRtb.IsTextSelectionEnabled = m_option.srchTxtEnable;
+
+            //content
+            titleTxt.Text = "";
         }
 
         private void M_srchWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -1200,6 +1203,26 @@ namespace test_universalApp
 
             //menu
             pasteBtn.Click += PasteBtn_Click;
+            openBtn.Click += OpenBtn_Click;
+        }
+
+        private async void OpenBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker();
+            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.Thumbnail;
+            picker.SuggestedStartLocation =
+                Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add(".txt");
+            picker.FileTypeFilter.Add("*");
+
+            StorageFile file = await picker.PickSingleFileAsync();
+
+            if (file != null)
+            {
+                string text = await FileIO.ReadTextAsync(file);
+                setRtb(new List<string> { text });
+                titleTxt.Text = file.Name;
+            }
         }
 
         private void PasteBtn_Click(object sender, RoutedEventArgs e)
@@ -1209,6 +1232,7 @@ namespace test_universalApp
             var t = Task.Run(async () => { txt = await data.GetTextAsync(); });
             t.Wait();
             setRtb(new List<string> { txt });
+            titleTxt.Text = "";
         }
 
         private void DictBtn_Click(object sender, RoutedEventArgs e)
@@ -1257,6 +1281,8 @@ namespace test_universalApp
 
         private void bg_loadData(object sender, DoWorkEventArgs e)
         {
+            throw new Exception("not use");
+
             //load option
             //m_worker.ReportProgress(20);
             bg_qryFgTask(myFgTask.qryType.loadProgress, 20);

@@ -244,6 +244,25 @@ namespace test_universalApp
             Debug.Assert(m_bLoaded);
             m_dbfile.save();
         }
+        public async Task saveAsyn()
+        {
+            if (!m_bLoaded) { throw new Exception("db was not loaded"); }
+            await m_dbfile.saveAsyn();
+        }
+        public async Task unloadAsyn()
+        {
+            if (!m_bLoaded) return;
+            m_bLoaded = false;
+#if use_xml
+            await m_dbfile.saveAsyn();
+#endif
+#if !use_xml
+            m_file.unload();
+#endif
+            m_dict.Clear();
+            m_cache.Clear();
+            m_deltedItem.Clear();
+        }
         public void unload()
         {
             if (!m_bLoaded) return;
@@ -353,6 +372,10 @@ namespace test_universalApp
                 m_cache.Add(key, newrec);
                 m_dict.Add(key, newrec);
             }
+        }
+        public List<chapterRec> getRecLst()
+        {
+            return m_dbfile.chapters;
         }
 
         void resizeTmpBuff(int size)

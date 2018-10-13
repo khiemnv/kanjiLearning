@@ -116,6 +116,7 @@
     <Content Include="Assets\conjugation.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\marked.xml" />
     <Content Include="Assets\paste.png" />
     <Content Include="Assets\search.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

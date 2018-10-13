@@ -509,16 +509,37 @@ namespace test_universalApp
         #region markerd
         public void saveMarkeds()
         {
-            //save marked
-            foreach (var key in m_chapterPgCfg.selectedChapters)
+            if (m_chapters.Count > 0)
             {
-                var ch = m_chapters[key];
-                m_db.saveMarked(ch);
+                //data was loaded
+                //save marked
+                foreach (var key in m_chapterPgCfg.selectedChapters)
+                {
+                    var ch = m_chapters[key];
+                    m_db.saveMarked(ch);
+                }
             }
+#if test_save_marked
+            m_db.save();
+#endif
         }
-        #endregion
+        public async Task saveMarkedsAsyn()
+        {
+            if (m_chapters.Count > 0)
+            {
+                //data was loaded
+                //save marked
+                foreach (var key in m_chapterPgCfg.selectedChapters)
+                {
+                    var ch = m_chapters[key];
+                    m_db.saveMarked(ch);
+                }
+            }
+            await m_db.saveAsyn();
+        }
+#endregion
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -952,7 +973,7 @@ namespace test_universalApp
         protected object m_configData;
     }
 
-    #region main_pg_config
+#region main_pg_config
     [DataContract]
     public class myMainPgCfg:myConfig
     {
@@ -990,8 +1011,8 @@ namespace test_universalApp
             t.Wait();
         }
     }
-    #endregion
-    #region lesson_pg_config
+#endregion
+#region lesson_pg_config
     [DataContract]
     public class myLessonPgCfg:myConfig
     {
@@ -1031,8 +1052,8 @@ namespace test_universalApp
             t.Wait();
         }
     }
-    #endregion
-    #region chapter_pg_config
+#endregion
+#region chapter_pg_config
     [DataContract]
     public class myChapterPgCfg:myConfig
     {
@@ -1042,12 +1063,15 @@ namespace test_universalApp
         public string lastPath;
         [DataMember]
         public List<string> selectedChapters;
+        [DataMember]
+        public List<string> starLst;
 
         public myChapterPgCfg()
         {
             mruToken = "";
             lastPath = "";
             selectedChapters = new List<string>();
+            starLst = new List<string>();
             m_configFile = "chapterPg.cfg";
         }
         static myChapterPgCfg m_config;
@@ -1076,9 +1100,14 @@ namespace test_universalApp
             var t = Task.Run(() => saveAsyn<myChapterPgCfg>());
             t.Wait();
         }
+        public void clean()
+        {
+            selectedChapters.Clear();
+            starLst.Clear();
+        }
     }
-    #endregion
-    #region db_file_config
+#endregion
+#region db_file_config
     [DataContract]
     public class myDbFileCfg : myConfig
     {
@@ -1111,6 +1140,10 @@ namespace test_universalApp
             var t = Task.Run(() => saveAsyn<myDbFileCfg>());
             t.Wait();
         }
+        public async Task saveAsyn()
+        {
+            await saveAsyn<myDbFileCfg>();
+        }
     }
-    #endregion
+#endregion
 }
