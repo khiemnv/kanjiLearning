@@ -131,7 +131,8 @@ namespace test_universalApp
             t.Wait();
 #endif
             s_cp.saveMarkeds();
-            s_cp.m_db.save();
+            s_cp.m_db.save(s_cp.m_chapterPgCfg);
+            //await s_cp.saveMarkedsAsyn();
 
             deferral.Complete();
         }

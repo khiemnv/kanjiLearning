@@ -55,11 +55,13 @@ namespace test_universalApp
             initCtrls();
 
             browserBtn.Tapped += browserBtn_ClickAsync;
+            openBtn.Click += browserBtn_ClickAsync;
             reloadBtn.Click += reloadBtn_Click;
             addBtn.Click += btnAdd_Click;
             nextBtn.Click += btnNext_Click;
             prevBtn.Click += PrevBtn_Click;
             clean.Click += btnClean_Click;
+            clearBtn.Click += btnClean_Click;
 
             //background work
             m_bgwork = new myWorker();
@@ -272,8 +274,20 @@ namespace test_universalApp
 
         private void btnClean_Click(object sender, RoutedEventArgs e)
         {
-            m_content.m_content.m_words.Clear();
-            txtBox.Text = "";
+            //m_content.m_content.m_words.Clear();
+            //txtBox.Text = "";
+            recentLst.Items.Clear();
+            s_lastFolderLoaded = "";
+
+            m_chapterPgCfg.lastPath = "";
+            m_chapterPgCfg.markedInfo.Clear();
+            m_chapterPgCfg.clean();
+            m_chapterPgCfg.save();
+
+            m_content.m_chapters.Clear();
+
+            var mru = StorageApplicationPermissions.MostRecentlyUsedList;
+            mru.Clear();
         }
 
         private void initCtrls()
@@ -309,7 +323,7 @@ namespace test_universalApp
             if (recentLst.SelectedItems.Count > 0)
             {
                 var selectedItem = recentLst.SelectedItem.ToString();
-                m_chapterPgCfg.lastPath = selectedItem;
+                //m_chapterPgCfg.lastPath = selectedItem;
             }
         }
 
@@ -339,16 +353,18 @@ namespace test_universalApp
             {
                 recentLst.Items.Clear();
                 IStorageItem item = null;
+                List<string> q = new List<string>();
+                string slected = "";
                 var mru = StorageApplicationPermissions.MostRecentlyUsedList;
                 foreach (AccessListEntry entry in mru.Entries)
                 {
                     try
                     {
                         item = await mru.GetFolderAsync(entry.Token);
-                        recentLst.Items.Add(entry.Metadata);
+                        q.Add(entry.Metadata);
                         if (entry.Metadata == m_chapterPgCfg.lastPath)
                         {
-                            recentLst.SelectedItem = m_chapterPgCfg.lastPath;
+                            slected = m_chapterPgCfg.lastPath;
                         }
                     }
                     catch
@@ -357,6 +373,14 @@ namespace test_universalApp
                         Debug.WriteLine("loadLastPath last path not exists");
                     }
                 }
+
+                q.Sort();
+                foreach (string i in q)
+                {
+                    recentLst.Items.Add(i);
+                }
+
+                recentLst.SelectedItem = slected;
             }
             
 

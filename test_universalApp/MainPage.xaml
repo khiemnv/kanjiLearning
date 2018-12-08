@@ -10,7 +10,7 @@
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="35" />
-            <RowDefinition Height="35" />
+            <RowDefinition Height="50" />
             <RowDefinition Height="*" />
             <RowDefinition Height="35" />
             <RowDefinition Height="35" />
@@ -32,6 +32,15 @@
                 Visibility="Collapsed"/>
         </Grid>
         <!--load multi chapter-->
+        <CommandBar
+            VerticalAlignment="Top"
+            Grid.Row="1"
+            Grid.RowSpan="2">
+            <AppBarButton Name="openBtn" Label="Open" Icon="OpenLocal"></AppBarButton>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton Name="clearBtn" Label="Clear" Icon="Clear"></AppBarButton>
+            </CommandBar.SecondaryCommands>
+        </CommandBar>
         <Grid
             Grid.Row="1"
             >
@@ -41,6 +50,7 @@
                 <!--<ColumnDefinition Width="50"/>-->
             </Grid.ColumnDefinitions>
             <TextBox x:Name="browserPath"
+                     Visibility="Collapsed"
                 Grid.Column="0"
                 TextWrapping="NoWrap"
                 PlaceholderText="Path to data dir..."
@@ -53,6 +63,7 @@
                     Width="50"></Image>
             </Button>-->
             <Canvas x:Name="browserBtn"
+                    Visibility="Collapsed"
                 Grid.Column="1"
                 Margin="1,1,1,1">
                 <Image 
@@ -62,19 +73,24 @@
             </Canvas>
         </Grid>
         <!--load single chapter-->
+
         <StackPanel
             Grid.Row="3"
             HorizontalAlignment="Right"
             Orientation="Horizontal">
             <Button Name="optBtn"
+                    Visibility="Collapsed"
                     >. . .</Button>
             <Button Name="clean"
                 Content="Clean"
+                    Visibility="Collapsed"
                 Margin="1,1,1,1"/>
             <Button x:Name="addBtn"
+                Visibility="Collapsed"
                 Content="Save"
                 Margin="1,1,1,1"/>
             <Button x:Name="reloadBtn"
+                    Visibility="Collapsed"
                 Content="Open"
                 Margin="1,1,1,1"/>
         </StackPanel>
@@ -82,6 +98,7 @@
         <SplitView
                 Name="split"
                 Grid.Row="2"
+                Grid.RowSpan="2"
                 Grid.Column="0"
                 Height="auto"
                 Width="auto"
@@ -108,6 +125,7 @@
                     </Grid.RowDefinitions>
                     <ListBox Name="recentLst"
                              Grid.Row="0"
+                             Grid.RowSpan="2"
                              SelectionMode="Single">
                         <TextBlock>c:\kanji\goi</TextBlock>
                     </ListBox>
@@ -118,6 +136,7 @@
                         AcceptsReturn="True"
                         ScrollViewer.VerticalScrollBarVisibility="Auto"
                         Grid.Row="1" Height="250" VerticalAlignment="Top"
+                        Visibility="Collapsed"
                         />
                 </Grid>
             </SplitView.Content>

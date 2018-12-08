@@ -1900,6 +1900,7 @@ namespace test_universalApp
                 updateTerm();
                 updateNum();
             }
+            m_option.save();
         }
         private void sulf()
         {

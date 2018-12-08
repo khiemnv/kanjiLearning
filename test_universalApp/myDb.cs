@@ -239,22 +239,48 @@ namespace test_universalApp
                 }
             }
         }
-        public void save()
+        public void save(myChapterPgCfg cfg)
         {
             Debug.Assert(m_bLoaded);
-            m_dbfile.save();
+
+            //m_dbfile.save();
+            List<chapterRec> tmpLst = new List<chapterRec>();
+            for (int i = 0; i< cfg.markedInfo.Count;i++)
+            {
+                string str = cfg.markedInfo[i];
+                string[] arr = str.Split(new char[] { '|' });
+                if (arr.Count() != 2) { throw new Exception("invalid data"); }
+                chapterRec rec = null;
+                string key = arr[0];
+                if (m_dict.ContainsKey(key))
+                {
+                    rec = m_dict[key];
+                    cfg.markedInfo[i] = rec.key + '|' + rec.marked;
+                    m_dict.Remove(key);
+                    tmpLst.Add(rec);
+                }
+            }
+            foreach (chapterRec rec in m_dict.Values)
+            {
+                cfg.markedInfo.Add( rec.key + '|' + rec.marked );
+            }
+            foreach(chapterRec rec in tmpLst)
+            {
+                m_dict.Add(rec.key, rec);
+            }
+            cfg.save();
         }
         public async Task saveAsyn()
         {
             if (!m_bLoaded) { throw new Exception("db was not loaded"); }
-            await m_dbfile.saveAsyn();
+            //await m_dbfile.saveAsyn();
         }
         public async Task unloadAsyn()
         {
             if (!m_bLoaded) return;
             m_bLoaded = false;
 #if use_xml
-            await m_dbfile.saveAsyn();
+            //await m_dbfile.saveAsyn();
 #endif
 #if !use_xml
             m_file.unload();
@@ -263,12 +289,12 @@ namespace test_universalApp
             m_cache.Clear();
             m_deltedItem.Clear();
         }
-        public void unload()
+        public void unload(myChapterPgCfg cfg)
         {
             if (!m_bLoaded) return;
             m_bLoaded = false;
 #if use_xml
-            m_dbfile.save();
+            //m_dbfile.save();
 #endif
 #if !use_xml
             m_file.unload();
@@ -277,16 +303,25 @@ namespace test_universalApp
             m_cache.Clear();
             m_deltedItem.Clear();
         }
-        myDbFileCfg m_dbfile;
-        public void load()
+        //myDbFileCfg m_dbfile;
+        public void load(myChapterPgCfg cfg)
         {
             if (m_bLoaded) return;
             m_bLoaded = true;
 #if use_xml
-            m_dbfile = myDbFileCfg.getInstance();
-            foreach(var ch in m_dbfile.chapters)
+            //m_dbfile = myDbFileCfg.getInstance();
+            //foreach(var ch in m_dbfile.chapters)
+            //{
+            //    m_dict.Add(ch.key, ch);
+            //}
+            foreach (string str in cfg.markedInfo)
             {
-                m_dict.Add(ch.key, ch);
+                string[] arr = str.Split(new char[]{ '|'});
+                if (arr.Count() != 2) { throw new Exception("invalid data"); }
+                chapterRec rec = new chapterRec();
+                rec.key = arr[0];
+                rec.marked = arr[1];
+                m_dict.Add(arr[0], rec);
             }
 #endif
 #if !use_xml
@@ -373,10 +408,10 @@ namespace test_universalApp
                 m_dict.Add(key, newrec);
             }
         }
-        public List<chapterRec> getRecLst()
-        {
-            return m_dbfile.chapters;
-        }
+        //public List<chapterRec> getRecLst()
+        //{
+        //    //return m_dbfile.chapters;
+        //}
 
         void resizeTmpBuff(int size)
         {
@@ -398,13 +433,13 @@ namespace test_universalApp
 #if use_xml
         private void addMarked(chapterRec rec)
         {
-            m_dbfile.chapters.Add(rec);
+            //m_dbfile.chapters.Add(rec);
         }
         private void updateMarked(chapterRec rec)
         {
             try
             {
-                var foundRec = m_dbfile.chapters.Find((t) => { return t.key == rec.key; });
+                //var foundRec = m_dbfile.chapters.Find((t) => { return t.key == rec.key; });
             }
             catch
             {

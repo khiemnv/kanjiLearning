@@ -35,11 +35,13 @@ namespace test_universalApp
 
         public void loadDb()
         {
-            m_db.load();
+            if (m_chapterPgCfg == null) throw new Exception("not init pg cfg");
+            m_db.load(m_chapterPgCfg);
         }
         public void unloadDb()
         {
-            m_db.unload();
+            if (m_chapterPgCfg == null) throw new Exception("not init pg cfg");
+            m_db.unload(m_chapterPgCfg);
         }
 #if use_sqlite
         public SqliteConnection m_cnn;
@@ -1065,6 +1067,8 @@ namespace test_universalApp
         public List<string> selectedChapters;
         [DataMember]
         public List<string> starLst;
+        [DataMember]
+        public List<string> markedInfo; //chapter|marked
 
         public myChapterPgCfg()
         {
@@ -1072,6 +1076,7 @@ namespace test_universalApp
             lastPath = "";
             selectedChapters = new List<string>();
             starLst = new List<string>();
+            markedInfo = new List<string>();
             m_configFile = "chapterPg.cfg";
         }
         static myChapterPgCfg m_config;
