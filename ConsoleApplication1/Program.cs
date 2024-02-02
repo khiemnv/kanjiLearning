@@ -1,13 +1,10 @@
 ﻿
 
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
@@ -33,14 +30,203 @@ namespace ConsoleApplication1
             myDict dict = myDict.Load();
             tickcount = (Environment.TickCount - tickcount);
             Console.WriteLine("load dict completed {0}", tickcount);
-            return;
+            //return;
 
             string w = "言葉";
-            for (;;) {
-                w= "突っ込む";
+            string p = "C:\\temp\\github\\kanjiLearning\\kanji";
+            var di = new DirectoryInfo(p);
+            var i = 0;
+            var files = di.GetFiles("*.json");
+            var chapters = files.ToList().ConvertAll(file =>
+            {
+                var txt = System.IO.File.ReadAllText(file.FullName);
+                var c = txt.FromJson<List<Note>>();
+                var tag = Path.GetFileNameWithoutExtension(file.Name).Replace("_", "\\");
+                return new Chapter { notes = c, tag = tag };
+            });
+
+            // all kanjis
+            var total = 0;
+            var d = new Dictionary<string, Container>();
+            foreach (var c in chapters)
+            {
+                foreach (var n in c.notes)
+                {
+                    var kanjis = dict.GetKanjis(n.kanji);
+                    int idx = 0;
+                    foreach (var kanji in kanjis)
+                    {
+                        if (!d.ContainsKey(kanji))
+                        {
+                            var ret = dict.Search(kanji);
+                            d.Add(kanji, new Container
+                            {
+                                myKanji = ret[0],
+                                nodeWraps = new List<NodeWrap>()
+                            });
+                        }
+                        d[kanji].nodeWraps.Add(new NodeWrap { idx = idx, note = n });
+                        idx++;
+                    }
+
+                    // total kanjis
+                    if (kanjis.Count > 0)
+                    {
+                        total++;
+                    }
+                }
+            }
+
+            // sort and init container cur
+            foreach (var container in d.Values)
+            {
+                container.nodeWraps.Sort((a, b) => a.idx - b.idx);
+                container.popOutCur = container.nodeWraps.Count - 1;
+            }
+
+            // add kanji to notes
+            var remain = total;
+            var list = d.Keys.ToList();
+            var unprocessed = new List<string>();
+            while (remain > 0)
+            {
+                var processedLst = new List<string>();
+                var popOutLst = new List<string>();
+                foreach (var c in list)
+                {
+                    var container = d[c];
+                    var nodewraps = container.nodeWraps;
+                    var ok = false;
+                    foreach (var nodewrap in nodewraps)
+                    {
+                        // add
+                        if (nodewrap.note.myKanji == null)
+                        {
+                            nodewrap.note.myKanji = container.myKanji;
+                            ok = true;
+                            processedLst.Add(c);
+                            remain--;
+                            break;
+                        }
+                    }
+
+                    // pop out
+                    if (!ok)
+                    {
+                        // replace
+                        if (container.popOutCur >= 0)
+                        {
+                            var noteWrap = container.nodeWraps[container.popOutCur];
+                            var old = noteWrap.note.myKanji;
+
+                            popOutLst.Add(old.val.ToString());
+                            processedLst.Remove(old.val.ToString());
+                            Debug.WriteLine($"replace: {old.val} by {c}");
+
+                            noteWrap.note.myKanji = container.myKanji;
+                            processedLst.Add(c);
+                            container.popOutCur--; // zero base
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"unprocessed: {c}");
+                            unprocessed.Add(c);
+                        }
+                    }
+                }
+
+                // continue
+                if (popOutLst.Count > 0)
+                {
+                    list = popOutLst;
+                }
+                else
+                {
+                    list = d.Keys.ToList();
+                }
+
+                // debug
+                Debug.WriteLine($"processedLst: {string.Join(",", processedLst)}\npopOutLst:{string.Join(",", popOutLst)} ");
+            }
+
+            for (; ; )
+            {
+                w = "突っ込む";
                 var ret = dict.Search(w);
+                foreach (var v in ret)
+                {
+                    var obj = new
+                    {
+                        v.decomposite,
+                        definitions = JoinDefs(v.definitions),
+                        v.extraStrokes,
+                        v.hn,
+                        radical = v.radical.zRadical,
+                        radicalDef = JoinDefs(v.radical.definitions),
+                        radicalStrokes = v.radical.nStrokes,
+                        radicalIdx = v.radical.iRadical,
+                        radicalHn = v.radical.hn,
+                        relatedWords = string.Join("", v.relatedWords.Select(tw => $"{tw.term} {tw.hn} {JoinDefs(tw.definitions)}").ToList())
+                    };
+                    var txt = obj.ToJson();
+                    Debug.Write(obj.ToJson());
+                }
             }
         }
+
+        class Container
+        {
+            public int idx;
+            public string c;
+            public List<NodeWrap> nodeWraps;
+            public myKanji myKanji;
+            public int popOutCur;
+        }
+        class NodeWrap
+        {
+            public int idx; // index of kanji in note
+            public Note note;
+        }
+
+        class Note
+        {
+            public string kanji; // 危険（な）
+            public string radical; // 厄 ÁCH, NGỎA
+            public string hira; // きけん（な
+            public string vn; // nguy hiểm
+            public string hn; // NGUY HIỂM
+            public string explain; // Cao, ở nơi cao mà ghê sợ gọi là nguy.
+            public string tag; // kanji\2\1\1
+            public string meaning; // decomposite
+            public myKanji myKanji;
+        }
+        class Chapter
+        {
+            public string tag;
+            public List<Note> notes;
+        }
+
+        static HtmlDocument htmlSnippet = new HtmlDocument();
+        public static string JoinDefs(List<myDefinition> defs)
+        {
+            List<string> list = new List<string>();
+            foreach (var d in defs)
+            {
+                if (!d.bFormated)
+                {
+                    list.Add(d.text);
+                }
+                else
+                {
+                    htmlSnippet.LoadHtml(d.text);
+                    var f = string.Join("", htmlSnippet.DocumentNode.Descendants("font").Select(y => y.InnerText).ToList());
+                    var li = htmlSnippet.DocumentNode.SelectNodes("//div/ol/li").Select(y => y.InnerText).ToList();
+                    list.AddRange(li);
+                }
+            }
+            return $"<ul>{string.Join("", list.ConvertAll(li => $"<li>{li}</li>"))}</ul>";
+        }
+
         void test_queue()
         {
 

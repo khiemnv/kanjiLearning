@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApplication1
@@ -352,6 +351,146 @@ namespace ConsoleApplication1
             }
             csv.Dispose();
         }
+
+        class myParser : csvParser
+        {
+            private readonly List<string> arr;
+            int cur = 0;
+
+            public myParser(string txt)
+            {
+                arr = txt.FromJson<List<string>>();
+                System.Diagnostics.Debug.Assert((arr.Count % 3) == 0, "invalid data!");
+            }
+            public override void start()
+            {
+
+            }
+
+            public override string[] getRec()
+            {
+                var ret = arr.Skip(cur).Take(3).ToArray();
+                cur += 3;
+                return ret;
+            }
+
+            public override int recCount => arr.Count / 3;
+        }
+
+        void load_dict_3(myDictBase dict, string path, int isJsFile = 0)
+        {
+            var b = System.IO.File.Exists(path);
+            if (!b)
+            {
+                path = "C:\\temp\\github\\kanjiLearning\\test_universalApp\\" + path;
+            }
+            var txt = System.IO.File.ReadAllText(path);
+            string[] arr;
+
+            //var fs = await StorageFile.GetFileFromPathAsync(path);
+            //var lines = await FileIO.ReadLinesAsync(fs);
+            csvParser csv = new myParser(txt);
+            csv.progress_processed = new System.IO.FileInfo(path).Length;
+            csv.uri = getUri(path);
+#if parse_use_thread
+            Task t = Task.Run(() => csv.start());
+#else
+            csv.start();
+#endif
+
+            int startTC = Environment.TickCount;
+            wrkState s = wrkState.init;
+#if bg_parse
+            int nBlock;
+            int iBlock = 0;
+            int nRead;
+            byte[] block;
+            int count;
+#endif
+            int nRec;
+            int iRec = 0;
+            bool bFetch;
+            Int64 preSize = m_processedSize;
+            for (; s != wrkState.end;)
+            {
+                m_processedSize = preSize + csv.progress_processed;
+                double percent = 100.0 * m_processedSize / m_totalSize;
+                loadProgress = percent;
+                Debug.WriteLine(string.Format("{0} load_dict % {1} s {2}", this, percent.ToString("F2"), s));
+                switch (s)
+                {
+                    case wrkState.init:
+#if bg_parse
+                        nBlock = csv.blockCount;
+                        if (iBlock < nBlock) {
+                            block = csv.getBlock(out nRead);
+                            iBlock++;
+                            csv.parseBlock(nRead, block);
+                        }
+#endif
+                        nRec = csv.recCount;
+                        if (nRec > 0) s = wrkState.begin;
+#if parse_use_thread
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
+                        break;
+                    case wrkState.begin:
+                        arr = csv.getRec();   //ignore first line
+                        iRec++;
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < (csv.recCount));
+#endif
+                        if (bFetch) s = wrkState.parsing;
+                        else s = wrkState.wait4read;
+                        break;
+                    case wrkState.wait4read:
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < (csv.recCount - isJsFile));
+#endif
+                        if (bFetch) s = wrkState.parsing;
+#if parse_use_thread
+                        else if (t.Status == TaskStatus.RanToCompletion) s = wrkState.end;
+#else
+                        else s = wrkState.end;
+#endif
+                        Task.Delay(1);
+                        break;
+                    case wrkState.parsing:
+#if bg_parse
+                        nBlock = csv.blockCount;
+                        for (; iBlock < nBlock;)
+#endif
+                        {
+#if bg_parse
+                            block = csv.getBlock(out nRead);
+                            iBlock++;
+                            csv.parseBlock(nRead, block);
+#endif
+                            nRec = (csv.recCount);
+                            for (; iRec < nRec;)
+                            {
+                                arr = csv.getRec();
+                                dict.add(arr);
+                                iRec++;
+                            }
+                        }
+#if bg_parse
+                        bFetch = (iBlock < csv.blockCount);
+#else
+                        bFetch = (iRec < (csv.recCount));
+#endif
+                        if (!bFetch) s = wrkState.wait4read;
+                        break;
+                }
+            }
+            csv.Dispose();
+        }
         void load_dict(myDictBase dict, myTextReader rd, string path)
         {
             //var fs = await StorageFile.GetFileFromPathAsync(path);
@@ -447,8 +586,8 @@ namespace ConsoleApplication1
             loadRec[] arr = new loadRec[] {
                 new loadRec{ bDict = chDict = new myDictCharacter(0), path = @"Assets/character.csv", isJsFile = 0 },
                 new loadRec{ bDict = hv_org = new myDictHVORG(0), path = @"Assets/hv_org.csv", isJsFile = 0 },
-                new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.js", isJsFile = 1 },
-                new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
+                new loadRec{ bDict = hvdict = new myDictHV(0), path = @"Assets/hanvietdict.json", isJsFile = 2 },
+                //new loadRec{ bDict = hv_word = new myDictHvWord(0), path = @"Assets/hv_word.csv", isJsFile = 0 },
                 new loadRec{ bDict = kxDict = new myDictKangxi(0), path = @"Assets/kangxi.csv", isJsFile = 0 },
                 //character_jdict.csv
                 new loadRec{ bDict = jdcDict = new myDictJDC(0), path = @"Assets/character_jdict.csv", isJsFile = 0 },
@@ -456,8 +595,8 @@ namespace ConsoleApplication1
                 //load kanji component
                 //  req: kangxi.csv, bothu214.csv loaded
                 new loadRec{ bDict = kjCompo = new myCompo(0), path = @"Assets/component.txt", isJsFile = 0 },
-                new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
-                new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
+                //new loadRec{ bDict = dictConj = new myDictConj(0), path = @"Assets/conjugation.csv", isJsFile = 0 },
+                //new loadRec{ bDict = dictSearch = new myDictSearch(0), path = @"Assets/search.csv", isJsFile = 0 },
             };
             //cacl total size
             m_totalSize = 0;
@@ -469,23 +608,36 @@ namespace ConsoleApplication1
             //load
             foreach (loadRec rec in arr)
             {
-                load_dict_2(rec.bDict, rec.path, rec.isJsFile);
+                if (rec.isJsFile == 2)
+                {
+                    load_dict_3(rec.bDict, rec.path, rec.isJsFile);
+                }
+                else
+                {
+                    load_dict_2(rec.bDict, rec.path, rec.isJsFile);
+                }
             }
             Debug.Assert(loadProgress == 100);
         }
         Int64 getFileSize(string path)
         {
             Int64 size = 0;
-            var t = Task.Run(async () =>
+            //var t = Task.Run(async () =>
+            //{
+            //    var sf = await StorageFile.GetFileFromApplicationUriAsync(getUri(path));
+            //    if (sf != null)
+            //    {
+            //        BasicProperties pro = await sf.GetBasicPropertiesAsync();
+            //        size = (long)pro.Size;
+            //    }
+            //});
+            //t.Wait();
+            var b = System.IO.File.Exists(path);
+            if (!b)
             {
-                var sf = await StorageFile.GetFileFromApplicationUriAsync(getUri(path));
-                if (sf != null)
-                {
-                    BasicProperties pro = await sf.GetBasicPropertiesAsync();
-                    size = (long)pro.Size;
-                }
-            });
-            t.Wait();
+                path = "C:\\temp\\github\\kanjiLearning\\test_universalApp\\" + path;
+            }
+            size = new System.IO.FileInfo(path).Length;
             return size;
         }
         myDict() { }
@@ -500,6 +652,11 @@ namespace ConsoleApplication1
                 m_instance.load_dicts();
             }
             return m_instance;
+        }
+
+        public List<string> GetKanjis(string w)
+        {
+            return w.Where(c => myDictBase.m_kanjis.ContainsKey(c)).Select(c => c.ToString()).ToList();
         }
 
         public List<myKanji> Search(string w)
@@ -524,6 +681,7 @@ namespace ConsoleApplication1
                         rd.format(kanji);
                         kjCompo.Update(kanji);
                     }
+                    var lst = kanji.relatedWords.GroupBy(tw => tw.term, (term, tg) => new myWord());
                     kanjis.Add(kanji);
                 }
             }

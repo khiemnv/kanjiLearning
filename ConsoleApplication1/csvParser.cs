@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
@@ -25,19 +23,20 @@ namespace ConsoleApplication1
         }
         public void Open(Uri uri)
         {
+            var wkdir = @"C:\temp\github\kanjiLearning\test_universalApp\Assets";
             string[] arr = {
-                @"C:\Users\Khiem\Desktop\hv_word.csv",
-                @"C:\Users\Khiem\Desktop\kangxi.csv",
-                @"C:\Users\Khiem\Desktop\hv_org.csv",
-                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js",
-                @"C:\Users\Khiem\Downloads\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js",
-                @"C:\Users\Khiem\Desktop\hannom_index.csv",
-                @"C:\Users\Khiem\Desktop\character.csv",
-                @"C:\Users\Khiem\Desktop\character_jdict.csv",
-                @"C:\Users\Khiem\Desktop\bothu214.csv",
-                @"C:\Users\Khiem\Desktop\component.txt",
-                @"C:\Users\Khiem\Desktop\search.csv",
-                @"C:\Users\Khiem\Desktop\conjugation.csv",
+                wkdir + @"\hv_word.csv",
+                wkdir + @"\kangxi.csv",
+                wkdir + @"\hv_org.csv",
+                wkdir + @"\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hanvietdict.js",
+                wkdir + @"\Từ điển Hán Việt_v1.4_apkpure.com\assets\buildhvdict\hvchubothu.js",
+                wkdir + @"\hannom_index.csv",
+                wkdir + @"\character.csv",
+                wkdir + @"\character_jdict.csv",
+                wkdir + @"\bothu214.csv",
+                wkdir + @"\component.txt",
+                wkdir + @"\search.csv",
+                wkdir + @"\conjugation.csv",
             };
             var name = Path.GetFileName(uri.ToString());
             string path = arr.First((s) => { return s.Contains(name); });
@@ -90,8 +89,9 @@ namespace ConsoleApplication1
     {
         int m_recCount = 0;
         int m_recCur = 0;
-        public int recCount { get { return m_recCount; } }
-        public string[] getRec() {
+        public virtual int recCount { get { return m_recCount; } }
+        public virtual string[] getRec()
+        {
             Debug.Assert(m_recCur < m_recCount);
 #if use_res_queue
             var res = m_resQueue.pop();
@@ -479,7 +479,7 @@ namespace ConsoleApplication1
         const int page_size = 4096;
         int block_remain = 0;
         byte[] block = new byte[page_size + block_prefix];
-        public void start()
+        public virtual void start()
         {
             var fs = new myReader();
             fs.Open(uri);
@@ -580,7 +580,7 @@ namespace ConsoleApplication1
                         case myCode.nByte.n4:
                             //|1110xxxx 10xxxxxx 10xxxxxx
                             //|^--j
-                            if ( (j + c) == (iEnd+1))
+                            if ((j + c) == (iEnd + 1))
                             {
                                 j += c;
                             }
@@ -662,7 +662,7 @@ namespace ConsoleApplication1
             }
         }
 
-#region IDisposable Support
+        #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -695,6 +695,6 @@ namespace ConsoleApplication1
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
-#endregion
+        #endregion
     }
 }
