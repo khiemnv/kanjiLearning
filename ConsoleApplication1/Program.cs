@@ -33,7 +33,7 @@ namespace ConsoleApplication1
             //return;
 
             string w = "言葉";
-            string p = "C:\\temp\\github\\kanjiLearning\\kanji";
+            string p = @"D:\tmp\kanjiLearning\kanji";
             var di = new DirectoryInfo(p);
             var i = 0;
             var files = di.GetFiles("*.json");
@@ -48,12 +48,13 @@ namespace ConsoleApplication1
             // all kanjis
             var total = 0;
             var d = new Dictionary<string, Container>();
+            var singleWord = new Dictionary<string,Container>();
             foreach (var c in chapters)
             {
                 foreach (var n in c.notes)
                 {
+                    // search kanji
                     var kanjis = dict.GetKanjis(n.kanji);
-                    int idx = 0;
                     foreach (var kanji in kanjis)
                     {
                         if (!d.ContainsKey(kanji))
@@ -61,27 +62,40 @@ namespace ConsoleApplication1
                             var ret = dict.Search(kanji);
                             d.Add(kanji, new Container
                             {
-                                myKanji = ret[0],
-                                nodeWraps = new List<NodeWrap>()
+                                kanji = ret[0],
+                                noteWraps = new List<NoteWrap>()
                             });
                         }
-                        d[kanji].nodeWraps.Add(new NodeWrap { idx = idx, note = n });
-                        idx++;
                     }
-
-                    // total kanjis
-                    if (kanjis.Count > 0)
+                        
+                    // word contains one kanji char
+                    if (kanjis.Count == 1)
                     {
+                        var k1 = kanjis[0];
+                        n.kanjiObj = d[k1].kanji;
+                        var c1 = d[k1];
+                        c1.distributedCount++;
+                        if (!singleWord.ContainsKey(k1)) { singleWord.Add(k1,c1); }
+                    }
+                    else if (kanjis.Count > 1)
+                    {
+                        for (int idx = 0;idx<kanjis.Count;idx++) { 
+                            var kanji = kanjis[idx];
+                            var container = d[kanji];
+                            container.noteWraps.Add(new NoteWrap { idx = idx, note = n, kanjisCount=kanjis.Count });
+                        }
+
+                        // total words that has more than one kanji char
                         total++;
                     }
                 }
             }
 
-            // sort and init container cur
+            // sort and init container cursor
             foreach (var container in d.Values)
             {
-                container.nodeWraps.Sort((a, b) => a.idx - b.idx);
-                container.popOutCur = container.nodeWraps.Count - 1;
+                container.noteWraps.Sort((a, b) => a.idx - b.idx);
+                container.popOutCur = container.noteWraps.Count - 1;
             }
 
             // add kanji to notes
@@ -92,55 +106,69 @@ namespace ConsoleApplication1
             {
                 var processedLst = new List<string>();
                 var popOutLst = new List<string>();
-                foreach (var c in list)
+                foreach (var kanji in list)
                 {
-                    var container = d[c];
-                    var nodewraps = container.nodeWraps;
-                    var ok = false;
-                    foreach (var nodewrap in nodewraps)
+                    if (kanji == "族")
+                    {
+                        Debug.WriteLine($"{remain}");
+                    }
+
+                    var container = d[kanji];
+                    var notewraps = container.noteWraps;
+
+                    var emptyIdx =notewraps.FindIndex(tw=>tw.note.kanjiObj == null);
+                    if (emptyIdx != -1)
                     {
                         // add
-                        if (nodewrap.note.myKanji == null)
-                        {
-                            nodewrap.note.myKanji = container.myKanji;
-                            ok = true;
-                            processedLst.Add(c);
-                            remain--;
-                            break;
-                        }
+                        notewraps[emptyIdx].note.kanjiObj = container.kanji;
+                        processedLst.Add(kanji);
+                        container.distributedCount++;
+                        remain--;
+                    }
+
+                    else if (container.distributedCount > 0)
+                    {
+                        // skip
+                        Debug.WriteLine($"distributedCount: {container.distributedCount} of {kanji}");
                     }
 
                     // pop out
-                    if (!ok)
+                    // replace
+                    else if (container.popOutCur >= 0)
                     {
-                        // replace
-                        if (container.popOutCur >= 0)
+                        var noteWrap = container.noteWraps[container.popOutCur];
+                        var old = noteWrap.note.kanjiObj;
+                        var c2 = d[old.val.ToString()];
+                        if (c2.distributedCount > 1)
                         {
-                            var noteWrap = container.nodeWraps[container.popOutCur];
-                            var old = noteWrap.note.myKanji;
-
+                            c2.distributedCount--;
                             popOutLst.Add(old.val.ToString());
                             processedLst.Remove(old.val.ToString());
-                            Debug.WriteLine($"replace: {old.val} by {c}");
+                            Debug.WriteLine($"replace: {old.val} by {kanji}");
 
-                            noteWrap.note.myKanji = container.myKanji;
-                            processedLst.Add(c);
+                            noteWrap.note.kanjiObj = container.kanji;
+                            container.distributedCount++;
+                            processedLst.Add(kanji);
                             container.popOutCur--; // zero base
-                        }
-                        else
+                        } else
                         {
-                            Debug.WriteLine($"unprocessed: {c}");
-                            unprocessed.Add(c);
+                            Debug.WriteLine($"unprocessed: {kanji}");
+                            unprocessed.Add(kanji);
                         }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"unprocessed: {kanji}");
+                        unprocessed.Add(kanji);
                     }
                 }
 
                 // continue
-                if (popOutLst.Count > 0)
-                {
-                    list = popOutLst;
-                }
-                else
+                //if (popOutLst.Count > 0)
+                //{
+                //    list = popOutLst;
+                //}
+                //else
                 {
                     list = d.Keys.ToList();
                 }
@@ -149,6 +177,9 @@ namespace ConsoleApplication1
                 Debug.WriteLine($"processedLst: {string.Join(",", processedLst)}\npopOutLst:{string.Join(",", popOutLst)} ");
             }
 
+            // export
+            System.IO.File.WriteAllText("chapters.json",chapters.ToJson());
+            return;
             for (; ; )
             {
                 w = "突っ込む";
@@ -176,15 +207,16 @@ namespace ConsoleApplication1
 
         class Container
         {
-            public int idx;
+            public int distributedCount;
             public string c;
-            public List<NodeWrap> nodeWraps;
-            public myKanji myKanji;
-            public int popOutCur;
+            public List<NoteWrap> noteWraps;
+            public myKanji kanji; // kanji objedt
+            public int popOutCur; // cursor
         }
-        class NodeWrap
+        class NoteWrap
         {
             public int idx; // index of kanji in note
+            public int kanjisCount; // number of kanjis in word
             public Note note;
         }
 
@@ -198,7 +230,7 @@ namespace ConsoleApplication1
             public string explain; // Cao, ở nơi cao mà ghê sợ gọi là nguy.
             public string tag; // kanji\2\1\1
             public string meaning; // decomposite
-            public myKanji myKanji;
+            public myKanji kanjiObj; // single kanji char obj
         }
         class Chapter
         {
